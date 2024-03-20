@@ -1,0 +1,48 @@
+a.disabled{
+	pointer-events: none;
+}
+.ErrorMessage{
+	font-family: Arial, Helvetica, sans-serif;
+    font-size: small;
+    color: red;
+    display: none;
+}
+.ErrorMessage.show{
+	display: block;
+}
+#content a.btn{
+	padding: 5px 13px;
+	color: white;
+}
+
+form td.form-label{
+    color: #EC008B;
+    font-weight: bold;
+}
+
+td.app_desc p{
+	font-family: Arial, Helvetica, sans-serif;
+    font-size: small;
+    color: #5371B4;
+    padding: 1em 0;
+}
+
+h4.page-name{
+	font-weight: bold;
+    color: #A9B8DA;
+    padding-top: 30px;
+}
+td div.input-action{
+	display: flex;
+	width: 100%;
+	gap: 10px;
+}
+div.d-flex > div.addr_items{
+	width: 25%;
+}
+form div.form-group label{
+	margin-bottom: 5px;
+}
+form div.form-group{
+	padding-bottom: 20px;
+}
