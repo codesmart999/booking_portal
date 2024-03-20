@@ -1,5 +1,5 @@
 <?php
-
+//Hello!
 $menu = false;
 require_once('header.php');
 
