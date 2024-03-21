@@ -18,6 +18,15 @@ switch( $_SERVER['SERVER_NAME'] ){
 		define ('DB_PASS',     '');
 		define ('DB_NAME',     'virtua21_chromis_booking');
 		break;
+	case 'codemax999.com':
+		define('ROOT_FOLDER',  '/public_html/chromis_booking/');
+		define('SITE_URL',     'http://codemax999.com:8080');
+		define('SECURE_URL',   'https://codemax999.com:8081');
+
+		define ('DB_USER',     'root');
+		define ('DB_PASS',     '');
+		define ('DB_NAME',     'virtua21_chromis_booking');
+		break;
 	case 'www.chromis.local.net':
 	case 'chromis.local.net':
 	case 'secure.chromis.local.net':
