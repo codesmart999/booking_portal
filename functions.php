@@ -100,7 +100,7 @@
 	        	"access"	=> $access
 	        );
 	    }
-
+		
     	// check by Default Time Setting
     	// Regular( available ) Booking Period
 		$stmt = $link->prepare("SELECT value FROM `settings` WHERE `name`='DEFAULT_REGULAR_TIME'");
@@ -118,9 +118,10 @@
 
     	// get Special Availability by System
     	foreach( $arrSystems as $system ){
-			$stmt = $link->prepare("SELECT RuleId, Available FROM `availability` WHERE `SystemId`=$system AND `SetDate`=$date");
+			$systemId = $system["systemId"];
+			$stmt = $link->prepare("SELECT RuleId, Available FROM `availability` WHERE `SystemId`= $systemId AND `SetDate`=$date");
 		    $stmt->execute();
-		    $stmt->bind_result($availablility);
+		    $stmt->bind_result($ruleId, $availablility);
 		    while($stmt->fetch())
 		    	$arrRules[] = json_decode($availablility);
     	}
