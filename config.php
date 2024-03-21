@@ -9,6 +9,15 @@ if( TESTING ){
 }
 
 switch( $_SERVER['SERVER_NAME'] ){
+	case 'codesmart.local':
+		define('ROOT_FOLDER',  '/public_html/chromis_booking/');
+		define('SITE_URL',     'http://codesmart.local:8080');
+		define('SECURE_URL',   'https://codesmart.local:8081');
+
+		define ('DB_USER',     'root');
+		define ('DB_PASS',     '');
+		define ('DB_NAME',     'virtua21_chromis_booking');
+		break;
 	case 'www.chromis.local.net':
 	case 'chromis.local.net':
 	case 'secure.chromis.local.net':
