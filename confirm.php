@@ -9,9 +9,9 @@ if( $arrAppData['business_name'] == ""){
 }
 
 $format_date = format_date( $arrAppData['date_appointment'] );
-
+$booking_code = $arrAppData['booking_code'];
 // TODO: uncomment after testing
-unset($_SESSION['appointment_data']);
+//unset($_SESSION['appointment_data']);
 ?>
 
 <h4 class="page-name">Confirmation ></h4>
@@ -23,12 +23,12 @@ unset($_SESSION['appointment_data']);
 		<tr>
 			<td colspan = "2" class="text-center app_desc fst-italic">
 				<p><?php echo $format_date . " " . $arrAppData['location']; ?></p>
-				<p><?php echo $arrServices[$arrAppData['service']]['desc']; ?></p>
+				<p><?php echo $arrServices[$arrAppData['service']]['fullname']; ?></p>
 				<?php
 					foreach( $arrAppData['booking_time'] as $time ){
 						if( $time ) {
 							echo '<p>Nurse Newcastle</p>';
-							echo '<p>'.$time.' Reference: 6953906F</p>';
+							echo '<p>'.$time.' Reference: '.$booking_code.'</p>';
 						}
 					}
 				?>
