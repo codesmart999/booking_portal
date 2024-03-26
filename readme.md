@@ -12,6 +12,7 @@ Chromis-MA is a booking platform for a employees.
 
 1. We have to change the values on config.php file & phinx.php
 2. Run `composer install`, to install all requirements. (Everytime there is an update in composer.json)
+   On Linux, run `php composer.phar install`
 3. Run `vendor/bin/phinx migrate -e development`. (Everytime there is an update in the database schema)
 4. Run `vendor/bin/phinx seed:run`. (Only once at the beginning)
 

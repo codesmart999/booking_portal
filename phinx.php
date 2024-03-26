@@ -13,7 +13,7 @@ return
             'adapter' => 'mysql',
             'host' => 'localhost',
             'name' => 'virtua21_chromis_booking',
-            'user' => 'root',
+            'user' => 'virtua21_chromis',
             'pass' => 'pDg&8IrXgY8[',
             'port' => '3306',
             'charset' => 'utf8',

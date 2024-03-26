@@ -1,3 +1,5 @@
 error_log
 composer.lock
 vendor/
+composer.phar
+.htaccess
