@@ -4,23 +4,42 @@
 	$message = "";
     $db = getDBConnection();
     // Save Settings
-    if( isset($_POST['Save']) ) {	
+    if( isset($_POST['Save']) ) {
    	    $key = $_POST['settingKey'];
-   	    $tmpValues = $_POST;
-   	    unset( $tmpValues["settingKey"] );
-   	    unset( $tmpValues["Save"] );
 
-   	    $stmt = $db->prepare(
-			'UPDATE settings
-                SET value = ?
-                WHERE name=?' );
-   	    $value = json_encode( $tmpValues );
-        $stmt->bind_param( 'ss',
-			$value,
-			$key
-        );
-        $stmt->execute() or die($stmt->error);
-        $stmt->close();
+		switch ($key) {
+			case 'AVAILABLE_WEEK_DAYS':
+				$arr_unavailable_weekdays = array_values($_POST['weekday_availability']);
+
+				$stmt = $db->prepare( 'TRUNCATE TABLE setting_weekdays' );
+				$stmt->execute() or die($stmt->error);
+
+				$stmt = $db->prepare("INSERT INTO `setting_weekdays` (weekday, isAvailable) VALUES (?, ?)");
+				for ($day = 0; $day < 7; $day++) {
+					$isAvailable = !in_array($day, $arr_unavailable_weekdays);
+					$stmt->bind_param('ii', $day, $isAvailable);
+					$stmt->execute() or die($stmt->error);
+				}
+				break;
+			default:
+				$tmpValues = $_POST;
+				unset( $tmpValues["settingKey"] );
+				unset( $tmpValues["Save"] );
+	
+				$stmt = $db->prepare(
+					'UPDATE settings
+						SET value = ?
+						WHERE name=?' );
+				$value = json_encode( $tmpValues );
+				$stmt->bind_param( 'ss',
+					$value,
+					$key
+				);
+				$stmt->execute() or die($stmt->error);
+				$stmt->close();
+				break;
+		}
+
 		$message = '<p class="Message fst-italic fw-bold text-success show">'._lang('success_update').'</p>';
     }
 
@@ -37,6 +56,35 @@
     		'value'	=> $value,
     		'cat'	=> $category,
     		'desc'	=> $description
+    	];
+    }
+
+	// Get setting_weekdays
+    $arrSettingWeekdays = array();
+    $stmt = $db->prepare("SELECT id, weekday, isAvailable FROM setting_weekdays WHERE `SystemId`=0");
+	$stmt->execute();
+    $stmt->bind_result($id, $weekday, $isAvailable);
+    $stmt->store_result();
+    while ($stmt->fetch()) {
+    	$arrSettingWeekdays[$weekday] = [
+    		'id' => $id,
+    		'isAvailable' => $isAvailable
+    	];
+    }
+
+	// Get setting_bookingperiods
+	$arrSettingBookingPeriods = array();
+    $stmt = $db->prepare("SELECT id, weekday, FromInMinutes, ToInMinutes, isRegular, isAvailable FROM setting_bookingperiods WHERE `SystemId`=0 ORDER BY weekday ASC, FromInMinutes ASC");
+	$stmt->execute();
+    $stmt->bind_result($id, $weekday, $from_in_mins, $to_in_mins, $isRegular, $isAvailable);
+    $stmt->store_result();
+    while ($stmt->fetch()) {
+    	$arrSettingBookingPeriods[$weekday] = [
+    		'id' => $id,
+			'FromInMinutes' => $from_in_mins,
+			'ToInMinutes' => $to_in_mins,
+    		'isRegular' => $isRegular,
+			'isAvailable' => $isAvailable,
     	];
     }
 ?>
@@ -393,7 +441,6 @@ require_once('footer.php');
 </div>
 <?php
 	$settingKey = "AVAILABLE_WEEK_DAYS";
-	$settingValue = json_decode($arrSettings[$settingKey]['value'], true);
 ?>
 <div class="modal fade" id="bookingDaysModal" tabindex="-1" role="dialog" aria-labelledby="saveModalLabel" aria-hidden="true">
     <form method="post" class="form-horizontal setting_form" id="">
@@ -406,27 +453,42 @@ require_once('footer.php');
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
-                <div class="modal-body">
-					<?php 
-						for( $day = -1; $day < 7; $day++ ) { 
-							if( $day == -1 ) {
-								$dayLable = "All days";
-								$dayKey = "All";
-							} else {
-								$dayLable = date('l', strtotime("Sunday +{$day} days"));
-								$dayKey = date('D', strtotime("Sunday +{$day} days"));
-							}
-
-							$optionKey = $dayKey . "_available";
-							$checked = "";
-							if( isset($settingValue[$optionKey]) )
-								$checked = "checked";
-					?>
-                    <div class="form-group">
-                        <input class="" type="checkbox" id="<?php echo $optionKey?>" name="<?php echo $optionKey?>" <?php echo $checked?>/>
-                    	<label for="<?php echo $optionKey?>"><?php echo $dayLable; ?></label>
-                    </div>
-                    <?php } ?>
+                <div class="modal-body table-responsive">
+					<table border="0" cellspacing="0" cellpadding="5" width="100%" class="table">
+						<thead>
+							<tr>
+								<td width="20" nowrap>Select</td>
+								<td width="40" nowrap>Week Day</td>
+								<td width="40" nowrap>Status</td>
+							</tr>
+						</thead>
+						<tbody>
+							<?php 
+								for( $day = 0; $day < 7; $day++ ) { 
+									$dayLabel = date('l', strtotime("Sunday +{$day} days"));
+									
+									$optionKey = 'weekday_' . $day;
+									$checked = "";
+									$status = "";
+									if ( isset($arrSettingWeekdays[$day]) && empty($arrSettingWeekdays[$day]['isAvailable'] )) {
+										$checked = "checked";
+										$status = "Unavailable";
+									}
+							?>
+							<tr>
+								<td width="20" nowrap>
+									<input class="chk_weekday_available" type="checkbox" id="<?php echo $optionKey?>" name="weekday_availability[]" value="<?php echo $day;?>" <?php echo $checked?>/>
+								</td>
+								<td width="40" nowrap>
+									<label for="<?php echo $optionKey?>"><?php echo $dayLabel; ?></label>
+								</td>
+								<td width="40" nowrap>
+									<span id="<?php echo $optionKey?>_status"><?php echo $status; ?></span>
+								</td>
+							</tr>
+							<?php } ?>
+						</tbody>
+					</table>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>
@@ -555,6 +617,12 @@ require_once('footer.php');
 				}
 	        });
 		});
+
+		$('.chk_weekday_available').change(function() {
+			var str_optionKey = $(this).attr('id');
+			var isChecked = $(this).prop("checked");
+			$('#' + str_optionKey + "_status").html(isChecked ? "Unavailable" : "");
+		})
 
 	});
 </script>
