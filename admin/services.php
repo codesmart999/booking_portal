@@ -1,7 +1,8 @@
 <?php
     require_once('header.php');
     $db = getDBConnection();
-	if(isset($_POST['records-limit'])){
+	if (isset($_POST['records-limit'])) {
+		$page = 1;
 		$_SESSION['records-limit'] = $_POST['records-limit'];
 	}
 
@@ -11,7 +12,7 @@
 	$prev = $page - 1;
 	$next = $page + 1;
 
-    $stmt = $db->prepare("SELECT * FROM services WHERE `active`='Y'");
+    $stmt = $db->prepare("SELECT * FROM services WHERE `active`=1");
 	$stmt->execute();
     $stmt->store_result();
 
