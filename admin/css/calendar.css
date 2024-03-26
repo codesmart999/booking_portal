@@ -28,7 +28,7 @@ td:has(>.month-calendar-today) {
 
 .calendar-sidebar table th,
 .calendar-sidebar table td {
-	padding: 5px !important;
+	padding: 5px 1px !important;
 	background-color: white;
 	border: 1px solid grey !important;
 }
@@ -247,4 +247,74 @@ table.lightgrey-weekends tbody td:nth-child(n+6) {
 .months-in-year .highlight-month,
 .years-table .highlight-year {
 	background-color: yellow;
+}
+
+.calendar-table-header {
+	font-family: Arial, sans-serif;
+}
+
+.calendar-table-header table {
+	width: 100%;
+	border-collapse: collapse;
+	margin-bottom: 20px;
+}
+
+.calendar-table-header th,
+.calendar-table-headerr td {
+	padding: 8px;
+	text-align: left;
+	border-bottom: 1px solid #ddd;
+}
+
+.calendar-table-header th {
+	background-color: #f2f2f2;
+}
+
+.time-slots-sidebar td,
+.time-slots-sidebar tr {
+	padding: 5px !important;
+}
+
+#timeSlotsTable th,
+#timeSlotsTable td {
+	border: 1px solid #888;
+	padding: 5px;
+	/* Set the width of table cells to 50% */
+}
+
+.big-font {
+	font-size: 15px !important;
+	/* Adjust the size as needed */
+}
+
+.image-links {
+	display: inline-block;
+	/* Display the links horizontally */
+	margin-right: 10px;
+	/* Add some space between the links */
+}
+
+#timeSlotsTable a {
+	color: blue;
+	text-decoration: none;
+	/* Remove underline */
+}
+
+/* Style for links when hovered */
+#timeSlotsTable a:hover {
+	color: blue;
+	text-decoration: underline;
+	/* Add underline on hover */
+}
+
+#locationText {
+	display: none;
+	/* Initially hide the location text */
+	padding: 5px;
+}
+
+.location-address {
+	display: block;
+	font-weight: bold;
+	font-size: larger;
 }
