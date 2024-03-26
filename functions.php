@@ -59,7 +59,6 @@
     	// if selected date is passed, then return FALSE
 		if( strtotime( $selectedDate ) < strtotime(date("Y-m-d")) )
 			return false;
-
     	if( $arrAppData['five_days'] ) {
     		for( $i = 0; $i < 5; $i++ ) {
 		    	$arrTimes = getAvailableTimes( $selectedDate );
@@ -100,7 +99,7 @@
 	        	"access"	=> $access
 	        );
 	    }
-
+		
     	// check by Default Time Setting
     	// Regular( available ) Booking Period
 		$stmt = $link->prepare("SELECT value FROM `settings` WHERE `name`='DEFAULT_REGULAR_TIME'");
@@ -118,9 +117,10 @@
 
     	// get Special Availability by System
     	foreach( $arrSystems as $system ){
-			$stmt = $link->prepare("SELECT RuleId, Available FROM `availability` WHERE `SystemId`=$system AND `SetDate`=$date");
+			$systemId = $system["systemId"];
+			$stmt = $link->prepare("SELECT RuleId, Available FROM `availability` WHERE `SystemId`= $systemId AND `SetDate`=$date");
 		    $stmt->execute();
-		    $stmt->bind_result($availablility);
+		    $stmt->bind_result($ruleId, $availablility);
 		    while($stmt->fetch())
 		    	$arrRules[] = json_decode($availablility);
     	}
@@ -164,4 +164,48 @@
 
     	return $arrDefault[$key];
     } 
+
+	//ramdom code generator for booking_code
+	function generateRandomCode($seed) {
+		// Set the seed for the random number generator
+		mt_srand(crc32($seed));
+
+		// Define characters to be used in the code
+		$characters = 'ABCDEFGHIJKLMNPQRSTUVWXYZ0123456789';
+
+		// Get the length of the character string
+		$char_length = strlen($characters);
+
+		// Initialize an empty string to store the code
+		$code = '';
+
+		// Generate 8 random characters
+		for ($i = 0; $i < 8; $i++) {
+			// Generate a random index within the range of character string length
+			$index = mt_rand(0, $char_length - 1);
+
+			// Append the randomly selected character to the code
+			$code .= $characters[$index];
+		}
+
+		// Return the generated code
+		return $code;
+	}
+
+	//extract start and end time from input
+	function extractStartAndEndTime($input) {
+		// Split the string by comma to separate the time ranges
+		$time_ranges = explode(',', $input);
+
+		// Extract start and end times from the first and last time ranges respectively
+		$start_time = trim(explode(' to ', $time_ranges[0])[0]);
+		$end_time = trim(explode(' to ', $time_ranges[count($time_ranges) - 1])[1]);
+
+		// Return start and end times as an associative array
+		return array(
+			"start_time" => $start_time,
+			"end_time" => $end_time
+		);
+	}
+
 ?>

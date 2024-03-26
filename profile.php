@@ -3,9 +3,47 @@
 $menu = "profile";
 require_once('header.php');
 
+$db = getDBConnection();
+
 if( isset($_POST['Submit'])){
-	header('Location: '. SECURE_URL . CONFIRM_PAGE, true, 301);
+	
+	$bussiness_man = $arrAppData['business_name'];
+	$email_addr = $arrAppData['email_addr'];
+	$postcode = $arrAppData['postcode'];
+	$phone_number = $arrAppData['phone_number'];
+	$comment = $arrAppData['comment'];
+
+	//print_r($arrAppData['booking_time'][0]);
+
+	$stmt = $db->prepare("INSERT INTO `customers` (FullName, Email, PostalAddr, Phone, Comment) VALUES (?, ?, ?, ?, ?)");
+	$stmt->bind_param('sssss', $bussiness_man, $email_addr, $postcode, $phone_number, $comment);
+	$stmt->execute() or die($stmt->error);
+
+	$customerId = $db->insert_id;
+	$system_id = $arrAppData['service'];
+	$date_appointment = DateTime::createFromFormat('d/m/Y', $arrAppData['date_appointment']);
+	$booking_date = $date_appointment->format('Y-m-d');
+	$booking_time = $arrAppData['booking_time'][0];
+	$times = extractStartAndEndTime($booking_time);
+
+	$booking_from =$times["start_time"];
+	$booking_to = $times["end_time"];
+
+	$booking_code = generateRandomCode($customerId.$system_id.$arrAppData['date_appointment'].$booking_from.$booking_to);
+	
+	$stmt = $db->prepare("INSERT INTO `bookings` (SystemId, CustomerId, BookingDate, BookingFrom, BookingTo, BookingCode) VALUES (?, ?, ?, ?, ?, ?)");
+	$stmt->bind_param('iissss', $system_id, $customerId, $booking_date, $booking_from, $booking_to, $booking_code);
+	$stmt->execute() or die($stmt->error);
+
+	$bookID = $db->insert_id;
+
+	if ($bookID != 0) {
+		$_SESSION['appointment_data']['booking_code'] = $booking_code;
+		header('Location: '. SECURE_URL . CONFIRM_PAGE, true, 301);
+	}
+	
 	exit(0);
+	
 }
 
 if( $arrAppData['booking_time'] == ""){
