@@ -162,15 +162,19 @@ table.lightgrey-weekends tbody td:nth-child(n+6) {
 	background-size: 100% 50%;
 }
 
-.grade-1 {
+.grade-available {
+	background-color: white !important;
+}
+
+.grade-unavailable {
 	background-color: rgb(255, 226, 166) !important;
 }
 
-.grade-2 {
+.grade-booked {
 	background-color: rgb(204, 255, 204) !important;
 }
 
-.grade-3 {
+.grade-booked-many {
 	background-color: rgb(114, 237, 92) !important;
 }
 
@@ -279,6 +283,7 @@ table.lightgrey-weekends tbody td:nth-child(n+6) {
 #timeSlotsTable td {
 	border: 1px solid #888;
 	padding: 5px;
+	vertical-align: baseline !important;
 	/* Set the width of table cells to 50% */
 }
 
@@ -317,4 +322,12 @@ table.lightgrey-weekends tbody td:nth-child(n+6) {
 	display: block;
 	font-weight: bold;
 	font-size: larger;
+}
+
+#trHeader td,
+#trHeader tr {
+	text-align: center;
+	font-weight: bold;
+	background-color: white;
+	color: black;
 }

@@ -13,7 +13,7 @@ if(isset($_SESSION['User'])) {
 }
 
 // Get the SystemId from the URL parameter
-$systemId = isset($_GET['SystemId']) ? $_GET['SystemId'] : null;
+$systemId = isset($_GET['SystemId']) ? intval($_GET['SystemId']) : null;
 
 if (!isset($systemId) || !isset($administratorName)) {
     // Redirect the user to the desired location
@@ -42,24 +42,53 @@ $array_months = [
     'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
 ];
 
-$year = isset($_GET['year']) ? intval($_GET['year']): date('Y');
-$month = isset($_GET['month']) ? intval($_GET['month']) : date('m');
-$day = isset($_GET['day']) ? intval($_GET['day']) : date('d');
 
-if ($year === 0 || $month === 0 || $day ===0 ) {//undefined case: exception handling
-    // Set a default value (current year)
+
+//*************  SET YEAR, MONTH, DAY  ***************** */
+$year = date('Y');
+$month = date('m');
+$day = date('d');
+
+// Initialize startDate with today's date as default
+$startDate = date('Y-m-d');
+
+// Check if startDate is set in the GET parameters
+if (isset($_GET['startDate'])) {
+    // Extract the value of startDate
+    $startDate = $_GET['startDate'];
+    
+    // Validate and format startDate
+    if (!empty($startDate) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $startDate)) {
+        // Split the date string into year, month, and day
+        list($year, $month, $day) = explode('-', $startDate);
+        
+        // Convert month and day to integers
+        $year = intval($year);
+        $month = intval($month);
+        $day = intval($day);
+        
+        // Proceed with further processing
+    } else {
+        $startDate = date('Y-m-d');
+    }
+}
+
+// Exception handling: check if any of the values are invalid or undefined
+if ($year === 0 || $month === 0 || $day === 0) {
+    // Set default values (current date)
     $year = date('Y');
     $month = date('m');
     $day = date('d');
 }
 
+
 $timestamp = mktime(0, 0, 0, $month, $day, $year);
 
 // Get the name of the month (e.g., March)
-$monthName = date('F', $timestamp);
+$monthName = date('M', $timestamp);
 
-// Get the name of the day of the week (e.g., Wednesday)
-$dayOfWeek = date('l', $timestamp);
+// Get the name of the day of the week (e.g., Wed)
+$dayOfWeek = date('D', $timestamp);
 
 // Get the day of the month without leading zeros (e.g., 27)
 $dayOfMonth = date('j', $timestamp);
@@ -68,6 +97,21 @@ $current_year = date('Y'); // Get the current year
 $current_month = date('n'); // Get the current month without leading zeros
 $current_day = date('d'); // Get the current day
 $array_weeks_in_month = cal_weeks_in_month($year, $month);
+
+$date = new DateTime("$year-$month-$day");
+$date->modify('+1 day');// Add one day to the date
+$nextDay = array(
+    'year' => $date->format('Y'),
+    'month' => $date->format('m'),
+    'day' => $date->format('d')
+);
+$date->modify('-2 day');// Add prev
+$prevDay = array(
+    'year' => $date->format('Y'),
+    'month' => $date->format('m'),
+    'day' => $date->format('d')
+);
+
 ?>
 <div class="dropdown" onmouseover="showPopupMenu()" onmouseout="hidePopupMenu()">
   <div class="dropdown-menu" id="popupMenu">
@@ -103,9 +147,8 @@ $array_weeks_in_month = cal_weeks_in_month($year, $month);
     <div class="row">
         <!-- Left Sidebar (Calendar) -->
         <div class="col-md-3 col-sm-12 calendar-sidebar demo-calendar" style="border-color:  white; padding-top:0px; padding: 0px;">
-        <div id="locationText">Location Address <span class="location-address"><?php echo $street;?></span></div>
+            <div id="locationText">Location Address <span class="location-address"><?php echo $street;?></span></div>
             <div id="calendarWidget">
-                
                 <div class="row">
                     <div class="col-md-12" style = "padding: 0px 2px;">
                         <div class="" id="demo-calendar-ajax">
@@ -120,7 +163,7 @@ $array_weeks_in_month = cal_weeks_in_month($year, $month);
                                         navigation_next: false,
                                         today_markup: '<span class="month-calendar-today">[day]</span>',
                                         classname: 'table clickable',
-                                        ajax: '/api/calendar_api.php'
+                                        ajax: '/api/calendar_ajax_api.php?SystemId=<?php echo $systemId;?>'
                                     });
                                     
                                 });
@@ -138,8 +181,8 @@ $array_weeks_in_month = cal_weeks_in_month($year, $month);
                                     const year = parseInt(parts[0]); // Extract the year (convert to integer)
                                     const month = parseInt(parts[1]); // Extract the month (convert to integer)
                                     const day = parseInt(parts[2]); // Extract the day (convert to integer)
-
-                                    var newUrl = window.location.origin + window.location.pathname + "?SystemId=<?php echo $systemId?>+&year=" + year + "&month="+month+"&day="+day;
+                                    const startDate = year+'-'+month+'-'+ day; // Format the date as M/D/Y
+                                    var newUrl = window.location.origin + window.location.pathname + "?SystemId=<?php echo $systemId?>&startDate="+ startDate + "&endDate=" + startDate;
                                     window.location.href = newUrl;
                                     
                                 });         
@@ -235,12 +278,10 @@ $array_weeks_in_month = cal_weeks_in_month($year, $month);
 
         <!-- Main Content (Time Slots) -->
         <div class="col-md-9 col-sm-12 time-slots-sidebar">
-            <!-- Code from the real site -->
-            
              <table id="timeSlotsTable" width="100%" table-bordered cellpadding="2" cellspacing="1" bgcolor="#000080">
                 <thead>
-                    <tr colspan="2">
-                        <td width="100%" bgcolor="#C5D4F0" valign="top" align="center" colspan="1">
+                    <tr>
+                        <td width="100%" bgcolor="#C5D4F0" valign="top" align="center" colspan="2">
                             <font face="Arial" size="2" color="#000000">
                                 <span class="big-font">
                                     <b><?php echo $dayOfWeek . ", " . $monthName . " " . $dayOfMonth . ", " . $year; ?></b>
@@ -256,9 +297,9 @@ $array_weeks_in_month = cal_weeks_in_month($year, $month);
 
                                 &nbsp;&nbsp;<font size="2" face="Arial" color="#0000FF">&nbsp; •
 
-                                </font><font size="2" face="Arial" color="#FFFFFF"> <a href="ddaction.asp?action=groupbookings&amp;d=2024-11-11&amp;endate=2024-11-11">Group&nbsp;Bookings</a></font><font size="2" face="Arial" color="#0000FF">&nbsp; &nbsp;• 
+                                </font><font size="2" face="Arial" color="#FFFFFF"> <a href="#">Group&nbsp;Bookings</a></font><font size="2" face="Arial" color="#0000FF">&nbsp; &nbsp;• 
 
-                                </font><font size="2" face="Arial" color="#FFFFFF"> <a href="ddaction.asp?action=changedisplay&amp;d=2024-11-11&amp;endate=2024-11-11">Change&nbsp;Display</a></font><font size="2" face="Arial" color="#0000FF">&nbsp; &nbsp;• 
+                                </font><font size="2" face="Arial" color="#FFFFFF"> <a href="#">Change&nbsp;Display</a></font><font size="2" face="Arial" color="#0000FF">&nbsp; &nbsp;• 
                                 </font><font size="2" face="Arial" color="#FFFFFF"> <a href="#" onmouseover="showLocation(true)" onmouseout="showLocation(false)">Show Location</a>
 
                                 </font>
@@ -266,53 +307,15 @@ $array_weeks_in_month = cal_weeks_in_month($year, $month);
                         </td>
                     </tr>
                 </thead>
-                <tbody colspan = "2">
+                <tbody>
                     <?php
-                    $startTime = strtotime("8:00 AM");
-                    $endTime = strtotime("1:00 PM");
-                    $interval = 5 * 60; // 5 minutes in seconds
-                    echo '<tr colspan="2">';
-                    echo '<td width="50%" colspan="1" bgcolor="#FFFFFF" valign="top" >';
-                    echo '<font face="arial" size="2">';
-                    while ($startTime <= $endTime) {
-                        $timeSlotStart = date("g:i A", $startTime);
-                        $startTime += $interval;
-                        $timeSlotEnd = date("g:i A", $startTime);
-
-                        // Generate a random number to represent the availability
-                        $random = mt_rand(1, 3);
-                        $background_color = "";
-                        $business_name = "";
-                        $link = "";
-
-                        // Set background color and business name based on availability
-                        switch ($random) {
-                            case 1:
-                                $background_color = "FFFFFF"; // White for available
-                                break;
-                            case 2:
-                                $background_color = "FFE2A6"; // Light yellow for unavailable
-                                break;
-                            case 3:
-                                $background_color = "CCFFCC"; // Light green for booked
-                                $business_name = " - Business Name"; // Add the business name for booked slots
-                                $link = '<a href="#">MB</a>'; // Add the "MB" link for booked slots
-                                break;
-                        }
-
-                        // Output the time slot item with appropriate background color, checkbox, MB link, and business name
-                       
-                        echo '&nbsp;<input type="checkbox" name="timeslot" style="margin-top: 5px"value="'.$timeSlotStart.'-'.$timeSlotEnd.'">&nbsp;<span style="background-color: #'.$background_color.'">'.$timeSlotStart.' - '.$timeSlotEnd.'</span>&nbsp;'.$link.$business_name.'&nbsp;<br/>';
-                       
-                    }
-                    echo '</font>';
-                    echo '</td>';
-                    echo '</tr>';
+                    // Include the contents of temp.php here
+                        require_once('booking_table.php');
                     ?>
                 </tbody>
-                <tfoot colspan="2">
+                <tfoot>
                     <tr>
-                        <td valign="middle">
+                        <td valign="middle" colspan="2">
                             <input id="doChangeAvail" data-dochange="false" type="submit" value="Change Availability" name="action" class="buttons" onclick="return changeAvailability()">
                             <span style="float:right; display: flex; align-items: center;">
                                 &nbsp;&nbsp;
@@ -320,11 +323,11 @@ $array_weeks_in_month = cal_weeks_in_month($year, $month);
                                     <span class="big-font">
                                         <b><?php echo $dayOfWeek . ", " . $monthName . " " . $dayOfMonth . ", " . $year; ?></b>
                                     </span>&nbsp;&nbsp;</font>
-                                <a href="amenux.asp?ddate=11/10/2024&amp;endate=11/10/2024">
+                                <a href="#" onclick="prevDay()">
                                     <img border="0" title="Previous Day" src="/images/arrowhead_week_astern.gif" align="middle">
                                 </a>
                                 <img border="0" src="/images/day.gif" align="middle">
-                                <a href="amenux.asp?ddate=11/12/2024&amp;endate=11/12/2024">
+                                <a href="#" onclick="nextDay()">
                                     <img border="0" title="Next Day" src="/images/arrowhead_week_ahead.gif" align="middle">
                                 </a>
                             </span>
@@ -352,7 +355,16 @@ $array_weeks_in_month = cal_weeks_in_month($year, $month);
         cell.addEventListener('click', () => {
             const from = cell.getAttribute('data-week-from');
             const to = cell.getAttribute('data-week-to'); 
-            alert(from + ":" + to); // Alert the week number on click
+            // Split the dates to get the year, month, and day components
+            const fromDateComponents = from.split('-');
+            const toDateComponents = to.split('-');
+
+            // Construct the URL with the startDate and endDate parameters
+            const url = window.location.origin + window.location.pathname + '?SystemId=<?php echo $systemId?>&startDate=' + fromDateComponents[0] + '-' + fromDateComponents[1] + '-' + fromDateComponents[2] +
+                        '&endDate=' + toDateComponents[0] + '-' + toDateComponents[1] + '-' + toDateComponents[2];
+
+            // Redirect to the constructed URL
+            window.location.href = url;
         });
     });
 
@@ -367,7 +379,8 @@ $array_weeks_in_month = cal_weeks_in_month($year, $month);
         cell.addEventListener('click', () => {      
             var year = $(cell).attr('data-year');
             var month = $(cell).attr('data-month');
-            var newUrl = window.location.origin + window.location.pathname + "?SystemId=<?php echo $systemId?>+&year=" + year + "&month=" + month + "&day=1";
+            const startDate = year +'/1/'+ month; // Format the date as M/D/Y
+            var newUrl = window.location.origin + window.location.pathname + "?SystemId=<?php echo $systemId?>&startDate=" + startDate;
             window.location.href = newUrl;
         });
     });
@@ -382,15 +395,15 @@ $array_weeks_in_month = cal_weeks_in_month($year, $month);
         });
         cell.addEventListener('click', () => {
             var year = $(cell).attr('data-year');
-            console.log(year);
-            var newUrl = window.location.origin + window.location.pathname + "?SystemId=<?php echo $systemId?>+&year=" + year + "&month=1&day=1";
+            const startDate = year + '-1-1'; // Format the date as Y/M/D
+            const newUrl = window.location.origin + window.location.pathname + "?SystemId=<?php echo $systemId; ?>&startDate=" + startDate;
             window.location.href = newUrl;
         });
     });
 
     function redirectToToday() {
-        window.location.href = window.location.origin + window.location.pathname + "?SystemId=" + <?php echo $systemId; ?> + "&year=" + <?php echo $current_year; ?> + "&month="+ <?php echo $current_month; ?> +"&day="+ <?php echo $current_day; ?>;
-    }
+        window.location.href = window.location.origin + window.location.pathname + "?SystemId=<?php echo $systemId; ?>&startDate=<?php echo $current_year; ?>-<?php echo $current_month ?>-<?php echo $current_day ?>";
+    }                                                                                                   
 
     function showLocation(flag) {
         var locationText = document.getElementById("locationText");
@@ -403,6 +416,16 @@ $array_weeks_in_month = cal_weeks_in_month($year, $month);
             locationText.style.display = "none"; // Hide the location text
             calendarWidget.style.display = "block"; // Show the calendar widget
         }
+    }
+
+    function prevDay() {
+        const newUrl = `${window.location.origin}${window.location.pathname}?SystemId=${<?php echo $systemId; ?>}&startDate=<?php echo $prevDay['year']; ?>-<?php echo $prevDay['month']; ?>-<?php echo $prevDay['day']; ?>`;
+        window.location.href = newUrl;
+    }
+
+    function nextDay() {
+        const newUrl = `${window.location.origin}${window.location.pathname}?SystemId=${<?php echo $systemId; ?>}&startDate=<?php echo $nextDay['year']; ?>-<?php echo $nextDay['month']; ?>-<?php echo $nextDay['day']; ?>`;
+        window.location.href = newUrl;
     }
 </script>
 <script src="./js/booking_access.js"></script>
