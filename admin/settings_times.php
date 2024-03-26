@@ -1,5 +1,6 @@
 <?php 
 	require_once('header.php');
+	require_once('utils.php');
 
 	$message = "";
     $db = getDBConnection();
@@ -20,6 +21,24 @@
 					$stmt->bind_param('ii', $day, $isAvailable);
 					$stmt->execute() or die($stmt->error);
 				}
+				break;
+			case 'DEFAULT_REGULAR_TIME':
+				$arr_bookingperiod_summary_by_weekday = summarize_bookingperiod_details($_POST);
+				
+				$stmt = $db->prepare( 'DELETE FROM setting_bookingperiods WHERE SystemId = 0 AND isRegular = 1' );
+				$stmt->execute() or die($stmt->error);
+
+				if (!empty($arr_bookingperiod_summary_by_weekday)) {
+					$stmt = $db->prepare("INSERT INTO `setting_bookingperiods` (weekday, FromInMinutes, ToInMinutes) VALUES (?, ?, ?)");
+					foreach ($arr_bookingperiod_summary_by_weekday as $weekday => $arr_workhours) {
+						for ($i = $arr_workhours['FromInMinutes']; $i < $arr_workhours['ToInMinutes']; $i += $arr_workhours['DurationInMinutes']) {
+							$duration_in_mins = $i + $arr_workhours['DurationInMinutes'];
+							$stmt->bind_param('iii', $weekday, $i, $duration_in_mins);
+							$stmt->execute() or die($stmt->error);
+						}
+					}
+				}
+
 				break;
 			default:
 				$tmpValues = $_POST;
@@ -60,33 +79,73 @@
     }
 
 	// Get setting_weekdays
-    $arrSettingWeekdays = array();
-    $stmt = $db->prepare("SELECT id, weekday, isAvailable FROM setting_weekdays WHERE `SystemId`=0");
+    $arr_availability_by_weekday = array(); // if set TRUE, it's available on that day
+    $stmt = $db->prepare("SELECT weekday, isAvailable FROM setting_weekdays WHERE `SystemId`=0");
 	$stmt->execute();
-    $stmt->bind_result($id, $weekday, $isAvailable);
+    $stmt->bind_result($weekday, $isAvailable);
     $stmt->store_result();
     while ($stmt->fetch()) {
-    	$arrSettingWeekdays[$weekday] = [
-    		'id' => $id,
-    		'isAvailable' => $isAvailable
-    	];
+    	$arr_availability_by_weekday[$weekday] = $isAvailable;
     }
 
 	// Get setting_bookingperiods
-	$arrSettingBookingPeriods = array();
-    $stmt = $db->prepare("SELECT id, weekday, FromInMinutes, ToInMinutes, isRegular, isAvailable FROM setting_bookingperiods WHERE `SystemId`=0 ORDER BY weekday ASC, FromInMinutes ASC");
+	$arr_bookingperiod_list_by_weekday = array();
+    
+	// Default Values, just in case the table is empty
+	// Each weekday has a summary in the following format.
+	// array(
+	//	'FromInMinutes' => 8 * 60, // 8:00 AM
+	//  'ToInMinutes' => 18 * 60, // 6:00 PM
+	//  'DurationInMinutes' => 15
+	// );
+	$arr_bookingperiod_summary_by_weekday = array(
+		'0' => array(),
+		'1' => array(),
+		'2' => array(),
+		'3' => array(),
+		'4' => array(),
+		'5' => array(),
+		'6' => array()
+	);
+
+	$stmt = $db->prepare("SELECT weekday, FromInMinutes, ToInMinutes, isRegular, isAvailable FROM setting_bookingperiods WHERE `SystemId`= 0 ORDER BY weekday ASC, FromInMinutes ASC");
 	$stmt->execute();
-    $stmt->bind_result($id, $weekday, $from_in_mins, $to_in_mins, $isRegular, $isAvailable);
+    $stmt->bind_result($weekday, $from_in_mins, $to_in_mins, $isRegular, $isAvailable);
     $stmt->store_result();
+
     while ($stmt->fetch()) {
-    	$arrSettingBookingPeriods[$weekday] = [
-    		'id' => $id,
-			'FromInMinutes' => $from_in_mins,
+		if (empty($arr_bookingperiod_list_by_weekday[$weekday])) {
+			$arr_bookingperiod_list_by_weekday[$weekday] = array();
+		}
+    	
+		// keep adding to the list
+		$arr_bookingperiod_list_by_weekday[$weekday][] = [
+    		'FromInMinutes' => $from_in_mins,
 			'ToInMinutes' => $to_in_mins,
     		'isRegular' => $isRegular,
 			'isAvailable' => $isAvailable,
     	];
+
+		if ($isRegular) {
+			if (!isset($arr_bookingperiod_summary_by_weekday[$weekday]['FromInMinutes'])
+			 || $from_in_mins < $arr_bookingperiod_summary_by_weekday[$weekday]['FromInMinutes']) {
+				$arr_bookingperiod_summary_by_weekday[$weekday]['FromInMinutes'] = $from_in_mins;
+			}
+			if (!isset($arr_bookingperiod_summary_by_weekday[$weekday]['ToInMinutes'])
+			 || $to_in_mins > $arr_bookingperiod_summary_by_weekday[$weekday]['ToInMinutes']) {
+				$arr_bookingperiod_summary_by_weekday[$weekday]['ToInMinutes'] = $to_in_mins;
+			}
+			if (!isset($arr_bookingperiod_summary_by_weekday[$weekday]['DurationInMinutes'])) {
+				$arr_bookingperiod_summary_by_weekday[$weekday]['DurationInMinutes'] = $to_in_mins - $from_in_mins;
+			}
+		}
     }
+
+	$result = convert_bookingperiod_summary_into_details($arr_bookingperiod_summary_by_weekday);
+
+	list($regular_weekday_start_hour, $regular_weekday_start_minutes, $regular_weekday_start_AP,
+		$regular_weekday_end_hour, $regular_weekday_end_minutes, $regular_weekday_end_AP,
+		$regular_weekday_duration_hours, $regular_weekday_duration_minutes) = array_values($result);
 ?>
 
 <h4 class="page-title">Manage Default Time Settings</h4>
@@ -146,11 +205,18 @@ require_once('footer.php');
                 <div class="modal-body">
 					<?php 
 						for( $day = 0; $day < 7; $day++ ) { 
-							$dayLable = date('l', strtotime("Sunday +{$day} days"));
-							$dayKey = date('D', strtotime("Sunday +{$day} days"));
+							$dayLabel = date('l', strtotime("Sunday +{$day} days"));
 					?>
-					<h6 class="day-title"><?php echo $dayLable;?></h6>
-                    <div class="form-group">
+					<h6 class="day-title">
+						<?php
+							echo $dayLabel;
+							if (!$arr_availability_by_weekday[$day]) {
+								echo ' (Unavailable)';
+								continue;
+							}
+						?>
+					</h6>
+					<div class="form-group">
                     	<table style="width:100%; margin-bottom:0">
                     		<tr>
                     			<td width="33%">Start Time</td>
@@ -159,94 +225,84 @@ require_once('footer.php');
                     		</tr>
                     		<tr>
                     			<td width="33%">
-                    				<?php $optionKey = $dayKey."_start_hour" ?>
+                    				<?php $optionKey = "weekday_start_hour[" . $day . "]"; ?>
 	                    			<select name="<?php echo $optionKey; ?>">
 			                        	<?php
-			                    		for( $i = 0; $i < 12; $i++){
+			                    		for( $i = 1; $i <= 12; $i++){
 				                        	$selected = "";
-			                    			if( $settingValue[$optionKey] == $i )
+			                    			if( $regular_weekday_start_hour[$day] == $i )
 			                    				$selected = "selected";
 			                    			echo '<option value="'.$i.'" '.$selected.'>'.$i.'</option>';
 			                    		}
 			                    		?>
 			                        </select>
-                    				<?php $optionKey = $dayKey."_start_minutes" ?>
+									<?php $optionKey = "weekday_start_minutes[" . $day . "]"; ?>
 	                    			<select name="<?php echo $optionKey; ?>">
 			                        	<option value="00">00</option>
 			                        	<?php
 			                    		for( $i = 5; $i < 60; $i += 1){
 				                        	$selected = "";
-			                    			if( $settingValue[$optionKey] == $i )
+			                    			if( $regular_weekday_start_minutes[$day] == $i )
 			                    				$selected = "selected";
 			                    			echo '<option value="'.$i.'" '.$selected.'>'.sprintf("%02d", $i).'</option>';
 			                    		}
 			                    		?>
 			                        </select>
-                    				<?php $optionKey = $dayKey."_start_AP"; 
-                    				if( isset($settingValue[$optionKey]))
-                    					$startAP = $settingValue[$optionKey];
-                    				else
-                    					$startAP = "AM";
-                    				?>
+                    				<?php $optionKey = "weekday_start_AP[" . $day . "]"; ?>
 	                    			<select name="<?php echo $optionKey; ?>">
-			                        	<option value="AM" <?php if($startAP=="AM") echo 'selected';?>>AM</option>
-			                        	<option value="PM" <?php if($startAP=="PM") echo 'selected';?>>PM</option>
+			                        	<option value="AM" <?php if ($regular_weekday_start_AP[$day] == "AM") echo 'selected';?>>AM</option>
+			                        	<option value="PM" <?php if ($regular_weekday_start_AP[$day] == "PM") echo 'selected';?>>PM</option>
 			                        </select>
 			                    </td>
                     			<td width="33%">
-	                    			<?php $optionKey = $dayKey."_end_hour" ?>
+	                    			<?php $optionKey = "weekday_end_hour[" . $day . "]"; ?>
 	                    			<select name="<?php echo $optionKey; ?>">
 			                        	<?php
-			                    		for( $i = 0; $i < 12; $i++){
+			                    		for( $i = 1; $i <= 12; $i++){
 				                        	$selected = "";
-			                    			if( $settingValue[$optionKey] == $i )
+			                    			if( $regular_weekday_end_hour[$day] == $i )
 			                    				$selected = "selected";
 			                    			echo '<option value="'.$i.'" '.$selected.'>'.$i.'</option>';
 			                    		}
 			                    		?>
 			                        </select>
-                    				<?php $optionKey = $dayKey."_end_minutes" ?>
+                    				<?php $optionKey = "weekday_end_minutes[" . $day . "]"; ?>
 	                    			<select name="<?php echo $optionKey; ?>">
 			                        	<option value="00">00</option>
 			                        	<?php
 			                    		for( $i = 5; $i < 60; $i += 1){
 				                        	$selected = "";
-			                    			if( $settingValue[$optionKey] == $i )
+			                    			if( $regular_weekday_end_minutes[$day] == $i )
 			                    				$selected = "selected";
 			                    			echo '<option value="'.$i.'" '.$selected.'>'.sprintf("%02d", $i).'</option>';
 			                    		}
 			                    		?>
 			                        </select>
-                    				<?php $optionKey = $dayKey."_end_AP";
-                    				if( isset($settingValue[$optionKey]))
-                    					$endAP = $settingValue[$optionKey];
-                    				else
-                    					$endAP = "AM";
-                    				?>
+                    				<?php $optionKey = "weekday_end_AP[" . $day . "]"; ?>
 	                    			<select name="<?php echo $optionKey; ?>">
-			                        	<option value="AM" <?php if($endAP=="AM") echo 'selected';?>>AM</option>
-			                        	<option value="PM" <?php if($endAP=="PM") echo 'selected';?>>PM</option>
+			                        	<option value="AM" <?php if ($regular_weekday_end_AP[$day] == "AM") echo 'selected';?>>AM</option>
+			                        	<option value="PM" <?php if ($regular_weekday_end_AP[$day] == "PM") echo 'selected';?>>PM</option>
 			                        </select>
 			                    </td>
 			                    <td width="33%">
-                    				<?php $optionKey = $dayKey."_duration_hours" ?>
+                    				<?php $optionKey = "weekday_duration_hours[" . $day . "]"; ?>
 	                    			<select name="<?php echo $optionKey; ?>">
 			                        	<?php
 			                    		for( $i = 0; $i < 24; $i++){
 			                    			$selected = "";
-			                    			if( $settingValue[$optionKey] == $i )
+			                    			if( $regular_weekday_duration_hours[$day] == $i )
 			                    				$selected = "selected";
 			                    			echo '<option value="'.$i.'" '.$selected.'>'.$i.'</option>';
 			                    		}
 			                    		?>
 			                        </select>
-                    				<?php $optionKey = $dayKey."_duration_minutes" ?>
+                    				<?php $optionKey = "weekday_duration_minutes[" . $day . "]"; ?>
 	                    			<select name="<?php echo $optionKey; ?>">
 			                        	<option value="00">00</option>
 			                        	<?php
 			                    		for( $i = 5; $i < 60; $i += 1){
 				                        	$selected = "";
-			                    			if( $settingValue[$optionKey] == $i )
+			                    			if( $regular_weekday_duration_minutes[$day] == $i )
 			                    				$selected = "selected";
 			                    			echo '<option value="'.$i.'" '.$selected.'>'.sprintf("%02d", $i).'</option>';
 			                    		}
@@ -287,10 +343,10 @@ require_once('footer.php');
 						<?php 
 							for( $day = -1; $day < 7; $day++ ) { 
 								if( $day == -1 ) {
-									$dayLable = "All days";
+									$dayLabel = "All days";
 									$dayKey = "All";
 								} else {
-									$dayLable = date('l', strtotime("Sunday +{$day} days"));
+									$dayLabel = date('l', strtotime("Sunday +{$day} days"));
 									$dayKey = date('D', strtotime("Sunday +{$day} days"));
 								}
 
@@ -301,7 +357,7 @@ require_once('footer.php');
 						?>
 	                    <div class="form-group">
 	                        <input class="choose_ir_day" type="radio" id="<?php echo $optionKey?>" name="irregularDay" value="<?php echo $dayKey?>"/>
-	                    	<label for="<?php echo $optionKey?>"><?php echo $dayLable; ?></label>
+	                    	<label for="<?php echo $optionKey?>"><?php echo $dayLabel; ?></label>
 	                    </div>
 	                    <?php } ?>
 	                </div>
@@ -398,10 +454,10 @@ require_once('footer.php');
 						<?php 
 							for( $day = -1; $day < 7; $day++ ) { 
 								if( $day == -1 ) {
-									$dayLable = "All days";
+									$dayLabel = "All days";
 									$dayKey = "All";
 								} else {
-									$dayLable = date('l', strtotime("Sunday +{$day} days"));
+									$dayLabel = date('l', strtotime("Sunday +{$day} days"));
 									$dayKey = date('D', strtotime("Sunday +{$day} days"));
 								}
 
@@ -412,7 +468,7 @@ require_once('footer.php');
 						?>
 	                    <div class="form-group">
 	                        <input class="choose_available_day" type="radio" id="<?php echo $optionKey?>" name="availableDay" value="<?php echo $dayKey?>"/>
-	                    	<label for="<?php echo $optionKey?>"><?php echo $dayLable; ?></label>
+	                    	<label for="<?php echo $optionKey?>"><?php echo $dayLabel; ?></label>
 	                    </div>
 	                    <?php } ?>
 	                </div>
@@ -470,7 +526,7 @@ require_once('footer.php');
 									$optionKey = 'weekday_' . $day;
 									$checked = "";
 									$status = "";
-									if ( isset($arrSettingWeekdays[$day]) && empty($arrSettingWeekdays[$day]['isAvailable'] )) {
+									if ( empty($arr_availability_by_weekday[$day] )) {
 										$checked = "checked";
 										$status = "Unavailable";
 									}
@@ -525,7 +581,7 @@ require_once('footer.php');
 
 				if( res.data.length ) {
 					$("#irregularTimes").find('option').remove();
-					for( var i=0; i<res.data.length; i++ ) {
+					for( var i=0; i < res.data.length; i++ ) {
 						$('#irregularTimes').append("<option value=\"" + res.data[i] + "\">" + res.data[i] + "</option>");
 					}
 				}
@@ -618,6 +674,7 @@ require_once('footer.php');
 	        });
 		});
 
+		// Added by Hennadii
 		$('.chk_weekday_available').change(function() {
 			var str_optionKey = $(this).attr('id');
 			var isChecked = $(this).prop("checked");
