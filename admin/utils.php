@@ -85,8 +85,8 @@ function summarize_bookingperiod_details($params) {
         $duration_hours = $regular_weekday_duration_hours[$weekday];
         $duration_minutes = $regular_weekday_duration_minutes[$weekday];
 
-        $start_hour += ($regular_weekday_start_AP[$weekday] === 'PM' && $start_hour < 12) ? 12 : 0;
-        $end_hour += ($regular_weekday_end_AP[$weekday] === 'PM' && $end_hour < 12) ? 12 : 0;
+        $start_hour += (strtolower($regular_weekday_start_AP[$weekday]) === 'pm' && $start_hour < 12) ? 12 : 0;
+        $end_hour += (strtolower($regular_weekday_end_AP[$weekday]) === 'pm' && $end_hour < 12) ? 12 : 0;
 
         $arr_bookingperiod_summary_by_weekday[$weekday] = [
             'FromInMinutes' => $start_hour * 60 + $start_minutes,
@@ -96,6 +96,23 @@ function summarize_bookingperiod_details($params) {
     }
 
     return $arr_bookingperiod_summary_by_weekday;
+}
+
+function get_display_text_from_minutes($from_in_mins, $to_in_mins) {
+    $start_hour = floor($from_in_mins / 60);
+    $start_minutes = sprintf("%02d", $from_in_mins % 60);
+    $start_AP = ($start_hour < 12) ? 'am' : 'pm';
+    $start_hour -= ($start_hour <= 12) ? 0 : 12;
+    $start_hour = sprintf("%02d", $start_hour);
+
+    $end_hour = floor($to_in_mins / 60);
+    $end_minutes = sprintf("%02d", $to_in_mins % 60);
+    $end_AP = ($end_hour < 12) ? 'am' : 'pm';
+    $end_hour -= ($end_hour <= 12) ? 0 : 12;
+    $end_hour = sprintf("%02d", $end_hour);
+
+    return $start_hour . ':' . $start_minutes . '' . $start_AP . ' To ' 
+        . $end_hour . ':' . $end_minutes . '' . $end_AP;
 }
 
 ?>
