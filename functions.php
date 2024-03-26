@@ -208,4 +208,36 @@
 		);
 	}
 
+	function cal_weeks_in_month($year, $month){
+		// Get the number of days in the current month
+		if (!isset($year))
+		    $year = date('Y');
+		if (!isset($month))
+		    $month = date('m');
+		$daysInMonth = cal_days_in_month(CAL_GREGORIAN, $month, $year);
+
+		// Get the first day of the month
+		$firstDayOfMonth = strtotime($year . '-' . $month . '-01');
+		// Determine the day of the week for the first day of the month
+		$dayOfWeek = date('N', $firstDayOfMonth);
+
+		// Calculate the date of the first Monday of the month
+		$firstMonday = $firstDayOfMonth - (($dayOfWeek - 1) * 24 * 60 * 60);
+		$weeks = array();
+
+		// Calculate the start and end date for each week
+		for ($i = $firstMonday; $i < $firstDayOfMonth + ($daysInMonth * 24 * 60 * 60); $i += (7 * 24 * 60 * 60)) {
+			$weekStart = date('Y-m-d', $i);
+			$weekEnd = date('Y-m-d', $i + (6 * 24 * 60 * 60));
+			
+			// Add to list of weeks
+			$weeks[] = array('start' => $weekStart, 'end' => $weekEnd);
+		}
+
+		if (count($weeks) > 5) {//ignore when 1st day of month is sunday
+        	array_shift($weeks); // Remove the first element
+    	}
+		return $weeks;
+	}
+
 ?>
