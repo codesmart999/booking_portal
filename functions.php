@@ -62,28 +62,28 @@
 			return false;
 		}
     	
-		$arrBookingPeriodsByDaysDiff = getAvailableTimes( $selectedDate );
+		$result = getAvailableSystems( $selectedDate );
 
-		if (empty($arrBookingPeriodsByDaysDiff))
+		if (empty($result))
 			return false;
 
-		ksort($arrBookingPeriodsByDaysDiff);
-
-		$_SESSION['arrBookingPeriodsByDaysDiff'] = $arrBookingPeriodsByDaysDiff;
+		$_SESSION['arrAvailableSystems'] = $result['arrSystems'];
+		$_SESSION['arrSystemBookingPeriodsByDaysDiff'] = $result['arrBookingPeriodsByDaysDiff'];
 
 		return true;
     }
 
     // get Available times by Selected Date 
     // it needs to check by Date, System ( from Location ) and Service
-    function getAvailableTimes( $date ) {
+    function getAvailableSystems( $date ) {
     	global $arrAppData;
 
     	$day = date("D", strtotime($date));
 
     	$link = getDBConnection();
-    	$arrRes = array();
-		$arrSystems = array();
+		
+		$arrSystems = array(); //RESULT
+		$arrBookingPeriodsByDaysDiff = array(); //RESULT
 
     	$locationId = $arrAppData['location'];
 		$serviceId = $arrAppData['service'];
@@ -104,7 +104,7 @@
 	    }
 
 		if (empty($arrSystems))
-			return $arrRes;
+			return null;
 
 		$arrSystemIds = array_keys($arrSystems);
 		$arrSystemIds[] = 0; // Add Default System Id
@@ -113,9 +113,9 @@
 		// Get Available Booking Periods
 		$strQuery = 'SELECT 
 						sbp.weekday,
-						MAX(sbp.SystemId) AS SystemId,
-						MIN(sbp.FromInMinutes) AS FromInMinutes,
-						MIN(sbp.ToInMinutes) AS ToInMinutes,
+						sbp.SystemId AS SystemId,
+						sbp.FromInMinutes AS FromInMinutes,
+						sbp.ToInMinutes AS ToInMinutes,
 						CASE
 							WHEN sbp.weekday - DAYOFWEEK(?) + 1 < 0 THEN sbp.weekday - DAYOFWEEK(?) + 1 + 7
 							ELSE sbp.weekday - DAYOFWEEK(?) + 1
@@ -138,12 +138,7 @@
 						)
 					' : '
 						AND sw.weekday = DAYOFWEEK(?) - 1
-					') .
-					' GROUP BY
-						sbp.weekday,
-						sbp.FromInMinutes,
-						sbp.ToInMinutes;
-					';
+					');
 		$stmt = $link->prepare($strQuery);
 		if ($bLookInFiveDays) {
 			$stmt->bind_param('ssssssss', $date, $date, $date, $date, $date, $date, $date, $date);
@@ -155,11 +150,14 @@
 	    $stmt->bind_result($weekday, $SystemId, $FromInMinutes, $ToInMinutes, $days_diff);
 	    
 		while($stmt->fetch()) {
-			if (!isset($arrRes[$days_diff])) {
-				$arrRes[$days_diff] = array();
+			if (!isset($arrBookingPeriodsByDaysDiff[$SystemId])) {
+				$arrBookingPeriodsByDaysDiff[$SystemId] = array();
+			}
+			if (!isset($arrBookingPeriodsByDaysDiff[$SystemId][$days_diff])) {
+				$arrBookingPeriodsByDaysDiff[$SystemId][$days_diff] = array();
 			}
 
-			$arrRes[$days_diff][] = array(
+			$arrBookingPeriodsByDaysDiff[$SystemId][$days_diff][] = array(
 				'weekday' => $weekday,
 				'SystemId' => $SystemId,
 				'FromInMinutes' => $FromInMinutes,
@@ -171,7 +169,11 @@
 
 	    $link->close();
 
-    	return $arrRes;
+		foreach ($arrBookingPeriodsByDaysDiff as $values) {
+			ksort($values); //Sorty by key (i.e. days_diff)
+		}
+
+    	return compact('arrSystems', 'arrBookingPeriodsByDaysDiff');
     }
 
     // get TimeSheet Array By start/end/period
@@ -235,19 +237,14 @@
 	}
 
 	//extract start and end time from input
-	function extractStartAndEndTime($input) {
-		// Split the string by comma to separate the time ranges
-		$time_ranges = explode(',', $input);
+	function extractStartAndEndTime($booking_periods) {
+		$first_slot = $booking_periods[0];
+		$end_slot = end($booking_periods);
+		
+		$from_in_mins = explode('-', $first_slot)[0];
+		$to_in_mins = explode('-', $end_slot)[1];
 
-		// Extract start and end times from the first and last time ranges respectively
-		$start_time = trim(explode(' to ', $time_ranges[0])[0]);
-		$end_time = trim(explode(' to ', $time_ranges[count($time_ranges) - 1])[1]);
-
-		// Return start and end times as an associative array
-		return array(
-			"start_time" => $start_time,
-			"end_time" => $end_time
-		);
+		return array($from_in_mins, $to_in_mins);
 	}
 
 	function cal_weeks_in_month($year, $month){
@@ -294,5 +291,21 @@
 		}
 	}
 
+	// Custom sorting function by Hennadii
+	// Used to sort the date range. e.g. array( '1080-1100', '660-675')
+	function sortRanges($a, $b) {
+		// Extract starting values from each range
+		$startA = explode('-', $a)[0];
+		$startB = explode('-', $b)[0];
 
+		// Convert starting values to integers for comparison
+		$startA = intval($startA);
+		$startB = intval($startB);
+
+		// Compare starting values
+		if ($startA == $startB) {
+			return 0;
+		}
+		return ($startA < $startB) ? -1 : 1;
+	}
 ?>

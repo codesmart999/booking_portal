@@ -27,6 +27,10 @@ td.app_desc p{
     padding: 1em 0;
 }
 
+td.app_desc p.focus {
+	font-weight: bold;
+}
+
 h4.page-name{
 	font-weight: bold;
     color: #A9B8DA;

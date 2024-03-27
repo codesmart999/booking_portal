@@ -2,45 +2,40 @@
 
 $menu = "select";
 require_once('header.php');
-require_once('admin/utils.php');
 
-$format_date = format_date( $arrAppData['date_appointment'] );
+$arrAvailableSystems = $_SESSION['arrAvailableSystems'];
+$arrSystemBookingPeriodsByDaysDiff = $_SESSION['arrSystemBookingPeriodsByDaysDiff'];
+$message = '';
 
-$arrBookingPeriodsByDaysDiff = $_SESSION['arrBookingPeriodsByDaysDiff'];
+if ( isset($_POST['Submit'])){
+	$system_id = $_POST['system_id'];
+	$booking_date = $_POST['booking_date'];
+	$arr_booking_times = $_POST['booking_time'];
 
-if( isset($_POST['Submit'])){
-	// adjust booking date
-	if( isset($_POST['booking_time0']) ) {
-		$_SESSION['appointment_data']['date_appointment'] = date('d/m/Y', strtotime('+1 day', strtotime($format_date)));
-		$_SESSION['appointment_data']['booking_time'] = $_POST['booking_time0'];
-	}
-	if( isset($_POST['booking_time1']) ) {
-		$_SESSION['appointment_data']['date_appointment'] = date('d/m/Y', strtotime('+1 day', strtotime($format_date)));
-		$_SESSION['appointment_data']['booking_time'] = $_POST['booking_time1'];
-	}
-	if( isset($_POST['booking_time2']) ) {
-		$_SESSION['appointment_data']['date_appointment'] = date('d/m/Y', strtotime('+2 day', strtotime($format_date)));
-		$_SESSION['appointment_data']['booking_time'] = $_POST['booking_time2'];
-	}
-	if( isset($_POST['booking_time3']) ) {
-		$_SESSION['appointment_data']['date_appointment'] = date('d/m/Y', strtotime('+3 day', strtotime($format_date)));
-		$_SESSION['appointment_data']['booking_time'] = $_POST['booking_time3'];
-	}
-	if( isset($_POST['booking_time4']) ) {
-		$_SESSION['appointment_data']['date_appointment'] = date('d/m/Y', strtotime('+4 day', strtotime($format_date)));
-		$_SESSION['appointment_data']['booking_time'] = $_POST['booking_time4'];
-	}
-	unset($_SESSION['appointment_data']['booking_time0']);
-	unset($_SESSION['appointment_data']['booking_time1']);
-	unset($_SESSION['appointment_data']['booking_time2']);
-	unset($_SESSION['appointment_data']['booking_time3']);
-	unset($_SESSION['appointment_data']['booking_time4']);
+	usort($arr_booking_times, 'sortRanges'); // custom-defined sorting function (in functions.php)
 
-	header('Location: '. SECURE_URL . PROFILE_PAGE, true, 301);
-	exit(0);
+	$prev_ending = -1;
+	foreach ($arr_booking_times as $value) {
+		list($from_in_mins, $to_in_mins) = explode('-', $value);
+		if ($prev_ending != -1 && $prev_ending != $from_in_mins) {
+			$prev_ending = -1;
+			break;
+		}
+		$prev_ending = $to_in_mins;
+	}
+	
+	if ($prev_ending != -1) {
+		$_SESSION['appointment_data']['date_appointment_final'] = date('d/m/Y', strtotime($booking_date));
+		$_SESSION['appointment_data']['booking_time'] = $arr_booking_times;
+
+		header('Location: '. SECURE_URL . PROFILE_PAGE, true, 301);
+		exit(0);
+	}
+
+	$message = '<span class="ErrorMessage fst-italic fw-bold show">'._lang('err_consecutive_time').'</span>';
 }
 
-if( $arrAppData['location'] == ""){
+if ( $arrAppData['location'] == ""){
 	header('Location: '. SECURE_URL . START_PAGE, true, 301);
 	exit(0);
 }
@@ -50,35 +45,41 @@ if( $arrAppData['location'] == ""){
 <h1 class="fw-bold">Chromis Medical Appointments</h1>
 
 <form method="post" class="form-horizontal" id="APP_FORM">
-	<p class="ErrorMessage fst-italic fw-bold">Please select Consecutive Times</p>
 	<h6>&nbsp;</h6>
 	<div class="table-responsive">
 		<table class="appForm table">
 			<tr>
 				<td colspan = "2" class="text-center app_desc fst-italic">
-					<p><?php echo $format_date; ?></p>
-					<p><?php echo $arrLocations[$arrAppData['location']]['name']; ?></p>
 					<p><?php echo $arrServices[$arrAppData['service']]['fullname']; ?></p>
-				</td>
-			</tr>
-			<tr>
-				<td colspan = "2" class="text-center app_desc">
 					<p><b><?php echo $arrLocations[$arrAppData['location']]['name']; ?></b> - <?php echo $arrLocations[$arrAppData['location']]['address']; ?></p>
+					<?php echo $message; ?>
 				</td>
 			</tr>
 			<tr>
 				<td class="form-label">Select Time:</td>
 				<td class="app_desc">
+					<input type="hidden" id="system_id" name="system_id"/>
+					<input type="hidden" id="booking_date" name="booking_date"/>
+					<?php
+						foreach ($arrAvailableSystems as $systemId => $objSystemInfo) {
+							if (!empty($arrSystemBookingPeriodsByDaysDiff[$systemId]))
+								$arrBookingPeriodsByDaysDiff = $arrSystemBookingPeriodsByDaysDiff[$systemId];
+							else
+								$arrBookingPeriodsByDaysDiff = $arrSystemBookingPeriodsByDaysDiff[0];
+					?>
+					<div class="row">
+						<div class="col-md-12">
+							<p class="lbl_system" id="lbl_system_<?php echo $systemId;?>"><?php echo $objSystemInfo['fullname']; ?></p>
+						</div>
+					</div>
 					<div class="row">
 					<?php
 						foreach ($arrBookingPeriodsByDaysDiff as $days_diff => $arrBookingPeriods) {
 							$date = date('d/m/Y', strtotime('+' . $days_diff . ' day', strtotime(str_replace('/', '-', $arrAppData['date_appointment']))));
 					?>
-						<div class="col-md-2 text-center">
-							<?php 
-								echo "<p>" . format_date($date)."</p>";
-							?>							
-							<select name="booking_time<?php echo $days_diff;?>[]" multiple="multiple" style="height:150px;">
+						<div class="col-md-2">
+							<p class="lbl_system_bookingperiods" id="lbl_system_bookingperiods_<?php echo $systemId . '_' . $days_diff;?>"><?php echo format_date($date); ?></p>
+							<select class="system_bookingperiods" name="booking_time[]" multiple="multiple" style="height:150px;" data-system-id="<?php echo $systemId;?>" data-days-diff="<?php echo $days_diff;?>">
 								<option value="">Deselect</option>
 								<?php
 									foreach( $arrBookingPeriods as $objBookingPeriod ) {
@@ -99,6 +100,10 @@ if( $arrAppData['location'] == ""){
 					<?php 
 						}
 					?>
+					</div>
+					<?php
+					}
+					?>
 				</td>
 			</tr>
 			<tr>
@@ -110,6 +115,22 @@ if( $arrAppData['location'] == ""){
 		</table>
 	</div>
 </form>
+
+<script>
+	$(document).ready(function() { 
+		$('.system_bookingperiods').on('change', function() {
+			system_id = $(this).attr('data-system-id');
+			days_diff = $(this).attr('data-days-diff');
+			$('.lbl_system').removeClass('focus');
+			$('#lbl_system_' + system_id).addClass('focus');
+			$('.lbl_system_bookingperiods').removeClass('focus');
+			$('#lbl_system_bookingperiods_' + system_id + '_' + days_diff).addClass('focus');
+
+			$("#system_id").val(system_id);
+			$("#booking_date").val($('#lbl_system_bookingperiods_' + system_id + '_' + days_diff).html());
+		});
+	});
+</script>
 
 <?php
 require_once('footer.php');
