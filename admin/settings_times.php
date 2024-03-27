@@ -156,19 +156,19 @@
 	    </thead>
 	    <tbody>
 	    	<tr>
-	    		<td><a href="#" data-toggle="modal" data-target="#regularModal">Regular Booking Periods</a></td>
+	    		<td><a href="#" class="btn-show-modal" data-toggle="modal" data-target="#regularModal">Regular Booking Periods</a></td>
 	    		<td>Set Regular Booking Periods in the day, e.g.,10.00 AM to 10.30 AM.</td>
 	    	</tr>
 	    	<tr>
-	    		<td><a href="#" data-toggle="modal" data-target="#irregularModal">Irregular Booking Periods</a></td>
+	    		<td><a href="#" class="btn-show-modal" data-toggle="modal" data-target="#irregularModal">Irregular Booking Periods</a></td>
 	    		<td>Set Irregular Booking Periods in the day, e.g.,10.20 AM to 11.00 AM.</td>
 	    	</tr>
 	    	<tr>
-	    		<td><a href="#" data-toggle="modal" data-target="#bookingPeriodModal">Unavailable/Available Booking Periods</a></td>
+	    		<td><a href="#" class="btn-show-modal" data-toggle="modal" data-target="#bookingPeriodModal">Unavailable/Available Booking Periods</a></td>
 	    		<td>Set Booking Periods in either Regular or Irregular Booking Periods as Unavailable. <br>Bookings Periods set as Unavailable can be reset at any time to Available.</td>
 	    	</tr>
 	    	<tr>
-	    		<td><a href="#" data-toggle="modal" data-target="#bookingDaysModal">Unavailable/Available Week Days</a></td>
+	    		<td><a href="#" class="btn-show-modal" data-toggle="modal" data-target="#bookingDaysModal">Unavailable/Available Week Days</a></td>
 	    		<td>Set Week Days, e.g., Friday, Saturday, Sunday, etc., as Unavailable. <br>Week Days set as Unavailable can be reset at any time to Available.</td>
 	    	</tr>
 	    </tbody>
@@ -572,6 +572,12 @@ require_once('footer.php');
 		// Irregular setting actions
 		$('#addIrTimes').on('click', function() {
 
+		});
+
+		// Added by Hennadii (2024-03-26)
+		$('.btn-show-modal').on('click', function() {
+			$('.step1').removeClass('d-none');
+			$('.step2').addClass('d-none');
 		});
 
 		// Updated by Hennadii (2024-03-26)
