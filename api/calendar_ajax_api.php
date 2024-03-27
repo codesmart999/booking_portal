@@ -112,47 +112,79 @@ if (!empty($_REQUEST['year']) && !empty($_REQUEST['month']) && !empty($_REQUEST[
     echo json_encode($data);
 	exit();
 
-} 
-if( $_POST['action'] == "change_availability" ) {
-	$date = isset($_POST['date']) ? $_POST['date'] : "";
-	$value = isset($_POST['value']) ?  $_POST['value'] : [];
+} if ($_POST['action'] == "change_availability") {
+    $date = isset($_POST['date']) ? intval($_POST['date']) : 0;
+    $value = isset($_POST['value']) ? $_POST['value'] : [];
+    $systemId = isset($_POST['systemId']) ? $_POST['systemId'] : [];
 
-	if ($date == "" || empty($value)) return;
+    // Validate input
+    if ($date == 0 || empty($value) || empty($systemId)) {
+        // Handle invalid input, maybe return an error response
+        return;
+    }
 
-	foreach ($value as $item) {
-		$timeSlot = $item['timeSlot']; // Assuming the key is 'timeSlot'
-		$status = $item['status']; // Assuming the key is 'status'
-		print_r($timeSlot);
-		// Now you can use $timeSlot and $status as needed
-	}
-	
-	// $stmt = $db->prepare("SELECT services.ServiceId, ServiceName, FullName, Price, Duration, IsCharge, active FROM services LEFT JOIN system_services as Sys on services.ServiceId = Sys.ServiceId 
-	// 	WHERE Sys.systemId=?");
-	// $stmt->bind_param( 'i', $systemId );
-	// $stmt->execute();
-	// $stmt->bind_result($serviceId, $servicename, $fullname,  $price, $duration, $charge, $active);
-	// $stmt->store_result();
+    // Loop through each value in the 'value' array
+    foreach ($value as $item) {
+        $timeSlot = $item['timeSlot'];
+        $status = $item['status'];
+        $invertedStatus = ($status == "1") ? "0" : "1";
+        // Extract hours and minutes from the time slot
+        list($fromInMinutes, $toInMinutes) = explode('-', $timeSlot);
 
-	// $arrServices = array();
-	// if ($stmt->num_rows > 0) {
-	// 	while ($stmt->fetch()) {
-	// 		$arrServices[] = [
-	// 			"name"		=> $fullname,
-	// 			"price"		=> displayPrice($price),
-	// 			"duration"	=> $duration,
-	// 			"charge"	=> displayYN($charge),
-	// 			"active"	=> displayYN($active)
-	// 		];
-	// 	}
-	// }
+     
+        insertIntoUnavailableBookingPeriods($systemId, $date, $fromInMinutes, $toInMinutes, $invertedStatus);
+        
+        // Output status for debugging
+        print_r($status);
+    }
 
-	// $res["status"] = "success";
-	// $res['data'] = $arrServices;
-
-	// echo json_encode( $res );
-	// exit;
-	exit();
+    // Exit after processing
+    exit();
 }
 
+// Function to insert into unavailable_bookingperiods table
+function insertIntoUnavailableBookingPeriods($systemId, $date, $fromInMinutes, $toInMinutes, $status) {
+    // Get database connection
+    $db = getDBConnection();
+
+    // Format date
+    $formattedDate = date('Y-m-d', $date);
+
+    // Check if the record already exists
+    $stmt = $db->prepare("SELECT COUNT(*) FROM setting_bookingperiods_special WHERE SystemId = ? AND SetDate = ? AND FromInMinutes = ? AND ToInMinutes = ?");
+    $stmt->execute([$systemId, $formattedDate, $fromInMinutes, $toInMinutes]);
+    $stmt->bind_result($existingRecordsCount);
+    $stmt->fetch();
+    $stmt->close();
+
+    /// If no matching record found, insert the new record
+    if ($existingRecordsCount == 0) {
+        // Prepare and execute SQL statement to insert the record
+        $insertStmt = $db->prepare("INSERT INTO setting_bookingperiods_special (SystemId, SetDate, FromInMinutes, ToInMinutes, isAvailable) VALUES (?, ?, ?, ?, ?)");
+        if (!$insertStmt) {
+            die('Error in preparing insert SQL statement: ' . $db->error);
+        }
+
+        $insertStmt->bind_param('isiii', $systemId, $formattedDate, $fromInMinutes, $toInMinutes, $status);
+        if (!$insertStmt->execute()) {
+            die('Error executing insert SQL statement: ' . $insertStmt->error);
+        }
+
+        $insertStmt->close();
+    }else {
+        $updateStmt = $db->prepare("UPDATE setting_bookingperiods_special SET isAvailable = ? WHERE SystemId=? AND SetDate = ? AND FromInMinutes = ? AND ToInMinutes = ?");
+        if (!$updateStmt) {
+            die('Error in preparing insert SQL statement: ' . $db->error);
+        }
+
+        $updateStmt->bind_param('iisii', $status, $systemId, $formattedDate, $fromInMinutes, $toInMinutes);
+        if (!$updateStmt->execute()) {
+            die('Error executing insert SQL statement: ' . $updateStmt->error);
+        }
+
+        $updateStmt->close();
+    }
+
+}
 
 ?>

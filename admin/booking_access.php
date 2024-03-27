@@ -104,6 +104,7 @@ $dayOfWeek = date('D', $timestamp);
 // Get the day of the month without leading zeros (e.g., 27)
 $dayOfMonth = date('j', $timestamp);
 
+$currentDateTime = strtotime(date('Y-m-d'));
 $current_year = date('Y'); // Get the current year
 $current_month = date('n'); // Get the current month without leading zeros
 $current_day = date('d'); // Get the current day
@@ -111,17 +112,12 @@ $array_weeks_in_month = cal_weeks_in_month($year, $month);
 
 $date = new DateTime("$year-$month-$day");
 $date->modify('+1 day');// Add one day to the date
-$nextDay = array(
-    'year' => $date->format('Y'),
-    'month' => $date->format('m'),
-    'day' => $date->format('d')
-);
+
+$nextDay = $date->format('Y-m-d');
+
 $date->modify('-2 day');// Add prev
-$prevDay = array(
-    'year' => $date->format('Y'),
-    'month' => $date->format('m'),
-    'day' => $date->format('d')
-);
+
+$prevDay = $date->format('Y-m-d')
 
 ?>
 <div class="dropdown" onmouseover="showPopupMenu()" onmouseout="hidePopupMenu()">
@@ -365,7 +361,8 @@ $prevDay = array(
     });
 
     function redirectToToday() {
-        window.location.href = window.location.origin + window.location.pathname + "?SystemId=<?php echo $systemId; ?>&startDate=<?php echo $current_year; ?>-<?php echo $current_month ?>-<?php echo $current_day ?>";
+        const newUrl = `${window.location.origin}${window.location.pathname}?SystemId=${<?php echo $systemId; ?>}&startDate=<?php echo $current_day;?>&endDate=<?php echo $current_day;?>`;
+        window.location.href = newUrl;
     }                                                                                                   
 
     function showLocation(flag) {
