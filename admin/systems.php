@@ -47,7 +47,7 @@
 		?>
         <tr>
             <td><a href="#" class="userEdit" data-user_id=<?php echo $userId ?>><?php echo $fullname ?></a></td>
-            <td><?php echo getLocationName( $locationId ); ?></td>
+            <td><?php echo getLocationNameById( $locationId ); ?></td>
             <td><?php echo $referenceId ?></td>
             <td><?php echo $email ?></td>
             <td><?php echo $phone_number ?></td>

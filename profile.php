@@ -66,7 +66,7 @@ $format_date = format_date( $arrAppData['date_appointment_final'] );
 			<tr>
 				<td colspan = "2" class="text-center app_desc fst-italic">
 					<p><?php echo $format_date; ?></p>
-					<p><?php echo $arrLocations[$arrAppData['location']]['name'] . ' - ' . $arrLocations[$arrAppData['location']]['address']; ?></p>
+					<p><?php echo getLocationNameById($arrAppData['location']) . ' - ' . getLocationAddressById($arrAppData['location']); ?></p>
 					<p><?php echo $arrServices[$arrAppData['service']]['fullname']; ?></p>
 					<?php
 						foreach( $arrAppData['booking_time'] as $time ){
