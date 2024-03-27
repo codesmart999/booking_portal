@@ -52,10 +52,16 @@
 		$stmt->bind_param('i', $weekday);
 		$stmt->execute() or die($stmt->error);
 
-		$stmt = $db->prepare("INSERT INTO `setting_bookingperiods` (weekday, FromInMinutes, ToInMinutes) VALUES (?, ?, ?)");
+		$stmt = $db->prepare("INSERT INTO `setting_bookingperiods` (weekday, FromInMinutes, ToInMinutes, isRegular) VALUES (?, ?, ?, ?)");
 		foreach ($arr_bookingperiods as $booking_period) {
-			list($from_in_mins, $to_in_mins) = explode('-', $booking_period);
-			$stmt->bind_param('iii', $weekday, $from_in_mins, $to_in_mins);
+			$arr_params = explode('-', $booking_period);
+			list($from_in_mins, $to_in_mins) = $arr_params;
+
+			$isRegular = 1;
+			if (count($arr_params) === 3)
+				$isRegular = 0;
+			
+			$stmt->bind_param('iiii', $weekday, $from_in_mins, $to_in_mins, $isRegular);
 			$stmt->execute() or die($stmt->error);
 		}
 

@@ -614,7 +614,7 @@ require_once('footer.php');
 			}
 
 			// Create a new option element
-			var newOption = $('<option>').val(from_in_mins + "-" + to_in_mins).text(getDisplayTextFromMinutes(from_in_mins, to_in_mins));
+			var newOption = $('<option>').val(from_in_mins + "-" + to_in_mins + "-irregular").text(getDisplayTextFromMinutes(from_in_mins, to_in_mins));
 			var targetOption = $("#list_bookingperiods option").eq(indexToInsert + 1);
 			newOption.insertBefore(targetOption);
 		});
