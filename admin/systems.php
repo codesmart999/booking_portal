@@ -13,7 +13,7 @@
 	$next = $page + 1;
 
     $stmt = $db->prepare("SELECT * FROM systems");
-	$stmt->execute();
+	  $stmt->execute();
     $stmt->store_result();
 
     $total_records = $stmt->num_rows;
@@ -340,29 +340,34 @@
                 </button>
             </div>
             <div class="modal-body table-responsive">
-				<table border="0" cellspacing="0" cellpadding="5" width="100%" class="table">
-			    	<thead>
-				        <tr>
-				            <td width="150" nowrap>Name</td>
-				            <td width="100" nowrap>Price</td>
-				            <td width="100" nowrap>Duration</td>
-				            <td width="100" nowrap>Charge</td>
-				        </tr>
-				    </thead>
-				    <tbody id="system_services">
+              <form method="post" class="form-horizontal" id="SERVICE_FORM">
+                <table border="0" cellspacing="0" cellpadding="5" width="100%" class="table">
+                    <thead>
+                        <tr>
+                            <td width="150" nowrap>Name</td>
+                            <td width="100" nowrap>Price</td>
+                            <td width="100" nowrap>Duration</td>
+                            <td width="100" nowrap>Charge</td>
+                            <td width="100" nowrap>Serve</td>
+                        </tr>
+                    </thead>
+                    <tbody id="system_services">
 
-				    </tbody>
-				</table>
+                    </tbody>
+                </table>
+              </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>
+                <button type="submit" class="btn btn-primary btn-sm" name="Save" value="Save" id="btnServiceSave">Save</button>
             </div>
         </div>
     </div>
 </div>
 <script>
 	$(document).ready(function() { 
-		var apiUri = "/api/systems.php";
+		var apiUri = "/api/services.php";
+    var SystemId = '';
 		function clearForm() {
 			$('input[name="userId"]').val( "" );
 			$('input[name="username"]').val( "" );
@@ -389,9 +394,19 @@
 			$('input[name="fax"]').val( "" );
 			$('select[name="user_type"]').val( "" );
 			$('input[name="active"]').prop( "checked", false );
+      
 		}
+    
+    $('#btnServiceSave').click(function(e) { 
+      var formData = $("#SERVICE_FORM").serializeArray();
+      formData.push({ name: "action", value: "update_service_items" });
+      $.post('/api/systems.php', formData, function (data) {
+				// var res = JSON.parse(data);
+        
+	    });
+    });
 
-		$('#btnSave').click(function(e){
+		$('#btnSave').click(function(e) {
 			e.preventDefault();
 
 			var formData = $("#APP_FORM").serializeArray();
@@ -524,27 +539,60 @@
             $('.pagination-form').submit();
         })
 
-        $('.viewService').click( function(e){
+    $('.viewService').click( function(e){
 			var formData = [];
-			formData.push({ name: "action", value: "get_services_by_system" });
-			formData.push({ name: "system_id", value: $(this).data("system_id") });
-
-			$.post(apiUri, formData, function (data) {
-				var res = JSON.parse(data);
+			formData.push({ name: "action", value: "get_all_services" });
+      formData.push({ name: 'SystemId', value: $(this).attr('data-system_id')});
+      
+			
+      $.post(apiUri, formData, function (data) {
+        
+        var res = JSON.parse(data);
 				data = res.data;
 
-				$("#system_services").empty();
+        SystemId = data[0]['SystemId']  ///////////////////////////////////////////////!!!!!!!!!!!!!!!!
+        $("#system_services").empty();
 				for( i = 0; i < data.length; i++ ) {
 					var service = data[i];
 					var html = `<tr>
-							<td>${service.name}</td>
-							<td>${service.price}</td>
-							<td>${service.duration}</td>
-							<td>${service.charge}</td>
+              <td>${service.ServiceName}</td>
+							<td>${service.Price}</td>
+							<td>${service.Duration}</td>
+							<td>${service.IsCharge}</td>
+              <td>
+                  <div class="form-group">
+                      <label class="toggle-switch">
+                          <input name="Services[]" value="${service.ServiceId}" type="checkbox" ${service.isSystemService ? 'checked' : ''}>
+                          <span class="toggle-slider"></span>
+                      </label>
+                  </div>
+              </td>
 						</tr>`;
 					$("#system_services").append(html)
 				}
-	        });
+
+        $("#system_services").append('<input type="hidden" name="SystemId" value="' + SystemId + '"/>');
+	    });
 		});
+
+    $('#myToggle').change(function() {
+        // Get the new value of the toggle switch (checked or unchecked)
+        var newValue = $(this).is(':checked') ? 1 : 0;
+
+        // Make an AJAX request to save the updated value
+        $.ajax({
+            url: '/api/systems.php', // URL to your PHP script that handles saving the value
+            method: 'POST',
+            data: { value: newValue }, // Send the new value to the server
+            success: function(response) {
+                // Handle the server response if needed
+                console.log('Toggle value saved successfully.');
+            },
+            error: function(xhr, status, error) {
+                // Handle errors if the AJAX request fails
+                console.error('Error saving toggle value:', error);
+            }
+        });
+    });
 	});
 </script>

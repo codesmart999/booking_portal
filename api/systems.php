@@ -343,6 +343,26 @@
 		exit;
 	}
 
+	// Change the Services for SystemId
+	if( $_POST['action'] == "update_service_items" ) {
+		$system_id = $_POST['SystemId'];
+		$arr_services = $_POST['Services'];
+		
+		$stmt = $db->prepare("DELETE FROM system_services WHERE SystemId=" . $system_id);
+		$stmt->execute() or die($stmt->error);
+
+		$stmt = $db->prepare(
+            'INSERT INTO system_services ( SystemId, ServiceId) VALUES (?,?)');
+
+        foreach ($arr_services as $service_id) {
+			$stmt->bind_param( 'ii', $system_id, $service_id);
+        	$stmt->execute() or die($stmt->error);
+		}
+
+		$stmt->close();
+		exit;
+	}
+
 	if( $_POST['action'] == "get_user" ) {
 		$userId = isset($_POST['userId']) ? $_POST['userId'] : "";
 		$stmt = $db->prepare("SELECT U.UserId, U.Username, U.Firstname, U.Lastname, U.Email, U.UserType, U.Active, S.LocationId, S.FullName, S.ReferenceId, S.BusinessName, S.Street, S.City, S.State, S.PostCode, S.Country, S.Timezone, S.PStreet, S.PCity, S.PState, S.PPostCode, S.Latitude, S.Longitude, S.SecondEmail, S.ThirdEmail, S.Phone, S.Mobile, S.Fax, S.RegDate

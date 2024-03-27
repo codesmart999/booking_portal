@@ -173,5 +173,53 @@
 		exit;
 	}
 
+	// get  All Service Info
+
+	if( $_POST['action'] == "get_all_services" ) {
+		$input_system_id = $_POST['SystemId'];
+		
+		$arrResult = array();
+		$stmt = $db->prepare("
+			SELECT 
+			s.ServiceId,
+			s.ServiceName,
+			s.FullName,
+			s.Duration,
+			s.IsCharge,
+			s.Price,
+			m.SystemId
+			FROM 
+				services s
+			LEFT JOIN
+				system_services m ON s.ServiceId = m.ServiceId AND m.SystemId = ?
+			ORDER BY s.ServiceId ASC;
+		");
+		$stmt->bind_param('i', $input_system_id);
+		
+		$stmt->execute();
+		$stmt->bind_result($ServiceId, $ServiceName, $FullName, $Duration, $IsCharge, $Price, $SystemId);
+		$stmt->store_result();
+
+         while($stmt->fetch()) {
+			$arrResult[] = array(
+				"ServiceId" 		=> $ServiceId,
+				"ServiceName" 		=> $ServiceName,
+				"FullName" 			=> $FullName,
+				"Duration"       	=> $Duration,
+				"IsCharge"			=> $IsCharge,
+				"Price" 			=> $Price,
+				"isSystemService"   => $SystemId == $input_system_id
+            );
+	    }
+
+		$res["status"] = "success";
+		$res['data'] = $arrResult;
+		
+		echo json_encode( $res );
+		exit;
+	}
+
+
+
     $db->close();
 ?>
