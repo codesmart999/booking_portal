@@ -99,6 +99,13 @@ $currentDate = strtotime($startDate);
 $endDateTime = strtotime($endDate);
 
 $tableTitle = formatDateRange($startDate, $endDate);
+
+$weekFlag = true;
+if ($startDate === $endDate) {
+    $weekFlag = false;
+}
+
+$weekDates = getWeekDates($endDate);
 ?>
 <thead>
         <tr>
@@ -136,14 +143,46 @@ $tableTitle = formatDateRange($startDate, $endDate);
     </thead>
     <tbody>
 <?php 
+$i = 0;
 while ($currentDate <= $endDateTime) {
     $weekday = date('N', $currentDate) % 7; // Get the weekday (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
-    echo '<tr id="trHeader"><td colspan="2">' . date('l, F j, Y', $currentDate) . '</td></tr>';
+    if ($weekFlag){
+        if ($i == 0)
+            echo '<tr id="trHeader"><td colspan="2">' . date('l, F j, Y', $currentDate) . '</td></tr>';
+        else {
+            ?>
+            <tr id="trHeader">
+                <td valign="middle" colspan="2">
+                    <input id="doChangeAvail" style = "float: left;" data-dochange="false" type="submit" value="Change Availability" name="action" class="buttons" onclick="return changeAvailability()">
+                
+                        &nbsp;&nbsp;
+                    <span style ="text-align: center;">
+                    
+                        <?php echo getNextDayFormatted($currentDate); ?>
+                    </span>
+
+                    <span style ="float: right; display: flex;" >
+                        <a href="#" onclick="prevWeek()">
+                            <img border="0" title="Previous Week" src="/images/arrowhead_week_astern.gif" align="middle">
+                        </a>
+                        <img border="0" src="/images/w.gif" align="middle">
+                        <a href="#" onclick="nextWeek()">
+                            <img border="0" title="Next Week" src="/images/arrowhead_week_ahead.gif" align="middle">
+                        </a>
+                    </span>
+                </td>
+            </tr>
+            
+            <?php
+        }
+        $i += 1;
+    }
     if (isset($availableSlots[$weekday])) {
-        
-        echo '<tr>';
-        echo '<td width="50%" colspan="1" bgcolor="#FFFFFF" valign="top" >';
-        echo '<font face="arial" size="2">';
+        ?>
+        '<tr>';
+        '<td width="50%" colspan="1" bgcolor="#FFFFFF" valign="top" >';
+        '<font face="arial" size="2">';
+        <?php
         $index = 0;
         // Time slots are available for this weekday
         $availableSlotCount = count($availableSlots[$weekday]);
@@ -178,13 +217,13 @@ while ($currentDate <= $endDateTime) {
             $background_color = "FFFFFF"; // White for available
             $fullName = "";
             // Check if the time slot is booked
-            if (isset($bookingInfo[date('Y-m-d', $currentDate)][$timeSlot])) {
-                $background_color = "CCFFCC";
+            if (isset($bookingInfo[date('Y-m-d', $currentDate)][$timeSlot])) { //booked case
+                $background_color = "CCFFCC"; //booked color
                 // Time slot is booked
                 $fullName = $bookingInfo[date('Y-m-d', $currentDate)][$timeSlot];
                 
             }
-            echo '&nbsp;<input type="checkbox" name="timeslot" style="margin-top: 5px"value="'.$timeRender.'">&nbsp;<span style="background-color: #'.$background_color.'">'.$timeRender.'</span>&nbsp;'.$fullName.'&nbsp;<br/>';
+            echo '&nbsp;<input type="checkbox" name="timeslot" style="margin-top: 5px" value="'.$timeRender.'">&nbsp;<span style="background-color: #'.$background_color.'">'.$timeRender.'</span>&nbsp;'.$fullName.'&nbsp;<br/>';
         }
         echo '</font>';
         echo '</td>';
@@ -225,10 +264,80 @@ while ($currentDate <= $endDateTime) {
         echo '</td>';
         echo '</tr>';
     }
+    if (!$weekFlag) {
+        ?>
+        <tr id="trHeader">
+                    <td valign="middle" colspan="2">
+                        <input id="doChangeAvail" style = "float: left;" data-dochange="false" type="submit" value="Change Availability" name="action" class="buttons" onclick="return changeAvailability()">
+                    
+                            &nbsp;&nbsp;
+                        <span style ="text-align: center;">
+                           <?php echo $dayOfWeek . ", " . $monthName . " " . $dayOfMonth . ", " . $year; ?>
+                        </span>
+
+                        <span style ="float: right; display: flex;" >
+                            <a href="#" onclick="prevDay()">
+                                <img border="0" title="Previous Week" src="/images/arrowhead_week_astern.gif" align="middle">
+                            </a>
+                            <img border="0" src="/images/day.gif" align="middle">
+                            <a href="#" onclick="nextDay()">
+                                <img border="0" title="Next Week" src="/images/arrowhead_week_ahead.gif" align="middle">
+                            </a>
+                        </span>
+                    </td>
+                </tr>
+            <?php
+    }
     // Move to the next date
     $currentDate = strtotime('+1 day', $currentDate);
 }
 
-
-
 ?>
+
+<script>
+    function prevDay() {
+        const newUrl = `${window.location.origin}${window.location.pathname}?SystemId=${<?php echo $systemId; ?>}&startDate=<?php echo $prevDay['year']; ?>-<?php echo $prevDay['month']; ?>-<?php echo $prevDay['day']; ?>`;
+        window.location.href = newUrl;
+    }
+
+    function nextDay() {
+        const newUrl = `${window.location.origin}${window.location.pathname}?SystemId=${<?php echo $systemId; ?>}&startDate=<?php echo $nextDay['year']; ?>-<?php echo $nextDay['month']; ?>-<?php echo $nextDay['day']; ?>`;
+        window.location.href = newUrl;
+    }
+
+    function prevWeek() {
+        const newUrl = `${window.location.origin}${window.location.pathname}?SystemId=${<?php echo $systemId; ?>}&startDate=<?php echo  $weekDates['prevWeek']['start']; ?>&endDate=<?php echo $weekDates['prevWeek']['end'];?>`;
+        window.location.href = newUrl;
+    }
+    function nextWeek(){
+        const newUrl = `${window.location.origin}${window.location.pathname}?SystemId=${<?php echo $systemId; ?>}&startDate=<?php echo  $weekDates['nextWeek']['start']; ?>&endDate=<?php echo $weekDates['nextWeek']['end'];?>`;
+        window.location.href = newUrl;
+    }
+    function getCheckedItemsInDateRange(startDate, endDate) {
+        var checkedItems = [];
+
+        // Convert start and end dates to Date objects
+        var startDateObj = new Date(startDate);
+        var endDateObj = new Date(endDate);
+
+        // Iterate through all checkboxes with name 'timeslot'
+        var checkboxes = document.querySelectorAll('input[type="checkbox"][name="timeslot"]');
+        checkboxes.forEach(function(checkbox) {
+            // Get the value of the checkbox (time slot)
+            var value = checkbox.value;
+
+            // Extract the date from the time slot value (assuming format "HH:MM AM/PM - HH:MM AM/PM")
+            var timeSlotParts = value.split(' - ');
+            var startTime = new Date('2000-01-01 ' + timeSlotParts[0]); // Date part is arbitrary, only time matters
+            var endTime = new Date('2000-01-01 ' + timeSlotParts[1]); // Date part is arbitrary, only time matters
+
+            // Check if the time slot falls within the date range
+            if (startTime >= startDateObj && endTime <= endDateObj) {
+                checkedItems.push(value);
+            }
+        });
+
+        return checkedItems;
+    }
+
+</script>
