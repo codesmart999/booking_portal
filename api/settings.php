@@ -1,6 +1,7 @@
 <?php
 	include("../config.php");
 	require_once('../lib.php');
+	require_once('../admin/utils.php');
 
 	$res = [
 		"status" 	=> "success",
@@ -8,7 +9,95 @@
 	];
 
     $db = getDBConnection();
-    if( $_POST['action'] == "get_irregular" ) {
+	// Added by Hennadii (2024-03-26)
+	if ( $_POST['action'] == 'get_bookingperiods_by_weekday') {
+		$arr_bookingperiod_list = array();
+		$weekday = $_POST['weekday'];
+
+		$stmt = $db->prepare("SELECT FromInMinutes, ToInMinutes, isRegular, isAvailable FROM setting_bookingperiods WHERE SystemId = 0 AND weekday = ? ORDER BY FromInMinutes ASC");
+		$stmt->bind_param('i', $weekday);
+		$stmt->execute();
+		$stmt->bind_result($from_in_mins, $to_in_mins, $isRegular, $isAvailable);
+		$stmt->store_result();
+
+		while ($stmt->fetch()) {
+			if (empty($arr_bookingperiod_list)) {
+				$arr_bookingperiod_list = array();
+			}
+			
+			// keep adding to the list
+			$arr_bookingperiod_list[] = [
+				'FromInMinutes' => $from_in_mins,
+				'ToInMinutes' => $to_in_mins,
+				'DisplayText' => get_display_text_from_minutes($from_in_mins, $to_in_mins),
+				'isRegular' => $isRegular,
+				'isAvailable' => $isAvailable,
+			];
+		}
+
+		$stmt->close();
+
+		$res["status"] = "success";
+		$res["data"] = $arr_bookingperiod_list;
+		echo json_encode( $res );
+		exit;
+	}
+
+	// Added by Hennadii (2024-03-26)
+	if ($_POST['action'] == "save_booking_periods") {
+		$weekday = $_POST['weekday'];
+		$arr_bookingperiods = isset($_POST['list_bookingperiods']) ? $_POST['list_bookingperiods'] : array();
+
+		$stmt = $db->prepare( 'DELETE FROM setting_bookingperiods WHERE SystemId = 0 AND weekday = ?' );
+		$stmt->bind_param('i', $weekday);
+		$stmt->execute() or die($stmt->error);
+
+		$stmt = $db->prepare("INSERT INTO `setting_bookingperiods` (weekday, FromInMinutes, ToInMinutes) VALUES (?, ?, ?)");
+		foreach ($arr_bookingperiods as $booking_period) {
+			list($from_in_mins, $to_in_mins) = explode('-', $booking_period);
+			$stmt->bind_param('iii', $weekday, $from_in_mins, $to_in_mins);
+			$stmt->execute() or die($stmt->error);
+		}
+
+		$stmt->close();
+
+		$res["status"] = "success";
+    	$res["message"] = _lang("success_update");
+		echo json_encode( $res );
+		exit;
+	}
+
+	// Added by Awesome (2024-03-26)
+	if( $_POST['action'] == "get_all_systems" ) {
+		$stmt = $db->prepare("SELECT * FROM systems");
+	    $stmt->execute();
+		$stmt->bind_result($SystemId, $UserId, $LocationId, $FullName, $ReferenceId, $Access, $InternalId, $BusinessName, $Steet, $City, $State,
+			$PostCode, $Country, $PStreet, $PCity, $PState, $PPostCode, $Timezone, $Latitue, $Longitude, $SecondEmail, $ThirdEmail, $Phone, $Mobile, $Fax, $Website,
+			$LastAccess, $RegDate);
+		$stmt->store_result();
+
+	    $arrSystems = array();
+		if ($stmt->num_rows > 0) {
+			while ($stmt->fetch()) {
+				$arrSystems[] = [
+					"SystemId"		=> $SystemId,
+					"UserId"		=> $UserId,
+					"FullName"	    => $FullName,
+					"Country"	    => $Country,
+					"LocationId"	=> $LocationId
+				];
+			}
+		}
+		
+
+		$res["status"] = "success";
+		$res['data'] = $arrSystems;
+		echo json_encode( $res );
+		exit;
+	}
+
+	// Not using anymore by Hennadii (2024-03-26)
+    if ( $_POST['action'] == "get_irregular" ) {
     	$day = $_POST['irregularDay'];
 
 	    $stmt = $db->prepare("SELECT * FROM settings WHERE `name`='DEFAULT_IRREGULAR_TIME'");
@@ -39,6 +128,7 @@
 		exit;
     }
 
+	// Not using anymore by Hennadii (2024-03-26)
     if( $_POST['action'] == "save_irregular" ) {
     	$day = $_POST['irregularDay'];
     	$arrSheets = isset($_POST['irregularTimes']) ? $_POST['irregularTimes'] : [];

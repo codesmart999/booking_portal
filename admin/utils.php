@@ -98,4 +98,16 @@ function summarize_bookingperiod_details($params) {
     return $arr_bookingperiod_summary_by_weekday;
 }
 
+function get_display_text_from_minutes($from_in_mins, $to_in_mins) {
+    $start_hour = sprintf("%02d", floor($from_in_mins / 60));
+    $start_minutes = sprintf("%02d", $from_in_mins % 60);
+    $start_AP = ($start_hour < 12) ? 'AM' : 'PM';;
+    $end_hour = sprintf("%02d", floor($to_in_mins / 60));
+    $end_minutes = sprintf("%02d", $to_in_mins % 60);
+    $end_AP = ($end_hour < 12) ? 'AM' : 'PM';;
+
+    return $start_hour . ':' . $start_minutes . '' . $start_AP . ' To ' 
+        . $end_hour . ':' . $end_minutes . '' . $end_AP;
+}
+
 ?>
