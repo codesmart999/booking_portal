@@ -20,14 +20,26 @@ $stmt->bind_param("iss", $systemId, $startDate, $endDate);
 // Execute the statement
 $stmt->execute();
 
-// Get the result set
-$result = $stmt->get_result();
+// Bind result variables
+$stmt->bind_result($bookingId, $bookingDate, $bookingFrom, $bookingTo, $fullName);
+
+// Initialize an array to store the booking information
+$bookings = [];
 
 // Fetch the results
-$bookings = $result->fetch_all(MYSQLI_ASSOC);
+while ($stmt->fetch()) {
+    $bookings[] = [
+        'BookingId' => $bookingId,
+        'BookingDate' => $bookingDate,
+        'BookingFrom' => $bookingFrom,
+        'BookingTo' => $bookingTo,
+        'FullName' => $fullName
+    ];
+}
 
 // Initialize an array to store the booking information
 $bookingInfo = [];
+
 
 // Store the booking information in an array indexed by date and time slot
 foreach ($bookings as $booking) {
@@ -56,18 +68,14 @@ $sql = "SELECT weekday, FromInMinutes, ToInMinutes, isAvailable
 $stmt = $db->prepare($sql);
 $stmt->bind_param("i", $systemId);
 $stmt->execute();
-$result = $stmt->get_result();
+
+// Bind the result variables
+$stmt->bind_result($weekday, $fromMinutes, $toMinutes, $isAvailable);
 
 // Initialize an array to store the available time slots
 $availableSlots = [];
-$bookCount = count($bookingInfo);
 // Fetch the booking periods
-while ($row = $result->fetch_assoc()) {
-    $weekday = $row['weekday'];
-    $fromMinutes = $row['FromInMinutes'];
-    $toMinutes = $row['ToInMinutes'];
-    $isAvailable = $row['isAvailable'];
-
+while ($stmt->fetch()) {
     // Store the available time slot information
     $availableSlots[$weekday][] = [
         'FromInMinutes' => $fromMinutes,
@@ -75,6 +83,9 @@ while ($row = $result->fetch_assoc()) {
         'isAvailable' => $isAvailable
     ];
 }
+
+
+$bookCount = count($bookingInfo);
 
 // Get the earliest available time slot for Monday (weekday 1)
 $earliestTimeSlot = PHP_INT_MAX;
@@ -210,9 +221,14 @@ while ($currentDate <= $endDateTime) {
             $timeRender = date('g:i A', strtotime($startTime)) . ' - ' . date('g:i A', strtotime($endTime));
             echo '&nbsp;<input type="checkbox" name="timeslot" style="margin-top: 5px"value="'.$startTime.'-'.$endTime.'">&nbsp;<span style="background-color: #'.$background_color.'">'.$timeRender.'</span>&nbsp;&nbsp;<br/>';;
         }
+        echo '</font>';
+        echo '</td>';
+        echo '</tr>';
     }
     // Move to the next date
     $currentDate = strtotime('+1 day', $currentDate);
 }
+
+
 
 ?>

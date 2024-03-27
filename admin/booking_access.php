@@ -73,7 +73,7 @@ if (isset($_GET['startDate'])) {
     }
 }
 
-$endDate = date('Y-m-d');
+$endDate = $startDate;
 if (isset($_GET['endDate'])) {
     // Extract the value of startDate
     $endDate = $_GET['endDate'];
@@ -363,7 +363,7 @@ $prevDay = array(
         cell.addEventListener('click', () => {      
             var year = $(cell).attr('data-year');
             var month = $(cell).attr('data-month');
-            const startDate = year +'/1/'+ month; // Format the date as M/D/Y
+            const startDate = year +'-'+ month + '-1'; // Format the date as M/D/Y
             var newUrl = window.location.origin + window.location.pathname + "?SystemId=<?php echo $systemId?>&startDate=" + startDate;
             window.location.href = newUrl;
         });
