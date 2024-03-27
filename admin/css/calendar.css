@@ -331,3 +331,17 @@ table.lightgrey-weekends tbody td:nth-child(n+6) {
 	background-color: white;
 	color: black;
 }
+
+#monthly_show_header td {
+	text-align: right;
+}
+
+#monthly_show_header a:hover {
+	color: red;
+	text-decoration: underline !important;
+}
+
+#monthly_show_body_tr a:hover {
+	color: red;
+	text-decoration: underline !important;
+}

@@ -241,7 +241,11 @@
 	}
 
 		
-	function formatDateRange($startDate, $endDate) {
+	function formatDateRange($startDate, $endDate, $showFlag) {
+		if ($showFlag == MONTHLY_SHOWING_MODE){
+			return date('F, Y', strtotime($startDate));
+		}
+
 		$start = date('l, F j, Y', strtotime($startDate));
 		$end = date('l, F j, Y', strtotime($endDate));
 
