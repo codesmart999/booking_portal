@@ -109,7 +109,7 @@ $tableTitle = formatDateRange($startDate, $endDate);
                     <a class="image-links" href="#"><img title="Show/Hide Default Unavailable Times" border="0" src="/images/day_pink.jpg"></a>
                     <a class="image-links" href="#"><img title="Show/Hide Bookings" border="0" src="/images/day_green.jpg"></a>
                     <a class="image-links" href="#"><img title="Show/Hide Available Times" border="0" src="/images/day_white.jpg"></a>
-
+                </span>
                     &nbsp;&nbsp;<font size="2" face="Arial" color="#0000FF">&nbsp; •
 
                     <!-- </font><font size="2" face="Arial" color="#FFFFFF"> <a href="#">Group&nbsp;Bookings</a></font><font size="2" face="Arial" color="#0000FF">&nbsp; &nbsp;• 
@@ -118,7 +118,7 @@ $tableTitle = formatDateRange($startDate, $endDate);
                     </font><font size="2" face="Arial" color="#FFFFFF"> <a href="#" onmouseover="showLocation(true)" onmouseout="showLocation(false)">Show Location</a>
 
                     </font>
-                </span>
+                
             </td>
         </tr>
     </thead>
