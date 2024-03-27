@@ -58,7 +58,7 @@ if (isset($_GET['startDate'])) {
     $startDate = $_GET['startDate'];
     
     // Validate and format startDate
-    if (!empty($startDate) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $startDate)) {
+    if (!empty($startDate) && preg_match('/^\d{4}-(0?[1-9]|1[0-2])-(0?[1-9]|[12][0-9]|3[01])$/', $startDate)) {
         // Split the date string into year, month, and day
         list($year, $month, $day) = explode('-', $startDate);
         
@@ -73,6 +73,17 @@ if (isset($_GET['startDate'])) {
     }
 }
 
+if (isset($_GET['endDate'])) {
+    // Extract the value of startDate
+    $endDate = $_GET['endDate'];
+    // Validate and format startDate
+    if (!empty($endDate) && preg_match('/^\d{4}-(0?[1-9]|1[0-2])-(0?[1-9]|[12][0-9]|3[01])$/', $endDate)) {
+        // Split the date string into year, month, and day
+        // Proceed with further processing
+    } else {
+        $endDate = date('Y-m-d');
+    }
+}
 // Exception handling: check if any of the values are invalid or undefined
 if ($year === 0 || $month === 0 || $day === 0) {
     // Set default values (current date)
@@ -80,7 +91,6 @@ if ($year === 0 || $month === 0 || $day === 0) {
     $month = date('m');
     $day = date('d');
 }
-
 
 $timestamp = mktime(0, 0, 0, $month, $day, $year);
 
@@ -279,39 +289,12 @@ $prevDay = array(
         <!-- Main Content (Time Slots) -->
         <div class="col-md-9 col-sm-12 time-slots-sidebar">
              <table id="timeSlotsTable" width="100%" table-bordered cellpadding="2" cellspacing="1" bgcolor="#000080">
-                <thead>
-                    <tr>
-                        <td width="100%" bgcolor="#C5D4F0" valign="top" align="center" colspan="2">
-                            <font face="Arial" size="2" color="#000000">
-                                <span class="big-font">
-                                    <b><?php echo $dayOfWeek . ", " . $monthName . " " . $dayOfMonth . ", " . $year; ?></b>
-                                </span> - 7 bookings
-                            </font>
-                            <span style="float: right">
-                                <a class="image-links" href="#"><img title="Show Whole Day" border="0" src="/images/day_blue_tick2.jpg"></a>
-                                <a class="image-links" href="#"><img title="Show/Hide Past Times" border="0" src="/images/day_yellow.jpg"></a>
-                                <a class="image-links" href="#"><img title="Show/Hide Unavailable Times" border="0" src="/images/day_orange.jpg"></a>
-                                <a class="image-links" href="#"><img title="Show/Hide Default Unavailable Times" border="0" src="/images/day_pink.jpg"></a>
-                                <a class="image-links" href="#"><img title="Show/Hide Bookings" border="0" src="/images/day_green.jpg"></a>
-                                <a class="image-links" href="#"><img title="Show/Hide Available Times" border="0" src="/images/day_white.jpg"></a>
-
-                                &nbsp;&nbsp;<font size="2" face="Arial" color="#0000FF">&nbsp; •
-
-                                </font><font size="2" face="Arial" color="#FFFFFF"> <a href="#">Group&nbsp;Bookings</a></font><font size="2" face="Arial" color="#0000FF">&nbsp; &nbsp;• 
-
-                                </font><font size="2" face="Arial" color="#FFFFFF"> <a href="#">Change&nbsp;Display</a></font><font size="2" face="Arial" color="#0000FF">&nbsp; &nbsp;• 
-                                </font><font size="2" face="Arial" color="#FFFFFF"> <a href="#" onmouseover="showLocation(true)" onmouseout="showLocation(false)">Show Location</a>
-
-                                </font>
-                            </span>
-                        </td>
-                    </tr>
-                </thead>
-                <tbody>
+                
                     <?php
                     // Include the contents of temp.php here
                         require_once('booking_table.php');
                     ?>
+                   
                 </tbody>
                 <tfoot>
                     <tr>

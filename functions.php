@@ -240,4 +240,17 @@
 		return $weeks;
 	}
 
+		
+	function formatDateRange($startDate, $endDate) {
+		$start = date('l, F j, Y', strtotime($startDate));
+		$end = date('l, F j, Y', strtotime($endDate));
+		
+		if ($startDate === $endDate) {
+			return $start;
+		} else {
+			return $start . ' to ' . $end;
+		}
+	}
+
+
 ?>
