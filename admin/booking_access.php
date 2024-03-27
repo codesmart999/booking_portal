@@ -73,6 +73,7 @@ if (isset($_GET['startDate'])) {
     }
 }
 
+$endDate = date('Y-m-d');
 if (isset($_GET['endDate'])) {
     // Extract the value of startDate
     $endDate = $_GET['endDate'];
