@@ -21,7 +21,8 @@
 	// manage date format for all places
 	function format_date( $date ) {
 		$date = str_replace('/', '-', $date);
-		return date("l, d F Y", strtotime($date));
+		return date("D, d F Y", strtotime($date));
+		// return date("l, d F Y", strtotime($date));
 	}
 
 	// display format Price
@@ -57,73 +58,114 @@
     	$selectedDate = date("Y-m-d", strtotime($selectedDate));
 
     	// if selected date is passed, then return FALSE
-		if( strtotime( $selectedDate ) < strtotime(date("Y-m-d")) )
+		if( strtotime( $selectedDate ) < strtotime(date("Y-m-d")) ) {
 			return false;
-    	if( $arrAppData['five_days'] ) {
-    		for( $i = 0; $i < 5; $i++ ) {
-		    	$arrTimes = getAvailableTimes( $selectedDate );
+		}
+    	
+		$arrBookingPeriodsByDaysDiff = getAvailableTimes( $selectedDate );
 
-				if( !empty( $arrTimes ))
-		    		return true;
+		if (empty($arrBookingPeriodsByDaysDiff))
+			return false;
 
-    			$selectedDate = date('Y-m-d', strtotime('+1 day', strtotime($selectedDate)));
-    		}
-    	} else {
-    		$arrTimes = getAvailableTimes( $selectedDate );
-    		if( !empty( $arrTimes )) return true;
-    	}
+		ksort($arrBookingPeriodsByDaysDiff);
 
-    	return false;
+		$_SESSION['arrBookingPeriodsByDaysDiff'] = $arrBookingPeriodsByDaysDiff;
+
+		return true;
     }
 
     // get Available times by Selected Date 
     // it needs to check by Date, System ( from Location ) and Service
     function getAvailableTimes( $date ) {
-    	global $arrAppData, $arrLocations;
+    	global $arrAppData;
 
     	$day = date("D", strtotime($date));
 
     	$link = getDBConnection();
-    	$arrRes = array(); $arrSystems = array();
+    	$arrRes = array();
+		$arrSystems = array();
 
-    	$locationId = $arrLocations[$arrAppData['location']]['id'];
-    	
-    	// Get System list by Location
-		$stmt = $link->prepare("SELECT SystemId, UserId, Access FROM `systems` WHERE `LocationId`=$locationId");
+    	$locationId = $arrAppData['location'];
+		$serviceId = $arrAppData['service'];
+		$bLookInFiveDays = !empty($arrAppData['five_days']);
+
+		// Get System list by LocationId && ServiceId
+		$stmt = $link->prepare('SELECT sys.SystemId, sys.UserId, sys.Access, sys.FullName FROM systems sys'
+			. ' JOIN system_services serv ON sys.SystemId = serv.SystemId'
+			. "	WHERE sys.LocationId = $locationId AND serv.ServiceId = $serviceId");
 	    $stmt->execute();
-	    $stmt->bind_result($systemId, $userId, $access);
-	    while($stmt->fetch()) {
+	    $stmt->bind_result($systemId, $userId, $access, $fullname);
+	    while ($stmt->fetch()) {
 	        $arrSystems[$systemId] = array(
-	        	"systemId" 	=> $systemId,
+	        	"fullname" 	=> $fullname,
 	        	"userId"	=> $userId,
 	        	"access"	=> $access
 	        );
 	    }
+
+		if (empty($arrSystems))
+			return $arrRes;
+
+		$arrSystemIds = array_keys($arrSystems);
+		$arrSystemIds[] = 0; // Add Default System Id
+		$strSystemIds = implode(',', $arrSystemIds);
 		
-    	// check by Default Time Setting
-    	// Regular( available ) Booking Period
-		$stmt = $link->prepare("SELECT value FROM `settings` WHERE `name`='DEFAULT_REGULAR_TIME'");
+		// Get Available Booking Periods
+		$strQuery = 'SELECT 
+						sbp.weekday,
+						MAX(sbp.SystemId) AS SystemId,
+						MIN(sbp.FromInMinutes) AS FromInMinutes,
+						MIN(sbp.ToInMinutes) AS ToInMinutes,
+						CASE
+							WHEN sbp.weekday - DAYOFWEEK(?) + 1 < 0 THEN sbp.weekday - DAYOFWEEK(?) + 1 + 7
+							ELSE sbp.weekday - DAYOFWEEK(?) + 1
+						END AS days_diff
+					FROM 
+						setting_bookingperiods sbp
+					JOIN 
+						setting_weekdays sw ON sbp.weekday = sw.weekday AND sbp.SystemId = sw.SystemId
+					WHERE 
+						sbp.SystemId IN (' . $strSystemIds . ')
+						AND sw.isAvailable = 1
+						AND sbp.isAvailable = 1' .
+					($bLookInFiveDays ? '
+						AND sw.weekday IN (
+							DAYOFWEEK(?) - 1, -- Current day
+							DAYOFWEEK(?) % 7, -- Next day
+							(DAYOFWEEK(?) + 1) % 7, -- Next next day
+							(DAYOFWEEK(?) + 2) % 7, -- Next next next day
+							(DAYOFWEEK(?) + 3) % 7 -- Next next next next day
+						)
+					' : '
+						AND sw.weekday = DAYOFWEEK(?) - 1
+					') .
+					' GROUP BY
+						sbp.weekday,
+						sbp.FromInMinutes,
+						sbp.ToInMinutes;
+					';
+		$stmt = $link->prepare($strQuery);
+		if ($bLookInFiveDays) {
+			$stmt->bind_param('ssssssss', $date, $date, $date, $date, $date, $date, $date, $date);
+		} else {
+			$stmt->bind_param('ssss', $date, $date, $date, $date);
+		}
+		
 	    $stmt->execute();
-	    $stmt->bind_result($regular_time);
-	    while($stmt->fetch())
-	    	$regular_time = json_decode($regular_time);
+	    $stmt->bind_result($weekday, $SystemId, $FromInMinutes, $ToInMinutes, $days_diff);
+	    
+		while($stmt->fetch()) {
+			if (!isset($arrRes[$days_diff])) {
+				$arrRes[$days_diff] = array();
+			}
 
-	    // get Irregular(Unavailable) Booking Period
-	    $stmt = $link->prepare("SELECT value FROM `settings` WHERE `name`='DEFAULT_IRREGULAR_TIME'");
-	    $stmt->execute();
-	    $stmt->bind_result($irregular_time);
-	    while($stmt->fetch())
-	    	$irregular_time = json_decode($irregular_time);
-
-    	// get Special Availability by System
-    	foreach( $arrSystems as $system ){
-			$systemId = $system["systemId"];
-			$stmt = $link->prepare("SELECT RuleId, Available FROM `availability` WHERE `SystemId`= $systemId AND `SetDate`=$date");
-		    $stmt->execute();
-		    $stmt->bind_result($ruleId, $availablility);
-		    while($stmt->fetch())
-		    	$arrRules[] = json_decode($availablility);
-    	}
+			$arrRes[$days_diff][] = array(
+				'weekday' => $weekday,
+				'SystemId' => $SystemId,
+				'FromInMinutes' => $FromInMinutes,
+				'ToInMinutes' => $ToInMinutes,
+			);
+		}
 
         $stmt->close();
 

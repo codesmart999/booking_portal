@@ -35,14 +35,15 @@ if( !isset( $_SESSION['appointment_data'] ))
 				<td class="form-label">Location:</td>
 				<td>
 					<?php 
-						foreach( $arrLocations as $key => $desc){
+						foreach ( $arrLocations as $key => $objLocation){
 							$checked = "";
+							
 							if( $key == $arrAppData['location'] )
 								$checked = "checked";
 
 							echo '<div class="form-check">
-									<label class="form-check-label" for="'.$key.'">'.$key.'</label>
-									<input type="radio" required class="form-check-input" name="location" id="'.$key.'" value="'.$key.'" '.$checked.'/>
+									<label class="form-check-label" for="location_' . $key . '">' . $objLocation['name'] .'</label>
+									<input type="radio" required class="form-check-input" name="location" id="location_' . $key . '" value="' . $key . '" ' . $checked.'/>
 								</div>';
 						}
 					?>
@@ -52,14 +53,14 @@ if( !isset( $_SESSION['appointment_data'] ))
 				<td class="form-label">Services:</td>
 				<td>
 					<?php 
-						foreach( $arrServices as $key => $desc){
+						foreach( $arrServices as $key => $objService){
 							$checked = "";
 							if( $key == $arrAppData['service'] )
 								$checked = "checked";
 
 							echo '<div class="form-check">
-									<label class="form-check-label" for="'.$key.'">'.$desc['fullname'].'</label>
-									<input type="radio" required class="form-check-input" name="service" id="'.$key.'" value="'.$desc['id'].'" '.$checked.'/>
+									<label class="form-check-label" for="service_'.$key.'">' . $objService['fullname'] . '</label>
+									<input type="radio" required class="form-check-input" name="service" id="service_' . $key . '" value="' . $objService['id'].'" ' . $checked . '/>
 								</div>';
 						}
 					?>

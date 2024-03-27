@@ -26,19 +26,19 @@
 	];
 
 	// Manage session data
-	if( isset($_POST['Submit'])) {
+	if (isset($_POST['Submit'])) {
 		$_SESSION['appointment_data'] = array_merge( $_SESSION['appointment_data'], $_POST );
 	}
 
-	// store Session data to Array
-	if( isset($_SESSION['appointment_data'])) {
+	// restore Session data to Array
+	if (isset($_SESSION['appointment_data'])) {
 		foreach( $_SESSION['appointment_data'] as $key => $val ) {
 			$arrAppData[$key] = $val;
 		}
 	}
 
 	// check user login for other pages
-	if( !isset( $_SESSION['User'] ) && $_SERVER['REQUEST_URI'] != "/") {
+	if (!isset( $_SESSION['User'] ) && $_SERVER['REQUEST_URI'] != "/") {
 		header('Location: '. SECURE_URL . LOGIN_PAGE, true, 301);
 		exit(0);
 	}
@@ -79,8 +79,7 @@
 	    $stmt->execute();
 	    $stmt->bind_result($id, $name, $address, $suburb, $state, $postcode, $phone, $deleted);
 	    while($stmt->fetch()) {
-	        $arrLocations[$name] = array(
-	        	"id" 		=> $id,
+	        $arrLocations[$id] = array(
 	        	"name"		=> $name,
 	        	"address" 	=> $address,
 	        	"suburb" 	=> $suburb,

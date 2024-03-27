@@ -2,8 +2,11 @@
 
 $menu = "select";
 require_once('header.php');
+require_once('admin/utils.php');
 
 $format_date = format_date( $arrAppData['date_appointment'] );
+
+$arrBookingPeriodsByDaysDiff = $_SESSION['arrBookingPeriodsByDaysDiff'];
 
 if( isset($_POST['Submit'])){
 	// adjust booking date
@@ -54,64 +57,48 @@ if( $arrAppData['location'] == ""){
 			<tr>
 				<td colspan = "2" class="text-center app_desc fst-italic">
 					<p><?php echo $format_date; ?></p>
-					<p><?php echo $arrAppData['location']; ?></p>
+					<p><?php echo $arrLocations[$arrAppData['location']]['name']; ?></p>
 					<p><?php echo $arrServices[$arrAppData['service']]['fullname']; ?></p>
 				</td>
 			</tr>
 			<tr>
 				<td colspan = "2" class="text-center app_desc">
-					<p><b><?php echo $arrAppData['location']; ?></b> - <?php echo $arrLocations[$arrAppData['location']]['address']; ?></p>
+					<p><b><?php echo $arrLocations[$arrAppData['location']]['name']; ?></b> - <?php echo $arrLocations[$arrAppData['location']]['address']; ?></p>
 				</td>
 			</tr>
 			<tr>
 				<td class="form-label">Select Time:</td>
 				<td class="app_desc">
 					<div class="row">
-					<?php 
-						if( $arrAppData['five_days'] ) { 
-							$date = $arrAppData['date_appointment'];
-							for( $i = 0; $i < 5; $i++ ) {
+					<?php
+						foreach ($arrBookingPeriodsByDaysDiff as $days_diff => $arrBookingPeriods) {
+							$date = date('d/m/Y', strtotime('+' . $days_diff . ' day', strtotime(str_replace('/', '-', $arrAppData['date_appointment']))));
 					?>
 						<div class="col-md-2 text-center">
 							<?php 
-								echo "<p>".format_date($date)."</p>";
+								echo "<p>" . format_date($date)."</p>";
 							?>							
-							<select name="booking_time<?php echo $i;?>[]" id="time_selector<?php echo $i;?>" multiple="multiple" style="height:150px;">
+							<select name="booking_time<?php echo $days_diff;?>[]" multiple="multiple" style="height:150px;">
 								<option value="">Deselect</option>
 								<?php
-									foreach( $arrTimeSheets as $key => $time ) {
+									foreach( $arrBookingPeriods as $objBookingPeriod ) {
+										$key = $objBookingPeriod['FromInMinutes'] . '-' . $objBookingPeriod['ToInMinutes'];
+										$val = get_display_text_from_minutes($objBookingPeriod['FromInMinutes'], $objBookingPeriod['ToInMinutes']);
+										
 										$selected = "";
-										foreach( $arrAppData['booking_time'] as $book_time ){
-											if( $key == $book_time && $arrAppData['date_appointment'] == $date )
-												$selected = "selected";
-										}
-										echo '<option value="'.$key.'" '.$selected.'>'.$time.'</option>';
+										// foreach( $arrAppData['booking_time'] as $book_time ){
+										// 	if( $key == $book_time && $arrAppData['date_appointment'] == $date )
+										// 		$selected = "selected";
+										// }
+										
+										echo '<option value="' . $key . '" ' . $selected . '>' . $val . '</option>';
 									}
 								?>
 							</select>
 						</div>	
 					<?php 
-							$date = date('d/m/Y', strtotime('+1 day', strtotime(str_replace('/', '-', $date))));
 						}
-					} else { ?>
-						<div class="col-md-12">
-							<select name="booking_time0[]" id="time_selector" multiple="multiple" style="height:150px;">
-								<option value="">Deselect</option>
-								<?php
-									foreach( $arrTimeSheets as $key => $time ) {
-										$selected = "";
-										foreach( $arrAppData['booking_time'] as $book_time ){
-											if( $key == $book_time )
-												$selected = "selected";
-										}
-
-										echo '<option value="'.$key.'" '.$selected.'>'.$time.'</option>';
-									}
-								?>
-							</select>
-						</div>						
-					</div>
-				<?php } ?>
+					?>
 				</td>
 			</tr>
 			<tr>
