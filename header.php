@@ -22,11 +22,13 @@ require_once('lib.php');
         <link href="./scripts/jquery-ui-1.10.0/css/ui-lightness/jquery-ui-1.10.0.custom.css" rel="stylesheet">
         <script src="./scripts/search.js"></script>
         <script src="./scripts/script.js"></script>
+
         <link href="./css/booking.css" rel="stylesheet" type="text/css" />
 
-<script src="./scripts/wc-form.js"></script>
-<script src="./scripts/jquery.validate.min.js"></script>
-<script src="./scripts/jqEasyCharCounter/jquery.jqEasyCharCounter.min.js"></script>
+
+        <script src="./scripts/wc-form.js"></script>
+        <script src="./scripts/jquery.validate.min.js"></script>
+        <script src="./scripts/jqEasyCharCounter/jquery.jqEasyCharCounter.min.js"></script>
     </head>
 
     <body>

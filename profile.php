@@ -9,14 +9,21 @@ if( isset($_POST['Submit'])){
 	
 	$bussiness_man = $arrAppData['business_name'];
 	$email_addr = $arrAppData['email_addr'];
-	$postcode = $arrAppData['postcode'];
+
+	$postAddress = array (
+		'street' => $arrAppData['street'],
+		'city' => $arrAppData['city'],
+		'state' => $arrAppData['state'],
+		'postcode' => $arrAppData['postcode']
+	);
+
 	$phone_number = $arrAppData['phone_number'];
 	$comment = $arrAppData['comment'];
 
 	//print_r($arrAppData['booking_time'][0]);
 
 	$stmt = $db->prepare("INSERT INTO `customers` (FullName, Email, PostalAddr, Phone, Comment) VALUES (?, ?, ?, ?, ?)");
-	$stmt->bind_param('sssss', $bussiness_man, $email_addr, $postcode, $phone_number, $comment);
+	$stmt->bind_param('sssss', $bussiness_man, $email_addr, json_encode($postAddress), $phone_number, $comment);
 	$stmt->execute() or die($stmt->error);
 
 	$customerId = $db->insert_id;

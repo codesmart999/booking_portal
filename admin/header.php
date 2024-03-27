@@ -25,6 +25,14 @@ if( $_SESSION['User']['UserType'] != "A" && $_SERVER['REQUEST_URI'] != ADMIN_IND
         <link href="../css/booking.css" rel="stylesheet" type="text/css" />
         <link href="./css/sidebar.css" rel="stylesheet" type="text/css" />
         <link href="./css/style.css" rel="stylesheet" type="text/css" />
+
+        <script src="../scripts/jquery-ui-1.10.0/js/jquery-1.9.0.js"></script>
+        <script src="./js/bootstrap.min.js"></script>
+
+        <!-- for calendar widget link -->
+        <link href="./css/zabuto_calendar.min.css" rel="stylesheet">
+        <script src="./js/zabuto_calendar.min.js"></script>
+        <link href="./css/calendar.css" rel="stylesheet">
     </head>
 
     <body>

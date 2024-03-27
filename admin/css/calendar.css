@@ -1,0 +1,250 @@
+html,
+body {
+	height: 100%;
+	width: 100%;
+}
+
+body {
+	font-family: 'Barlow Semi Condensed', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+	font-size: 16px;
+}
+
+td:has(>.month-calendar-today) {
+	/* Your styles here */
+	background-color: yellow !important;
+}
+
+.zabuto-calendar.table>tbody td {
+	border: 1px solid grey !important;
+}
+
+.zabuto-calendar.table>thead:first-child>tr:first-child>td {
+	background-color: rgb(197, 212, 240) !important;
+}
+
+.calendar-sidebar table {
+	margin-bottom: 0 !important;
+}
+
+.calendar-sidebar table th,
+.calendar-sidebar table td {
+	padding: 5px !important;
+	background-color: white;
+	border: 1px solid grey !important;
+}
+
+/* nav */
+#navbar .navbar-brand {
+	color: #99792f;
+}
+
+#navbar .navbar-brand>img {
+	width: 30px;
+	margin-top: -3px;
+	margin-right: 6px;
+}
+
+#navbar .navbar-brand>span {
+	color: #564e49;
+}
+
+/* sections */
+section h2,
+section p.lead {
+	padding-top: 4.5rem;
+	color: #99792f;
+}
+
+section h3 {
+	padding-top: 1rem;
+}
+
+.calendar_today {
+	background-color: yellow;
+}
+
+/* footer */
+footer {
+	margin-top: 4.5rem;
+	padding: 30px 0 20px 0;
+	color: #564e49;
+}
+
+/* scrollup */
+a.scrollup {
+	height: 32px;
+	width: 32px;
+	color: #ffffff;
+	background-color: #564e49;
+	font-size: 18px;
+	line-height: 32px;
+	text-align: center;
+	text-decoration: none;
+	position: fixed;
+	bottom: 20px;
+	right: 20px;
+	z-index: 9999;
+	opacity: 0.5;
+}
+
+a.scrollup:hover {
+	opacity: 1;
+	color: #fff;
+}
+
+/* settings */
+dd {
+	color: #777;
+}
+
+dl.language {
+	font-size: 0.9em;
+}
+
+dd.type,
+dl.language dd {
+	color: #000;
+}
+
+dl.language dd {
+	margin-bottom: 0;
+}
+
+/* code */
+pre.prettyprint,
+pre.prettyprint.prettyprinted {
+	padding: 10px;
+}
+
+/* responsive */
+@media (max-width: 767px) {
+	a.scrollup {
+		height: 28px;
+		width: 28px;
+		bottom: 12px;
+		right: 12px;
+	}
+
+	section {
+		padding: 1rem 0 1rem 0;
+	}
+}
+
+
+/* calendar demo */
+.demo-calendar {
+	min-height: 340px;
+	background-color: #fff;
+	padding: 10px;
+	border: 1px solid #888;
+	border-radius: 4px;
+	font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+	font-size: 14px;
+	line-height: 1.42857143;
+}
+
+.demo-calendar.basic {
+	min-height: 190px;
+}
+
+table.lightgrey-weekends tbody td:nth-child(n+6) {
+	background-color: #f3f3f3;
+}
+
+.event-black {
+	background-color: #000 !important;
+}
+
+.event-colourful {
+	background: linear-gradient(180deg, #fdcd3b 50%, #ffed4b 50%), linear-gradient(45deg, #b5ffd0 50%, #00ff00 50%);
+	background-position: top left, bottom right;
+	background-repeat: no-repeat, no-repeat;
+	background-size: 100% 50%;
+}
+
+.grade-1 {
+	background-color: rgb(255, 226, 166) !important;
+}
+
+.grade-2 {
+	background-color: rgb(204, 255, 204) !important;
+}
+
+.grade-3 {
+	background-color: rgb(114, 237, 92) !important;
+}
+
+.console-log {
+	width: 100%;
+	height: 300px;
+	overflow-y: scroll;
+	margin-top: 5px;
+	padding: 5px;
+	border: 1px solid #000;
+	border-radius: 4px;
+	color: #00ff00;
+	background-color: #000;
+}
+
+.console-log p {
+	margin-top: 0;
+	margin-bottom: 0;
+	line-height: 1.1rem;
+	font-family: 'Courier New', Courier, sans-serif;
+	font-size: 0.75rem;
+}
+
+.weeks-in-month .table-title {
+	text-align: center;
+	background-color: rgb(197, 212, 240);
+}
+
+/* Center align table cells */
+.weeks-in-month td,
+.weeks-in-month th {
+	text-align: center;
+	background-color: white;
+}
+
+.weeks-in-month .week-number {
+	color: blue;
+	text-align: center;
+	cursor: pointer;
+	background-color: white;
+}
+
+/* Highlight week 5 */
+.weeks-in-month .highlight-week {
+	background-color: yellow;
+}
+
+.months-in-year .table-title,
+.years-table .table-title {
+	text-align: center;
+	background-color: rgb(197, 212, 240);
+}
+
+/* Center align table cells */
+.months-in-year .table td,
+.months-in-year .table th,
+.years-table .table td,
+.years-table .table th {
+	text-align: center;
+}
+
+.months-in-year .month-name,
+.years-table .year-number {
+	color: blue;
+	/* Set font color to blue */
+	text-align: center;
+	/* Center align month names */
+	cursor: pointer;
+	/* Change cursor to pointer on hover */
+	background-color: white;
+}
+
+/* Highlight current month */
+.months-in-year .highlight-month,
+.years-table .highlight-year {
+	background-color: yellow;
+}
