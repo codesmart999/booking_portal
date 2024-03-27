@@ -359,7 +359,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>
-                <button type="submit" class="btn btn-primary btn-sm" name="Save" value="Save" id="btnServiceSave">Save</button>
+                <button type="submit" class="btn btn-primary btn-sm" name="Save" value="Save" id="btnServiceSave" data-dismiss="modal">Save</button>
             </div>
         </div>
     </div>
@@ -543,14 +543,12 @@
 			var formData = [];
 			formData.push({ name: "action", value: "get_all_services" });
       formData.push({ name: 'SystemId', value: $(this).attr('data-system_id')});
-      
-			
+      var SystemId = $(this).attr('data-system_id');
+		
       $.post(apiUri, formData, function (data) {
-        
         var res = JSON.parse(data);
 				data = res.data;
 
-        SystemId = data[0]['SystemId']  ///////////////////////////////////////////////!!!!!!!!!!!!!!!!
         $("#system_services").empty();
 				for( i = 0; i < data.length; i++ ) {
 					var service = data[i];
@@ -570,7 +568,6 @@
 						</tr>`;
 					$("#system_services").append(html)
 				}
-
         $("#system_services").append('<input type="hidden" name="SystemId" value="' + SystemId + '"/>');
 	    });
 		});

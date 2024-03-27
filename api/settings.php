@@ -14,10 +14,10 @@
 		$arr_bookingperiod_list = array();
 		$weekday = $_POST['weekday'];
 
-		$stmt = $db->prepare("SELECT FromInMinutes, ToInMinutes, isRegular, isAvailable FROM setting_bookingperiods WHERE SystemId = 0 AND weekday = ? ORDER BY FromInMinutes ASC");
+		$stmt = $db->prepare("SELECT id, FromInMinutes, ToInMinutes, isRegular, isAvailable FROM setting_bookingperiods WHERE SystemId = 0 AND weekday = ? ORDER BY FromInMinutes ASC");
 		$stmt->bind_param('i', $weekday);
 		$stmt->execute();
-		$stmt->bind_result($from_in_mins, $to_in_mins, $isRegular, $isAvailable);
+		$stmt->bind_result($id, $from_in_mins, $to_in_mins, $isRegular, $isAvailable);
 		$stmt->store_result();
 
 		while ($stmt->fetch()) {
@@ -27,6 +27,7 @@
 			
 			// keep adding to the list
 			$arr_bookingperiod_list[] = [
+				'id' => $id,
 				'FromInMinutes' => $from_in_mins,
 				'ToInMinutes' => $to_in_mins,
 				'DisplayText' => get_display_text_from_minutes($from_in_mins, $to_in_mins),
@@ -42,12 +43,35 @@
 		echo json_encode( $res );
 		exit;
 	}
+	
+	// Added by Awesome (2024-03-27)
+	if ($_POST['action'] == "save_booking_periods_availability") {
+		$weekday = $_POST['weekday'];
+		$arr_unavailable_bookingperiods = isset($_POST['unavailable_bookingperiod']) ? $_POST['unavailable_bookingperiod'] : array();
+		$arr_bookingperiod_ids = array_keys($arr_unavailable_bookingperiods);
+
+		$stmt = $db->prepare( 'UPDATE setting_bookingperiods SET isAvailable = 1 WHERE SystemId = 0 AND weekday = ?' );
+		$stmt->bind_param('i', $weekday);
+		$stmt->execute() or die($stmt->error);
+
+		if (!empty($arr_bookingperiod_ids)) {
+			$str_bookingperiod_ids = implode(',', $arr_bookingperiod_ids);
+			$stmt = $db->prepare( 'UPDATE setting_bookingperiods SET isAvailable = 0 WHERE id IN (' . $str_bookingperiod_ids . ')' );
+			$stmt->execute() or die($stmt->error);
+		}
+		
+		$stmt->close();
+
+		$res["status"] = "success";
+    	$res["message"] = _lang("success_update");
+		echo json_encode( $res );
+		exit;
+	}
 
 	// Added by Hennadii (2024-03-26)
 	if ($_POST['action'] == "save_booking_periods") {
 		$weekday = $_POST['weekday'];
 		$arr_bookingperiods = isset($_POST['list_bookingperiods']) ? $_POST['list_bookingperiods'] : array();
-
 		$stmt = $db->prepare( 'DELETE FROM setting_bookingperiods WHERE SystemId = 0 AND weekday = ?' );
 		$stmt->bind_param('i', $weekday);
 		$stmt->execute() or die($stmt->error);

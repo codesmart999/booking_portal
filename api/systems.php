@@ -347,7 +347,7 @@
 	if( $_POST['action'] == "update_service_items" ) {
 		$system_id = $_POST['SystemId'];
 		$arr_services = $_POST['Services'];
-		
+		// print_r($system_id)
 		$stmt = $db->prepare("DELETE FROM system_services WHERE SystemId=" . $system_id);
 		$stmt->execute() or die($stmt->error);
 
