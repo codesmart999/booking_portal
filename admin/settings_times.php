@@ -246,8 +246,8 @@ require_once('footer.php');
 			                        </select>
                     				<?php $optionKey = "weekday_start_AP[" . $dayKey . "]"; ?>
 	                    			<select name="<?php echo $optionKey; ?>">
-			                        	<option value="AM" <?php if ($regular_weekday_start_AP[$dayKey] == "AM") echo 'selected';?>>AM</option>
-			                        	<option value="PM" <?php if ($regular_weekday_start_AP[$dayKey] == "PM") echo 'selected';?>>PM</option>
+			                        	<option value="AM" <?php if (strtolower($regular_weekday_start_AP[$dayKey]) == "am") echo 'selected';?>>AM</option>
+			                        	<option value="PM" <?php if (strtolower($regular_weekday_start_AP[$dayKey]) == "pm") echo 'selected';?>>PM</option>
 			                        </select>
 			                    </td>
                     			<td width="33%">
@@ -329,7 +329,8 @@ require_once('footer.php');
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="saveModalLabel">Select Individual Day to Assign Irregular Booking Periods</h5>
+                    <h5 class="modal-title step1" id="saveModalLabel">Select Individual Day to Assign Irregular Booking Periods</h5>
+					<h5 class="modal-title step2">Set Irregular Booking Periods</h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
@@ -354,7 +355,7 @@ require_once('footer.php');
 	                    </div>
 	                    <?php } ?>
 	                </div>
-	                <div class="step2 d-none">
+	                <div class="step2">
 	                	<table style="width:100%; margin-bottom:0">
                     		<tr>
                     			<td width="33%">Start Time</td>
@@ -363,14 +364,14 @@ require_once('footer.php');
                     		</tr>
                     		<tr>
                     			<td>
-                    				<select id="insertStartHour">
+                    				<select id="irregular_start_hour">
 			                        	<?php
 			                    		for( $i = 1; $i <= 12; $i++){
 			                    			echo '<option value="'.$i.'">'.$i.'</option>';
 			                    		}
 			                    		?>
 			                        </select>
-			                      	<select id="insertStartMinutes">
+			                      	<select id="irregular_start_minutes">
 			                        	<option value="00">00</option>
 			                        	<?php
 			                    		for( $i = 5; $i < 60; $i += 1){
@@ -378,20 +379,20 @@ require_once('footer.php');
 			                    		}
 			                    		?>
 			                        </select>
-			                        <select id="insertStartAP">
+			                        <select id="irregular_start_AP">
 			                        	<option value="AM">AM</option>
 			                        	<option value="PM">PM</option>
 			                        </select>
                     			</td>
 								<td>
-                    				<select id="insertEndHour">
+                    				<select id="irregular_end_hour">
 			                        	<?php
 			                    		for( $i = 1; $i <= 12; $i++){
 			                    			echo '<option value="'.$i.'">'.$i.'</option>';
 			                    		}
 			                    		?>
 			                        </select>
-			                      	<select id="insertEndMinutes">
+			                      	<select id="irregular_end_minutes">
 			                        	<option value="00">00</option>
 			                        	<?php
 			                    		for( $i = 5; $i < 60; $i += 1){
@@ -399,13 +400,13 @@ require_once('footer.php');
 			                    		}
 			                    		?>
 			                        </select>
-			                        <select id="insertEndAP">
+			                        <select id="irregular_end_AP">
 			                        	<option value="AM">AM</option>
 			                        	<option value="PM">PM</option>
 			                        </select>
                     			</td>
                     			<td>
-                    				<button type="button" id="addIrTimes" class="btn btn-primary btn-sm">Include</button>
+                    				<button type="button" id="btn_add_irregular_bookingperiods" class="btn btn-primary btn-sm">Include</button>
                     			</td>
                     		</tr>
                     	</table>
@@ -422,8 +423,8 @@ require_once('footer.php');
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary btn-sm step1" data-dismiss="modal">Close</button>
 					<button type="button" class="btn btn-primary btn-sm step1 btn-next" disabled>Next</button>
-					<button type="button" class="btn btn-secondary btn-sm step2 d-none btn-previous">Previous</button>
-                    <button type="button" class="btn btn-primary btn-sm step2 d-none" name="Save" value="Save" id="btnIrSave">Save</button>
+					<button type="button" class="btn btn-secondary btn-sm step2 btn-previous">Previous</button>
+                    <button type="button" class="btn btn-primary btn-sm step2" name="Save" value="Save" id="btnIrSave">Save</button>
                 </div>
             </div>
         </div>
@@ -468,7 +469,7 @@ require_once('footer.php');
 	                    </div>
 	                    <?php } ?>
 	                </div>
-	                <div class="step2 hide">
+	                <div class="step2">
 	                	<table style="width:100%; margin-bottom:0">
 	                		<thead>
 	                    		<tr>
@@ -542,8 +543,8 @@ require_once('footer.php');
 						</tbody>
 					</table>
 
-					<h6 class="step2 d-none">Select individual Systems that you want the changes applied to</p>
-					<table border="0" cellspacing="0" cellpadding="5" width="100%" class="table step2 d-none">
+					<h6 class="step2">Select individual Systems that you want the changes applied to</p>
+					<table border="0" cellspacing="0" cellpadding="5" width="100%" class="table step2">
 						<thead>
 						<tr>
 							<td width="40" nowrap>Select</td>
@@ -558,8 +559,8 @@ require_once('footer.php');
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary btn-sm step1" data-dismiss="modal">Close</button>
 					<button type="button" class="btn btn-primary btn-sm step1 btn-next" data-modal-name="available_weekdays">Next</button>
-					<button type="button" class="btn btn-secondary btn-sm step2 btn-previous d-none" >Previous</button>
-                    <button type="submit" class="btn btn-primary btn-sm step2 d-none" name="Save" value="Save" id="btnSave">Save</button>
+					<button type="button" class="btn btn-secondary btn-sm step2 btn-previous" >Previous</button>
+                    <button type="submit" class="btn btn-primary btn-sm step2" name="Save" value="Save" id="btnSave">Save</button>
                 </div>
             </div>
         </div>
@@ -570,8 +571,52 @@ require_once('footer.php');
 		var apiUri = "/api/settings.php";
 
 		// Irregular setting actions
-		$('#addIrTimes').on('click', function() {
+		$('#btn_add_irregular_bookingperiods').on('click', function() {
+			var start_hour = parseInt($("#irregular_start_hour").val());
+			var start_minutes = parseInt($("#irregular_start_minutes").val());
+			var start_AP = $("#irregular_start_AP").val();
+			var end_hour = parseInt($("#irregular_end_hour").val());
+			var end_minutes = parseInt($("#irregular_end_minutes").val());
+			var end_AP = $("#irregular_end_AP").val();
 
+			start_hour += (start_AP.toLowerCase() === 'pm' && start_hour < 12) ? 12 : 0;
+        	end_hour += (end_AP.toLowerCase() === 'pm' && end_hour < 12) ? 12 : 0;
+
+			var from_in_mins = start_hour * 60 + start_minutes;
+			var to_in_mins = end_hour * 60 + end_minutes;
+
+			if (from_in_mins >= to_in_mins) {
+				alert("Please select a valid booking period.");
+				return;
+			}
+
+			var bFoundAnyOverlap = false;
+			var indexToInsert = -1; //
+			$("#list_bookingperiods option").each(function(index) {
+				// Access each option using $(this)
+				var optionValue = $(this).val(); // Get the value of the current option
+				var arr_parts = optionValue.split("-"); //[0]: FromInMins, [1]: ToInMins
+				arr_parts[0] = parseInt(arr_parts[0]);
+				arr_parts[1] = parseInt(arr_parts[1]);
+				
+				if ((from_in_mins >= arr_parts[0] && from_in_mins < arr_parts[1]) || (to_in_mins > arr_parts[0] && to_in_mins <= arr_parts[1])) {
+					bFoundAnyOverlap = true;
+					return false;
+				}
+
+				if (from_in_mins > arr_parts[0])
+					indexToInsert = index;
+			});
+
+			if (bFoundAnyOverlap) {
+				alert("Time slots can not overlap.");
+				return;
+			}
+
+			// Create a new option element
+			var newOption = $('<option>').val(from_in_mins + "-" + to_in_mins).text(getDisplayTextFromMinutes(from_in_mins, to_in_mins));
+			var targetOption = $("#list_bookingperiods option").eq(indexToInsert + 1);
+			newOption.insertBefore(targetOption);
 		});
 
 		// Added by Hennadii (2024-03-26)
