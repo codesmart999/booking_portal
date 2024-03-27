@@ -5,22 +5,6 @@ require_once('header.php');
 // Get the database connection
 $db = getDBConnection();
 
-$endDate = date('Y-m-d');
-
-if (isset($_GET['endDate'])) {
-    // Extract the value of startDate
-    $endDate = $_GET['endDate'];
-    
-    // Validate and format startDate
-    if (!empty($endDate) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $endDate)) {
-        // Split the date string into year, month, and day
-        // Proceed with further processing
-    } else {
-        $endDate = date('Y-m-d');
-    }
-}
-
-
 // Prepare and execute a query to retrieve data from the database for the specified date range and systemId
 $sql = "SELECT bookings.BookingId, bookings.BookingDate, bookings.BookingFrom, bookings.BookingTo, customers.FullName
         FROM bookings
@@ -64,7 +48,7 @@ $sql = "SELECT weekday, FromInMinutes, ToInMinutes, isAvailable
         FROM setting_bookingperiods
         WHERE SystemId = IFNULL(
                     (SELECT SystemId 
-                    FROM setting_weekdays 
+                    FROM setting_bookingperiods 
                     WHERE SystemId = ?
                     LIMIT 1),
                     0)";
@@ -76,7 +60,7 @@ $result = $stmt->get_result();
 
 // Initialize an array to store the available time slots
 $availableSlots = [];
-
+$bookCount = count($bookingInfo);
 // Fetch the booking periods
 while ($row = $result->fetch_assoc()) {
     $weekday = $row['weekday'];
@@ -101,9 +85,46 @@ foreach ($availableSlots[1] as $slot) {
 }
 // Iterate over each date in the date range
 $currentDate = strtotime($startDate);
-$endDate = strtotime($endDate);
+$endDateTime = strtotime($endDate);
 
-while ($currentDate <= $endDate) {
+$tableTitle = formatDateRange($startDate, $endDate);
+?>
+<thead>
+        <tr>
+            <td style="width:50%;  border-right: 0 solid black;" bgcolor="#C5D4F0" valign="top" align="center" >
+                
+                <font face="Arial" size="2" color="#000000">
+                    <span class="big-font">
+                        <b>
+                        <?php echo $tableTitle; ?>
+                        </b>
+                    </span> - <?php echo $bookCount; ?> bookings
+                </font>
+            </td>
+            <td style="width:50%; border-left: 0 solid black;" bgcolor="#C5D4F0" valign="top" align="center">
+                <span style="float: right">
+                    <a class="image-links" href="#"><img title="Show Whole Day" border="0" src="/images/day_blue_tick2.jpg"></a>
+                    <a class="image-links" href="#"><img title="Show/Hide Past Times" border="0" src="/images/day_yellow.jpg"></a>
+                    <a class="image-links" href="#"><img title="Show/Hide Unavailable Times" border="0" src="/images/day_orange.jpg"></a>
+                    <a class="image-links" href="#"><img title="Show/Hide Default Unavailable Times" border="0" src="/images/day_pink.jpg"></a>
+                    <a class="image-links" href="#"><img title="Show/Hide Bookings" border="0" src="/images/day_green.jpg"></a>
+                    <a class="image-links" href="#"><img title="Show/Hide Available Times" border="0" src="/images/day_white.jpg"></a>
+
+                    &nbsp;&nbsp;<font size="2" face="Arial" color="#0000FF">&nbsp; •
+
+                    <!-- </font><font size="2" face="Arial" color="#FFFFFF"> <a href="#">Group&nbsp;Bookings</a></font><font size="2" face="Arial" color="#0000FF">&nbsp; &nbsp;• 
+
+                    </font><font size="2" face="Arial" color="#FFFFFF"> <a href="#">Change&nbsp;Display</a></font><font size="2" face="Arial" color="#0000FF">&nbsp; &nbsp;•  -->
+                    </font><font size="2" face="Arial" color="#FFFFFF"> <a href="#" onmouseover="showLocation(true)" onmouseout="showLocation(false)">Show Location</a>
+
+                    </font>
+                </span>
+            </td>
+        </tr>
+    </thead>
+    <tbody>
+<?php 
+while ($currentDate <= $endDateTime) {
     $weekday = date('N', $currentDate) % 7; // Get the weekday (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
     echo '<tr id="trHeader"><td colspan="2">' . date('l, F j, Y', $currentDate) . '</td></tr>';
     if (isset($availableSlots[$weekday])) {
