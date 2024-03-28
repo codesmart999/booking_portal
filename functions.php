@@ -280,10 +280,14 @@
 	}
 
 		
-	function formatDateRange($startDate, $endDate) {
+	function formatDateRange($startDate, $endDate, $showFlag) {
+		if ($showFlag == MONTHLY_SHOWING_MODE){
+			return date('F, Y', strtotime($startDate));
+		}
+
 		$start = date('l, F j, Y', strtotime($startDate));
 		$end = date('l, F j, Y', strtotime($endDate));
-		
+
 		if ($startDate === $endDate) {
 			return $start;
 		} else {
@@ -297,7 +301,6 @@
 		// Extract starting values from each range
 		$startA = explode('-', $a)[0];
 		$startB = explode('-', $b)[0];
-
 		// Convert starting values to integers for comparison
 		$startA = intval($startA);
 		$startB = intval($startB);
@@ -308,4 +311,65 @@
 		}
 		return ($startA < $startB) ? -1 : 1;
 	}
+
+	function getNextDayFormatted($currentDate) {
+		// Get the timestamp for the next day
+		$nextDayTimestamp = strtotime('+1 day', $currentDate);
+
+		// Extract day, month, and year from the next day's timestamp
+		$dayOfWeek = date('l', $nextDayTimestamp);
+		$monthName = date('F', $nextDayTimestamp);
+		$dayOfMonth = date('j', $nextDayTimestamp);
+		$year = date('Y', $nextDayTimestamp);
+
+		// Return the formatted next day string
+		return $dayOfWeek . ", " . $monthName . " " . $dayOfMonth . ", " . $year;
+	}
+
+	function getWeekDates($inputDate) {
+		// Convert input date to timestamp
+		$inputTimestamp = strtotime($inputDate);
+
+		// Get the day of the week (0 for Sunday, 1 for Monday, ..., 6 for Saturday)
+		$dayOfWeek = date('w', $inputTimestamp);
+
+		// Calculate the start of the current week (Monday)
+		$startOfWeekTimestamp = strtotime('last Monday', $inputTimestamp);
+
+		// Calculate the end of the current week (Sunday)
+		$endOfWeekTimestamp = strtotime('next Sunday', $inputTimestamp);
+
+		// Calculate the start of the previous week (Monday)
+		$startOfPrevWeekTimestamp = strtotime('-1 week', $startOfWeekTimestamp);
+
+		// Calculate the end of the previous week (Sunday)
+		$endOfPrevWeekTimestamp = strtotime('-1 day', $startOfWeekTimestamp);
+
+		// Calculate the start of the next week (Monday)
+		$startOfNextWeekTimestamp = strtotime('+1 day', $endOfWeekTimestamp);
+
+		// Calculate the end of the next week (Sunday)
+		$endOfNextWeekTimestamp = strtotime('+1 week', $endOfWeekTimestamp);
+
+		// Format the dates
+		$startOfWeek = date('Y-m-d', $startOfWeekTimestamp);
+		$endOfWeek = date('Y-m-d', $endOfWeekTimestamp);
+		$startOfPrevWeek = date('Y-m-d', $startOfPrevWeekTimestamp);
+		$endOfPrevWeek = date('Y-m-d', $endOfPrevWeekTimestamp);
+		$startOfNextWeek = date('Y-m-d', $startOfNextWeekTimestamp);
+		$endOfNextWeek = date('Y-m-d', $endOfNextWeekTimestamp);
+
+		// Return the date ranges
+		return array(
+			'prevWeek' => array(
+				'start' => $startOfPrevWeek,
+				'end' => $endOfPrevWeek
+			),
+			'nextWeek' => array(
+				'start' => $startOfNextWeek,
+				'end' => $endOfNextWeek
+			)
+		);
+	}
+	
 ?>

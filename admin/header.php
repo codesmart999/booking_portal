@@ -2,6 +2,11 @@
 require_once('../config.php');
 require_once('../lib.php');
 
+define('DAYILY_SHOWING_MODE', 0);
+define('WEEKLY_SHOWING_MODE', 1);
+define('MONTHLY_SHOWING_MODE', 2);
+
+
 // Check Admin Login
 if( $_SESSION['User']['UserType'] != "A" && $_SERVER['REQUEST_URI'] != ADMIN_INDEX."/" ) {
     header('Location: '. SECURE_URL . LOGIN_PAGE, true, 301);

@@ -297,27 +297,6 @@ $prevDay = array(
                     ?>
                    
                 </tbody>
-                <tfoot>
-                    <tr>
-                        <td valign="middle" colspan="2">
-                            <input id="doChangeAvail" data-dochange="false" type="submit" value="Change Availability" name="action" class="buttons" onclick="return changeAvailability()">
-                            <span style="float:right; display: flex; align-items: center;">
-                                &nbsp;&nbsp;
-                                <font face="Arial" size="2">
-                                    <span class="big-font">
-                                        <b><?php echo $dayOfWeek . ", " . $monthName . " " . $dayOfMonth . ", " . $year; ?></b>
-                                    </span>&nbsp;&nbsp;</font>
-                                <a href="#" onclick="prevDay()">
-                                    <img border="0" title="Previous Day" src="/images/arrowhead_week_astern.gif" align="middle">
-                                </a>
-                                <img border="0" src="/images/day.gif" align="middle">
-                                <a href="#" onclick="nextDay()">
-                                    <img border="0" title="Next Day" src="/images/arrowhead_week_ahead.gif" align="middle">
-                                </a>
-                            </span>
-                        </td>
-                    </tr>
-                </tfoot>
             </table>
         </div>
     </div>
@@ -402,15 +381,6 @@ $prevDay = array(
         }
     }
 
-    function prevDay() {
-        const newUrl = `${window.location.origin}${window.location.pathname}?SystemId=${<?php echo $systemId; ?>}&startDate=<?php echo $prevDay['year']; ?>-<?php echo $prevDay['month']; ?>-<?php echo $prevDay['day']; ?>`;
-        window.location.href = newUrl;
-    }
-
-    function nextDay() {
-        const newUrl = `${window.location.origin}${window.location.pathname}?SystemId=${<?php echo $systemId; ?>}&startDate=<?php echo $nextDay['year']; ?>-<?php echo $nextDay['month']; ?>-<?php echo $nextDay['day']; ?>`;
-        window.location.href = newUrl;
-    }
 </script>
 <script src="./js/booking_access.js"></script>
 <?php
