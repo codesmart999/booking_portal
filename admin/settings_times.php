@@ -336,18 +336,18 @@ require_once('footer.php');
                 </div>
                 <div class="modal-body">
                 	<div class="step1" >
-						<?php 
-							for( $day = 0; $day < 7; $day++ ) { 
-								$dayLabel = date('l', strtotime("Sunday +{$day} days"));
-								// $dayKey = date('D', strtotime("Sunday +{$day} days"));
+                      <?php 
+                        for( $day = 0; $day < 7; $day++ ) { 
+                          $dayLabel = date('l', strtotime("Sunday +{$day} days"));
+                          // $dayKey = date('D', strtotime("Sunday +{$day} days"));
 
-								$optionKey = "choose_ir_day_" . $day;
-								$disabled = "";
-								if ( empty($arr_availability_by_weekday[$day]) ) {
-									$dayLabel .= ' (Unavailable)';
-									$disabled = "disabled";
-								}
-						?>
+                          $optionKey = "choose_ir_day_" . $day;
+                          $disabled = "";
+                          if ( empty($arr_availability_by_weekday[$day]) ) {
+                            $dayLabel .= ' (Unavailable)';
+                            $disabled = "disabled";
+                          }
+                      ?>
 	                    <div class="form-group">
 	                        <input class="choose_ir_day" type="radio" id="<?php echo $optionKey?>" name="weekday" value="<?php echo $day?>" <?php echo $disabled; ?>/>
 	                    	<label for="<?php echo $optionKey?>"><?php echo $dayLabel; ?></label>
@@ -421,9 +421,9 @@ require_once('footer.php');
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary btn-sm step1" data-dismiss="modal">Close</button>
-					<button type="button" class="btn btn-primary btn-sm step1 btn-next" disabled>Next</button>
-					<button type="button" class="btn btn-secondary btn-sm step2 d-none btn-previous">Previous</button>
-                    <button type="button" class="btn btn-primary btn-sm step2 d-none" name="Save" value="Save" id="btnIrSave">Save</button>
+                    <button type="button" class="btn btn-primary btn-sm step1 btn-next" disabled>Next</button>
+                    <button type="button" class="btn btn-secondary btn-sm step2 d-none btn-previous">Previous</button>
+                    <button type="button" class="btn btn-primary btn-sm step2 d-none" name="Save" value="Save" id="btnSave">Save</button>
                 </div>
             </div>
         </div>
@@ -447,45 +447,45 @@ require_once('footer.php');
                 </div>
                 <div class="modal-body">
                 	<div class="step1">
-						<?php 
-							for( $day = -1; $day < 7; $day++ ) { 
-								if( $day == -1 ) {
-									$dayLabel = "All days";
-									$dayKey = "All";
-								} else {
-									$dayLabel = date('l', strtotime("Sunday +{$day} days"));
-									$dayKey = date('D', strtotime("Sunday +{$day} days"));
-								}
+                  <?php 
+                    for( $day = 0; $day < 7; $day++ ) { 
+                      $dayLabel = date('l', strtotime("Sunday +{$day} days"));
+                      // $dayKey = date('D', strtotime("Sunday +{$day} days"));
 
-								$optionKey = $dayKey . "_period";
-								$checked = "";
-								if( isset($settingValue[$optionKey]) )
-									$checked = "checked";
-						?>
+                      $optionKey = "choose_bp_day_" . $day;
+                      $disabled = "";
+                      if ( empty($arr_availability_by_weekday[$day]) ) {
+                        $dayLabel .= ' (Unavailable)';
+                        $disabled = "disabled";
+                      }
+                  ?>  
 	                    <div class="form-group">
-	                        <input class="choose_available_day" type="radio" id="<?php echo $optionKey?>" name="availableDay" value="<?php echo $dayKey?>"/>
+                        <input class="choose_bp_day" type="radio" id="<?php echo $optionKey?>" name="weekday" value="<?php echo $day?>" <?php echo $disabled; ?>/>
 	                    	<label for="<?php echo $optionKey?>"><?php echo $dayLabel; ?></label>
 	                    </div>
 	                    <?php } ?>
 	                </div>
-	                <div class="step2 hide">
-	                	<table style="width:100%; margin-bottom:0">
-	                		<thead>
-	                    		<tr>
-	                    			<td width="10%">Select</td>
-	                    			<td width="25%">Start Time</td>
-	                    			<td width="25%">End Time</td>
-	                    			<td width="25%">Status</td>
-	                    		</tr>
-	                    	</thead>
-	                    	<tbody id="availablePeriodStatus">
-                    		</tbody>
-                    	</table>
-                    </div>
+	                <div class="step2 d-none">
+                    	<div class="form-group text-center mt-2 flex">
+                        <table border="0" cellspacing="0" cellpadding="5" width="100%" class="table step2 d-none">
+                          <thead>
+                          <tr>
+                            <td width="40" nowrap>Select</td>
+                            <td width="40" nowrap>Time</td>
+                            <td width="40" nowrap>Status</td>
+                          </tr>
+                          </thead>
+                          <tbody id="tbl_bookingperiods">
+                          </tbody>
+                        </table>
+                    	</div>
+	                </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-primary btn-sm" name="Submit" value="Submit" id="btnAvailableSave">Save</button>
+                    <button type="button" class="btn btn-secondary btn-sm step1" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary btn-sm step1 btn-next" disabled>Next</button>
+                    <button type="button" class="btn btn-secondary btn-sm step2 d-none btn-previous">Previous</button>
+                    <button type="button" class="btn btn-primary btn-sm step2 d-none" name="Save" value="Save" id="btnBpSave">Save</button>
                 </div>
             </div>
         </div>
@@ -529,7 +529,7 @@ require_once('footer.php');
 							?>
 							<tr>
 								<td width="20" nowrap>
-									<input class="chk_weekday_available" type="checkbox" id="<?php echo $optionKey?>" name="weekday_availability[]" value="<?php echo $day;?>" <?php echo $checked?>/>
+									<input class="chk_availability" type="checkbox" id="<?php echo $optionKey?>" name="period_availability[]" value="<?php echo $day;?>" <?php echo $checked?>/>
 								</td>
 								<td width="40" nowrap>
 									<label for="<?php echo $optionKey?>"><?php echo $dayLabel; ?></label>
@@ -557,8 +557,8 @@ require_once('footer.php');
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary btn-sm step1" data-dismiss="modal">Close</button>
-					<button type="button" class="btn btn-primary btn-sm step1 btn-next" data-modal-name="available_weekdays">Next</button>
-					<button type="button" class="btn btn-secondary btn-sm step2 btn-previous d-none" >Previous</button>
+                    <button type="button" class="btn btn-primary btn-sm step1 btn-next" data-modal-name="available_weekdays">Next</button>
+                    <button type="button" class="btn btn-secondary btn-sm step2 btn-previous d-none" >Previous</button>
                     <button type="submit" class="btn btn-primary btn-sm step2 d-none" name="Save" value="Save" id="btnSave">Save</button>
                 </div>
             </div>
@@ -595,7 +595,6 @@ require_once('footer.php');
 			$("#IRREGULAR_TIME_FORM .btn-next").removeAttr("disabled");
 			
 			var weekday = $(this).val();
-
 			var formData = [];
 			formData.push({ name: "action", value: "get_bookingperiods_by_weekday" });
 			formData.push({ name: "weekday", value: $(this).val() });
@@ -611,6 +610,49 @@ require_once('footer.php');
 					}
 				}
 	        });
+		});
+
+		// Updated by Awesome (2024-03-26)
+		$('.choose_bp_day').click(function(e){
+			$("#AVAILABLE_PERIOD_FORM .btn-next").removeAttr("disabled");
+
+			$('#tbl_bookingperiods').html();
+			
+			var weekday = $(this).val();
+			var formData = [];
+			formData.push({ name: "action", value: "get_bookingperiods_by_weekday" });
+			formData.push({ name: "weekday", value: $(this).val() });
+
+			$.post(apiUri, formData, function (data) {
+				var res = JSON.parse(data);
+				
+				if (res.data.length) {
+					for (var i = 0; i < res.data.length; i++) {
+						var bookingperiod_id = res.data[i].id;
+						var isAvailable = res.data[i].isAvailable;
+
+						var html = `<tr>
+							<td width="20" nowrap>
+								<input class="chk_availability" type="checkbox" id="unavailable_bookingperiod_${i}" name="unavailable_bookingperiod[${bookingperiod_id}]" ${isAvailable ? "" : "checked"} />
+							</td>
+							<td width="40" nowrap>
+								<label for="unavailable_bookingperiod_${i}">${res.data[i].DisplayText}</label>
+							</td>
+							<td width="40" nowrap>
+								<span id="unavailable_bookingperiod_${i}_status">${isAvailable ? "" : "Unavailable"}</span>
+							</td>
+						</tr>`;
+						
+						$('#tbl_bookingperiods').append(html);
+					}
+
+					$('.chk_availability').change(function() {
+						var str_optionKey = $(this).attr('id');
+						var isChecked = $(this).prop("checked");
+						$('#' + str_optionKey + "_status").html(isChecked ? "Unavailable" : "");
+					})
+				}
+			});
 		});
 
 		// Added by Hennadii (2024-03-26)
@@ -660,7 +702,7 @@ require_once('footer.php');
 		$('#btnIrSave').click(function(e){
 			e.preventDefault();
 			$("#list_bookingperiods option").prop('selected', true);
-
+      
 			var formData = $("#IRREGULAR_TIME_FORM").serializeArray();
 			formData.push({ name: "action", value: "save_booking_periods" });
 
@@ -678,38 +720,23 @@ require_once('footer.php');
 	        });
 		});
 
-		// Available / Unavailable Booking Period
-		$('.choose_available_day').click(function(e){
-			var formData = [];
-			formData.push({ name: "action", value: "get_available" });
-			formData.push({ name: "availableDay", value: $(this).val() });
+    	$('#btnBpSave').click(function(e){
+			e.preventDefault();
+
+			var formData = $("#AVAILABLE_PERIOD_FORM").serializeArray();
+
+			formData.push({ name: "action", value: "save_booking_periods_availability" });
 
 			$.post(apiUri, formData, function (data) {
 				var res = JSON.parse(data);
-				$("#AVAILABLE_PERIOD_FORM .step2").show();
-				if( res.data.length ) {
-					$("#availablePeriodStatus").empty();
-					for( var i=0; i<res.data.length; i++ ) {
-						item = res.data[i];
-						status = "Available", checked = "";
-						if( res.data[i].status == 'U') {
-							status = "Unavailable";
-							checked = "checked"
-						}
-
-						html = `<tr class="available_row">
-						<td><input type='checkbox' class='changeAvailable' ${checked}/></td>
-						<td>${res.data[i].from}
-						<input type='hidden' name='avaialble_from[]' value="${res.data[i].from}"/></td>
-						<td>${res.data[i].to}
-						<input type='hidden' name='avaialble_to[]' value="${res.data[i].to}"/></td>
-						<td><span class="status_label">${status}</span>
-						<input class="status_value" type='hidden' name='avaialble_status[]' value="${res.data[i].status}"/>
-						</td>
-						</tr>`;
-
-						$('#availablePeriodStatus').append( html );
-					}
+				
+				if (res.status == "error"){
+					$(".Message").removeClass("text-success");
+					$(".Message").addClass("text-danger");
+				} else {
+					$(".Message").removeClass("text-danger");
+					$(".Message").addClass("text-success");
+					location.reload();
 				}
 	        });
 		});
@@ -745,7 +772,7 @@ require_once('footer.php');
 		});
 
 		// Added by Hennadii
-		$('.chk_weekday_available').change(function() {
+		$('.chk_availability').change(function() {
 			var str_optionKey = $(this).attr('id');
 			var isChecked = $(this).prop("checked");
 			$('#' + str_optionKey + "_status").html(isChecked ? "Unavailable" : "");
