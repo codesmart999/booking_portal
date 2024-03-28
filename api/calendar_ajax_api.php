@@ -116,12 +116,18 @@ if (!empty($_REQUEST['year']) && !empty($_REQUEST['month']) && !empty($_REQUEST[
 
         $className = 'grade-available';
 
-        if ($weekAvailableInfo[$weekday]['nUnavailable'] != 0)
+        if (isset($weekAvailableInfo[$weekday]['nUnavailable']) && $weekAvailableInfo[$weekday]['nUnavailable'] != 0)
             $className = 'grade-unavailable';
-        if ($weekAvailableInfo[$weekday]['nAvailable'] != 0)
+        if (isset($weekAvailableInfo[$weekday]['nAvailable']) && $weekAvailableInfo[$weekday]['nAvailable'] != 0)
             $className = 'grade-available';
-        if (isset($monthAvailableInfo[$currentDate]['nUnavailable']) && $monthAvailableInfo[$currentDate]['nUnavailable']!= 0)
-            $className = 'grade-unavailable';
+       
+        if (isset($monthAvailableInfo[$currentDate]['nUnavailable']) && $monthAvailableInfo[$currentDate]['nUnavailable']!= 0){
+            if (isset($weekAvailableInfo[$weekday]['nUnavailable'])){
+                if (($weekAvailableInfo[$weekday]['nUnavailable'] + $weekAvailableInfo[$weekday]['nAvailable']) == $monthAvailableInfo[$currentDate]['nUnavailable'])
+                $className = 'grade-unavailable';
+            }
+        }
+            
         if (isset($monthAvailableInfo[$currentDate]['nAvailable']) && $monthAvailableInfo[$currentDate]['nAvailable']!= 0)
             $className = 'grade-available';
 

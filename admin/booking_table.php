@@ -241,15 +241,48 @@ while ($startDateTime <= $endDateTime) {
                     if (isset($bookingInfo[$dateYMD][$timeSlot])) { //booked case
                         $background_color = "CCFFCC"; //booked color
                         // Time slot is booked
-                        $fullName = $bookingInfo[$dateYMD][$timeSlot]["business_name"];
+                        $businessName = $bookingInfo[$dateYMD][$timeSlot]["business_name"];
+                        $booking_id = $bookingInfo[$dateYMD][$timeSlot]["booking_id"];
+                        $customer_id = $bookingInfo[$dateYMD][$timeSlot]["customer_id"];
                         $available = 2; //booked
+                        $hasComment = empty($bookingInfo[$dateYMD][$timeSlot]["booking_comments"]) ? 0 : 1;
+                        echo '&nbsp;
+                            <input type="checkbox" 
+                                name="timeslot" 
+                                date = "'.$startDateTime.'" 
+                                status = "'.$available.'" 
+                                style="margin-top: 5px" 
+                                value="'.$fromMinutes.'-'.$toMinutes.'">&nbsp;
+                            <span 
+                                style="background-color: #'.$background_color.'">'
+                                .$timeRender.'
+                            </span>';
+                        echo '<a target="main" href="#" onclick="bookedClientView('.$customer_id.');"><span class="CustName">'.$businessName.'<br/></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
+                        echo '<a target="main" href="#" onclick="bookedAddComments('.$booking_id.');">';
+                        if ($hasComment){
+                            echo '<img title="Comment Added" border="0" src="/images/comment.png">
+                                </a>';
+                        }else {
+                            echo '<img title="Add Comments" border="0" src="/images/nocomment.png">
+                                </a>';
+                        }
+                        echo '<a target="main" href="#" onclick="bookedQA('.$booking_id.');">
+                                <img title="Questions and Answers" border="0" src="/images/i1.png">
+                             </a>';
+                        echo '<a target="main" href="#" onclick="bookedViewBookingDetails('.$booking_id.');">
+                                    <img title="View Booking Details" border="0" src="/images/bookdetail.png">
+                                </a>
+                            <br>';
+                        
+                    }else {
+                        if (isset($availableSlots[$weekday][$timeSlot]) && $availableSlots[$weekday][$timeSlot] == 0) { //unavailable case
+                            $background_color = "FFE2A6"; //unavailable
+                            $available = 0; //unavailable
+                        }
+                        echo '&nbsp;<input type="checkbox" name="timeslot" date = "'.$startDateTime.'" status = "'.$available.'" style="margin-top: 5px" value="'.$fromMinutes.'-'.$toMinutes.'">&nbsp;<span style="background-color: #'.$background_color.'">'.$timeRender.'</span>&nbsp;&nbsp;<br/>';
                     }
 
-                    if (isset($availableSlots[$weekday][$timeSlot]) && $availableSlots[$weekday][$timeSlot] == 0) { //unavailable case
-                        $background_color = "FFE2A6"; //unavailable
-                        $available = 0; //unavailable
-                    }
-                    echo '&nbsp;<input type="checkbox" name="timeslot" date = "'.$startDateTime.'" status = "'.$available.'" style="margin-top: 5px" value="'.$fromMinutes.'-'.$toMinutes.'">&nbsp;<span style="background-color: #'.$background_color.'">'.$timeRender.'</span>&nbsp;'.$fullName.'&nbsp;<br/>';
+                    
                 }
             }
             echo '</font>';
@@ -292,7 +325,7 @@ while ($startDateTime <= $endDateTime) {
     }
 
     function nextDay() {
-        const newUrl = `${window.location.origin}${window.location.pathname}?SystemId=${<?php echo $systemId; ?>}&startDate=<?php echo $nextDay?>&endDate=<?php echo $prevDay;?>`;
+        const newUrl = `${window.location.origin}${window.location.pathname}?SystemId=${<?php echo $systemId; ?>}&startDate=<?php echo $nextDay?>&endDate=<?php echo $nextDay;?>`;
         window.location.href = newUrl;
     }
 
@@ -414,7 +447,9 @@ while ($startDateTime <= $endDateTime) {
                 // Get the value of the date attribute
                 var dateAttribute = this.getAttribute('date');
                 // Compare the dates
-                if (dateAttribute <= <?php echo $currentDateTime; ?>) {
+                var currentTimeMillis = new Date().getTime() / 1000;
+                if (dateAttribute <= currentTimeMillis) {
+                   
                     // Show alert if the date is in the past
                     alert('This Timeslot is in the past');
                     // Uncheck the checkbox

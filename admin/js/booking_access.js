@@ -12,3 +12,19 @@ function showPopupMenu() {
 function hidePopupMenu() {
   $("#popupMenu").hide(); // Hide the popup menu
 }
+
+function bookedClientView(customer_id) {
+  alert(customer_id);
+}
+
+function bookedAddComments(booking_id) {
+  alert(booking_id);
+}
+
+function bookedQA(booking_id) {
+  alert(booking_id);
+}
+
+function bookedViewBookingDetails(booking_id) {
+  alert(booking_id);
+}
