@@ -715,7 +715,16 @@
 	{
 		$db = getDBConnection();
 		// Prepare and execute a query to retrieve data from the database for the specified date range and systemId
-		$sql = "SELECT bookings.BookingId, bookings.BookingDate, bookings.BookingFrom, bookings.BookingTo, customers.FullName
+		$sql = "SELECT 
+					bookings.BookingId, 
+					bookings.BookingDate, 
+					bookings.BookingFrom, 
+					bookings.BookingTo, 
+					bookings.BookingCode, 
+					bookings.Comments, 
+					bookings.Message, 
+					customers.FullName, 
+					customers.CustomerId
 				FROM bookings
 				INNER JOIN customers ON bookings.CustomerId = customers.CustomerId
 				WHERE bookings.SystemId = ? AND DATE(bookings.BookingDate) BETWEEN ? AND ?";
@@ -724,7 +733,16 @@
 		$stmt = $db->prepare($sql);
 		$stmt->bind_param("iss", $systemId, $startDate, $endDate);
 		$stmt->execute();
-		$stmt->bind_result($bookingId, $bookingDate, $bookingFrom, $bookingTo, $fullName);
+		$stmt->bind_result(
+				$bookingId, 
+				$bookingDate, 
+				$bookingFrom, 
+				$bookingTo, 
+				$bookingCode,
+				$bookingComments,
+				$bookingMessage,
+				$customerBusiness, 
+				$customerId);
 
 		// Initialize an array to store the booking information
 		$bookingInfo = [];
@@ -734,7 +752,11 @@
 
 			$bookingTimeSlot = $bookingFrom . '-' . $bookingTo;
 			// Store the booking information for the corresponding date and time slot
-			$bookingInfo[$bookingDate][$bookingTimeSlot] = $fullName;
+			$bookingInfo[$bookingDate][$bookingTimeSlot]['customer_id'] = $customerId;
+			$bookingInfo[$bookingDate][$bookingTimeSlot]['business_name'] = $customerBusiness;
+			$bookingInfo[$bookingDate][$bookingTimeSlot]['booking_code'] = $bookingCode;
+			$bookingInfo[$bookingDate][$bookingTimeSlot]['booking_comments'] = $bookingComments;
+			$bookingInfo[$bookingDate][$bookingTimeSlot]['booking_id'] = $bookingId;
 		}
 		return $bookingInfo;
 	}
