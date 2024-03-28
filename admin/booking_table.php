@@ -151,10 +151,10 @@ while ($startDateTime <= $endDateTime) {
         $availableSlotCount = ($availableSlotCount < 0) ? 0 : $availableSlotCount; //exception handling;
         $unavailableSlotCount = ($unavailableSlotCount < 0) ? 0 : $unavailableSlotCount; //exception handling;
 
-        $dateTdStr = ($dateYMD == $todayDate)? '<td width="8%" bgcolor="yellow" valign="top" align="left"><font face="Arial" size="2">&nbsp;<a target="main" href="javascript:redirectToSelectedDate(&quot;'.$dateYMD.'&quot;)">' . $i . ' ' . $dayOfWeek . '</a></font></td>' :  '<td width="8%" bgcolor="FFFFFF" valign="top" align="left"><font face="Arial" size="2">&nbsp;<a target="main" href="javascript:redirectToSelectedDate(&quot;'.$dateYMD.'&quot;)">' . $i . ' ' . $dayOfWeek . '</a></font></td>';
-        $availableTdStr = $availableSlotCount > 0 ? '<td width="12%" bgcolor="FFFFFF" valign="top" align="left"><font face="Arial" size="2">&nbsp;' . $availableSlotCount . '&nbsp;<a target="main" href="javascript:changeAvailabilityDateRange(&quot;'.$startDateTime.'&quot;,1)">Change</a></font></td>' : '<td width="12%" bgcolor="FFFFFF" valign="top" align="left"><font face="Arial" size="2">&nbsp;&nbsp;</font></td>';
-        $unavailableTdStr = $unavailableSlotCount > 0 ? '<td width="12%" bgcolor="FFE2A6" valign="top" align="left"><font face="Arial" size="2">&nbsp;' . $unavailableSlotCount . '&nbsp;<a target="main" href="javascript:changeAvailabilityDateRange(&quot;'.$startDateTime.'&quot;,0)">Change</a></font></td>' : '<td width="12%" bgcolor="FFFFFF" valign="top" align="left"><font face="Arial" size="2">&nbsp;&nbsp;</font></td>'; 
-        $bookTdStr = $bookedCount > 0 ? '<td width="39%" bgcolor="CCFFCC" valign="top" align="left"><font face="Arial" size="2">&nbsp;'.$bookedCount.'&nbsp;&nbsp;<a target="main" href="javascript:redirectToSelectedDate(&quot;'.$dateYMD.'&quot;)">Book/Cancel</a>&nbsp;</font></td>' : '<td width="39%" bgcolor="FFFFFF" valign="top" align="left"><font face="Arial" size="2">&nbsp;&nbsp;&nbsp;&nbsp;<a target="main" href="javascript:redirectToSelectedDate(&quot;'.$dateYMD.'&quot;)">Book</a>&nbsp;</font></td>';
+        $dateTdStr = ($dateYMD == $todayDate)? '<td width="8%" bgcolor="yellow" valign="top" align="left"><font face="Arial" size="2">&nbsp;<a target="main" href="#" onclick="redirectToSelectedDate(&quot;'.$dateYMD.'&quot;)">' . $i . ' ' . $dayOfWeek . '</a></font></td>' :  '<td width="8%" bgcolor="FFFFFF" valign="top" align="left"><font face="Arial" size="2">&nbsp;<a target="main" href="#" onclick="redirectToSelectedDate(&quot;'.$dateYMD.'&quot;)">' . $i . ' ' . $dayOfWeek . '</a></font></td>';
+        $availableTdStr = $availableSlotCount > 0 ? '<td width="12%" bgcolor="FFFFFF" valign="top" align="left"><font face="Arial" size="2">&nbsp;' . $availableSlotCount . '&nbsp;<a target="main" href="#" onclick="changeAvailabilityDateRange(&quot;'.$startDateTime.'&quot;,1)">Change</a></font></td>' : '<td width="12%" bgcolor="FFFFFF" valign="top" align="left"><font face="Arial" size="2">&nbsp;&nbsp;</font></td>';
+        $unavailableTdStr = $unavailableSlotCount > 0 ? '<td width="12%" bgcolor="FFE2A6" valign="top" align="left"><font face="Arial" size="2">&nbsp;' . $unavailableSlotCount . '&nbsp;<a target="main" href="#" onclick="changeAvailabilityDateRange(&quot;'.$startDateTime.'&quot;,0)">Change</a></font></td>' : '<td width="12%" bgcolor="FFFFFF" valign="top" align="left"><font face="Arial" size="2">&nbsp;&nbsp;</font></td>'; 
+        $bookTdStr = $bookedCount > 0 ? '<td width="39%" bgcolor="CCFFCC" valign="top" align="left"><font face="Arial" size="2">&nbsp;'.$bookedCount.'&nbsp;&nbsp;<a target="main" href="#" onclick="redirectToSelectedDate(&quot;'.$dateYMD.'&quot;)">Book/Cancel</a>&nbsp;</font></td>' : '<td width="39%" bgcolor="FFFFFF" valign="top" align="left"><font face="Arial" size="2">&nbsp;&nbsp;&nbsp;&nbsp;<a target="main" href="#" onclick="redirectToSelectedDate(&quot;'.$dateYMD.'&quot;)">Book</a>&nbsp;</font></td>';
         echo '<tr id ="monthly_show_body_tr">' . $dateTdStr . $bookTdStr . $availableTdStr . $unavailableTdStr . '</tr>';
 
     } else { //if you click on Weeks calendary / Month calendar
@@ -242,7 +242,7 @@ while ($startDateTime <= $endDateTime) {
                     $fullName = $bookingInfo[$dateYMD][$timeSlot];
                     $available = 2; //booked
                 }
-                
+
                 if (isset($availableSlots[$weekday][$timeSlot]) && $availableSlots[$weekday][$timeSlot] == 0) { //unavailable case
                     $background_color = "FFE2A6"; //unavailable
                     $available = 0; //unavailable

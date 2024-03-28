@@ -12,40 +12,69 @@ if (!empty($_REQUEST['year']) && !empty($_REQUEST['month']) && !empty($_REQUEST[
     $year = (int)$_REQUEST['year'];
     $month = (int)$_REQUEST['month'];
 
-    // Fetch availability data from setting_weekdays
-    $query = "SELECT weekday, isAvailable 
-                FROM setting_weekdays 
-                WHERE SystemId = IFNULL(
-                    (SELECT SystemId 
-                    FROM setting_weekdays 
-                    WHERE SystemId = ?
-                    LIMIT 1),
-                    0
-                )";
-    $statement = $db->prepare($query);
-    $statement->bind_param("i", $systemId);
-    $success = $statement->execute();
-    if ($success === false) {
-        // Handle query execution failure
-        header('HTTP/1.1 500 Internal Server Error');
-        exit;
-    }
-
-    // Bind the result variables
-    $statement->bind_result($weekday, $isAvailable);
-
-    $arrayWeek = [];
-
-    // Fetch the availability data
-    while ($statement->fetch()) {
-        // Store each row in $arrayWeek using the weekday as the key
-        $arrayWeek[$weekday] = $isAvailable;
-    }
-
+    
     // Get the first and last day of the current month
     $firstDayOfMonth = date('Y-m-01', strtotime("$year-$month-01"));
     $lastDayOfMonth = date('Y-m-t', strtotime("$year-$month-01"));
 
+    $monthAvailableInfo = getAvailableCountInMonth($systemId, $firstDayOfMonth, $lastDayOfMonth);
+    //Sample Return Result 
+    // [2025-10-10] => Array
+    //     (
+    //         [nAvailable] => 7
+    //         [nUnavailable] => 0
+    //         [weekday] => 5
+    //     )
+
+    // [2025-10-13] => Array
+    //     (
+    //         [nAvailable] => 20
+    //         [nUnavailable] => 0
+    //         [weekday] => 1
+    //     )
+    $weekAvailableInfo = getAvailableCountInWeek($systemId);
+    //Sample Return Result
+    //[0] => Array
+    //     (
+    //         [nAvailable] => 0
+    //         [nUnavailable] => 4
+    //     )
+
+    // [1] => Array
+    //     (
+    //         [nAvailable] => 20
+    //         [nUnavailable] => 0
+    //     )
+
+    // [2] => Array
+    //     (
+    //         [nAvailable] => 0
+    //         [nUnavailable] => 30
+    //     )
+
+    // [3] => Array
+    //     (
+    //         [nAvailable] => 0
+    //         [nUnavailable] => 40
+    //     )
+
+    // [4] => Array
+    //     (
+    //         [nAvailable] => 0
+    //         [nUnavailable] => 30
+    //     )
+
+    // [5] => Array
+    //     (
+    //         [nAvailable] => 0
+    //         [nUnavailable] => 7
+    //     )
+
+    // [6] => Array
+    //     (
+    //         [nAvailable] => 0
+    //         [nUnavailable] => 4
+    //     )
     // Fetch booking data for the current month
     $query = "SELECT BookingDate, COUNT(*) AS numBookings 
           FROM bookings 
@@ -64,6 +93,7 @@ if (!empty($_REQUEST['year']) && !empty($_REQUEST['month']) && !empty($_REQUEST[
     // Bind the result variables
     $statement->bind_result($bookingDate, $numBookings);
 
+    //contain booked info
     $bookedDates = [];
 
     // Fetch the booking data
@@ -84,7 +114,16 @@ if (!empty($_REQUEST['year']) && !empty($_REQUEST['month']) && !empty($_REQUEST[
         // Determine the date in YYYY-MM-DD format
         $currentDate = $date->format('Y-m-d');
 
-        $className = isset($arrayWeek[$weekday]) && $arrayWeek[$weekday] == 1 ? 'grade-available' : 'grade-unavailable';
+        $className = 'grade-available';
+
+        if ($weekAvailableInfo[$weekday]['nUnavailable'] != 0)
+            $className = 'grade-unavailable';
+        if ($weekAvailableInfo[$weekday]['nAvailable'] != 0)
+            $className = 'grade-available';
+        if (isset($monthAvailableInfo[$currentDate]['nUnavailable']) && $monthAvailableInfo[$currentDate]['nUnavailable']!= 0)
+            $className = 'grade-unavailable';
+        if (isset($monthAvailableInfo[$currentDate]['nAvailable']) && $monthAvailableInfo[$currentDate]['nAvailable']!= 0)
+            $className = 'grade-available';
 
         // Check if the current date is booked and count the number of bookings
         $numBookings = isset($bookedDates[$currentDate]) ? $bookedDates[$currentDate] : 0;

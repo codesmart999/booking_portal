@@ -384,8 +384,139 @@
 			)
 		);
 	}
+
+
 	
+	//Get Available and Unavailable count in Date Range 
+	//USAGE: To show available/unavailable days on calendar
+	function getAvailableCountInMonth($systemId, $startDate, $endDate){
+		$db = getDBConnection();
+		// Prepare and execute a query to retrieve available time slots for the specified systemId
+		$sql = "SELECT 
+			SP_TB.SetDate, 
+			SUM(CASE WHEN COALESCE(SP_TB.isAvailable, Week_TB.isAvailable) = 1 THEN 1 ELSE 0 END) AS nAvailable,
+			SUM(CASE WHEN COALESCE(SP_TB.isAvailable, Week_TB.isAvailable) = 0 THEN 1 ELSE 0 END) AS nUnAvailable,
+			weekday
+			FROM 
+				(
+					SELECT 
+						SetDate, 
+						FromInMinutes, 
+						ToInMinutes, 
+						isAvailable, 
+						MOD(DAYOFWEEK(SetDate) + 6, 7) AS weekday_calc 
+					FROM 
+						setting_bookingperiods_special 
+					WHERE 
+						SystemId = ? AND 
+						Date(SetDate) BETWEEN ? AND ?
+				) AS SP_TB 
+			LEFT JOIN 
+				(
+					SELECT 
+						weekday, 
+						FromInMinutes, 
+						ToInMinutes, 
+						isAvailable 
+					FROM 
+						setting_bookingperiods 
+					WHERE 
+						SystemId = IFNULL(
+							(
+								SELECT 
+									SystemId 
+								FROM 
+									setting_bookingperiods 
+								WHERE 
+									SystemId = ?
+								LIMIT 1
+							),
+							0
+						)
+				) AS Week_TB 
+			ON 
+				Week_TB.FromInMinutes = SP_TB.FromInMinutes 
+				AND Week_TB.ToInMinutes = SP_TB.ToInMinutes 
+				AND Week_TB.weekday = SP_TB.weekday_calc
+			GROUP BY 
+				SP_TB.SetDate;
+				";
+		//RESULT
+		//SetDate		nAvailable		nUnAvailable
+		// 2025-10-10	7				0
+		// 2025-10-13	20				0
+		// 2025-10-17	3				0
+		// 2025-10-25	0				2
+		$stmt = $db->prepare($sql);
+		$stmt->bind_param("issi", $systemId, $startDate, $endDate, $systemId);
+		$stmt->execute();
+		$stmt->bind_result($setDate, $nAvailable, $nUnAvailable, $weekday);
+
+
+		// Initialize an array to store the available time slots
+		$result = [];
+		// Fetch the booking periods
+		while ($stmt->fetch()) {
+			$result[$setDate]["nAvailable"] = $nAvailable;
+			$result[$setDate]["nUnavailable"] = $nUnAvailable;
+			$result[$setDate]["weekday"] = $weekday;
+		}
+		return $result;
+		
+	}
+
+
+	//Get Available and Unavailable count in Date Range 
+	//USAGE: To show available/unavailable days on calendar
+	function getAvailableCountInWeek($systemId){
+		$db = getDBConnection();
+		// Prepare and execute a query to retrieve available time slots for the specified systemId
+		$sql = "SELECT 
+				weekday, 
+				COUNT(CASE WHEN isAvailable = 1 THEN 1 END) AS nAvailable,
+				COUNT(CASE WHEN isAvailable = 0 THEN 1 END) AS nUnavailable
+				FROM 
+					setting_bookingperiods 
+				WHERE 
+					SystemId = COALESCE(
+						(
+							SELECT 
+								SystemId 
+							FROM 
+								setting_bookingperiods 
+							WHERE 
+								SystemId = ?
+							LIMIT 1
+						),
+						0
+					)
+				GROUP BY
+					weekday;
+			";
+		//RESULT
+		//weekday		nAvailable		nUnAvailable
+		// 0			7				0
+		// 2			20				0
+		// 3			3				0
+		// 4			0				2
+		$stmt = $db->prepare($sql);
+		$stmt->bind_param("i", $systemId);
+		$stmt->execute();
+		$stmt->bind_result($weekday, $nAvailable, $nUnAvailable);
+
+		// Initialize an array to store the available time slots
+		$result = [];
+		// Fetch the booking periods
+		while ($stmt->fetch()) {
+			$result[$weekday]["nAvailable"] = $nAvailable;
+			$result[$weekday]["nUnavailable"] = $nUnAvailable;
+		}
+
+		return $result;
+	}
+
 	//get available/unvavailable time periods from setting_bookingperiods DB
+	//USAGE: For weekly show and dailys show case
 	function getTimePeriodsByWeek($systemId){
 
 		$db = getDBConnection();
@@ -432,7 +563,7 @@
 		return $result;
 	}
 
-	//
+	//Get one Week time periods with DateRange by comibining BookingPeriods DB and Special DB
 	function getWeeklyTimePeriodsByDateRange($systemId, $startDate, $endDate){
 		$db = getDBConnection();
 		// Prepare and execute a query to retrieve available time slots for the specified systemId
@@ -447,6 +578,13 @@
 						setting_bookingperiods.*
 					FROM
 						setting_bookingperiods
+					WHERE SystemId = IFNULL(
+						(SELECT SystemId 
+						FROM setting_bookingperiods 
+						WHERE SystemId = ?
+						LIMIT 1),
+						0
+					)
 				) AS Week_TB
 				LEFT JOIN
 				(
@@ -469,7 +607,7 @@
 				";
 
 		$stmt = $db->prepare($sql);
-		$stmt->bind_param("iss", $systemId, $startDate, $endDate);
+		$stmt->bind_param("iiss", $systemId, $systemId, $startDate, $endDate);
 		$stmt->execute();
 		$stmt->bind_result($weekday, $fromMinutes, $toMinutes, $isAvailable);
 
