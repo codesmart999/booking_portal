@@ -203,51 +203,54 @@ while ($startDateTime <= $endDateTime) {
             //     [isAvailable] => 0
             // )
             // )
-            $availableSlotCount = $availableSlots[$weekday][1];
-            $unavailableSlotCount = $availableSlots[$weekday][0];
+            $availableSlotCount = isset($availableSlots[$weekday][1]) ? $availableSlots[$weekday][1] : 0;
+            $unavailableSlotCount = isset($availableSlots[$weekday][0]) ? $availableSlots[$weekday][0] : 0;
             $halfIndex = ceil(($availableSlotCount + $unavailableSlotCount) / 2) + 1;
-            foreach ($availableSlots[$weekday]["timeslot"] as $slot) {
-                $index += 1;
+            if (isset($availableSlots[$weekday]["timeslot"])){//exception handling
+                
+                foreach ($availableSlots[$weekday]["timeslot"] as $slot) {
+                    $index += 1;
 
-                if ($index == $halfIndex) {
-                    echo '</font></td>';
-                    echo '<td width="50%" bgcolor="#FFFFFF" valign="top"><font face="arial" size="2">';
-                } 
-                $fromMinutes = $slot['FromInMinutes'];
-                $toMinutes = $slot['ToInMinutes'];
-                $isAvailable = $slot['isAvailable'];
+                    if ($index == $halfIndex) {
+                        echo '</font></td>';
+                        echo '<td width="50%" bgcolor="#FFFFFF" valign="top"><font face="arial" size="2">';
+                    } 
+                    $fromMinutes = $slot['FromInMinutes'];
+                    $toMinutes = $slot['ToInMinutes'];
+                    $isAvailable = $slot['isAvailable'];
 
-                $timeSlot = "$fromMinutes-$toMinutes";
+                    $timeSlot = "$fromMinutes-$toMinutes";
 
-                // Format the start time
-                $startHour = floor($fromMinutes / 60);
-                $startMinute = $fromMinutes % 60;
-                $startTime = sprintf('%d:%02d', $startHour, $startMinute);
+                    // Format the start time
+                    $startHour = floor($fromMinutes / 60);
+                    $startMinute = $fromMinutes % 60;
+                    $startTime = sprintf('%d:%02d', $startHour, $startMinute);
 
-                // Format the end time
-                $endHour = floor($toMinutes / 60);
-                $endMinute = $toMinutes % 60;
-                $endTime = sprintf('%d:%02d', $endHour, $endMinute);
+                    // Format the end time
+                    $endHour = floor($toMinutes / 60);
+                    $endMinute = $toMinutes % 60;
+                    $endTime = sprintf('%d:%02d', $endHour, $endMinute);
 
-                // Combine start and end times
-                $timeRender = date('g:i A', strtotime($startTime)) . ' - ' . date('g:i A', strtotime($endTime));
+                    // Combine start and end times
+                    $timeRender = date('g:i A', strtotime($startTime)) . ' - ' . date('g:i A', strtotime($endTime));
 
-                $background_color = "FFFFFF"; // White for available
-                $fullName = "";
-                $available = 1; //available
-                // Check if the time slot is booked
-                if (isset($bookingInfo[$dateYMD][$timeSlot])) { //booked case
-                    $background_color = "CCFFCC"; //booked color
-                    // Time slot is booked
-                    $fullName = $bookingInfo[$dateYMD][$timeSlot];
-                    $available = 2; //booked
+                    $background_color = "FFFFFF"; // White for available
+                    $fullName = "";
+                    $available = 1; //available
+                    // Check if the time slot is booked
+                    if (isset($bookingInfo[$dateYMD][$timeSlot])) { //booked case
+                        $background_color = "CCFFCC"; //booked color
+                        // Time slot is booked
+                        $fullName = $bookingInfo[$dateYMD][$timeSlot]["business_name"];
+                        $available = 2; //booked
+                    }
+
+                    if (isset($availableSlots[$weekday][$timeSlot]) && $availableSlots[$weekday][$timeSlot] == 0) { //unavailable case
+                        $background_color = "FFE2A6"; //unavailable
+                        $available = 0; //unavailable
+                    }
+                    echo '&nbsp;<input type="checkbox" name="timeslot" date = "'.$startDateTime.'" status = "'.$available.'" style="margin-top: 5px" value="'.$fromMinutes.'-'.$toMinutes.'">&nbsp;<span style="background-color: #'.$background_color.'">'.$timeRender.'</span>&nbsp;'.$fullName.'&nbsp;<br/>';
                 }
-
-                if (isset($availableSlots[$weekday][$timeSlot]) && $availableSlots[$weekday][$timeSlot] == 0) { //unavailable case
-                    $background_color = "FFE2A6"; //unavailable
-                    $available = 0; //unavailable
-                }
-                echo '&nbsp;<input type="checkbox" name="timeslot" date = "'.$startDateTime.'" status = "'.$available.'" style="margin-top: 5px" value="'.$fromMinutes.'-'.$toMinutes.'">&nbsp;<span style="background-color: #'.$background_color.'">'.$timeRender.'</span>&nbsp;'.$fullName.'&nbsp;<br/>';
             }
             echo '</font>';
             echo '</td>';
