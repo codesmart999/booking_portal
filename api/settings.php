@@ -71,12 +71,14 @@
 	// Added by Hennadii (2024-03-26)
 	if ($_POST['action'] == "save_booking_periods") {
 		$weekday = $_POST['weekday'];
+		$isAvailable = $_POST['isWeekdayAvailable'];
+
 		$arr_bookingperiods = isset($_POST['list_bookingperiods']) ? $_POST['list_bookingperiods'] : array();
 		$stmt = $db->prepare( 'DELETE FROM setting_bookingperiods WHERE SystemId = 0 AND weekday = ?' );
 		$stmt->bind_param('i', $weekday);
 		$stmt->execute() or die($stmt->error);
 
-		$stmt = $db->prepare("INSERT INTO `setting_bookingperiods` (weekday, FromInMinutes, ToInMinutes, isRegular) VALUES (?, ?, ?, ?)");
+		$stmt = $db->prepare("INSERT INTO `setting_bookingperiods` (weekday, FromInMinutes, ToInMinutes, isRegular, isAvailable) VALUES (?, ?, ?, ?, ?)");
 		foreach ($arr_bookingperiods as $booking_period) {
 			$arr_params = explode('-', $booking_period);
 			list($from_in_mins, $to_in_mins) = $arr_params;
@@ -85,7 +87,7 @@
 			if (count($arr_params) === 3)
 				$isRegular = 0;
 			
-			$stmt->bind_param('iiii', $weekday, $from_in_mins, $to_in_mins, $isRegular);
+			$stmt->bind_param('iiiii', $weekday, $from_in_mins, $to_in_mins, $isRegular, $isAvailable);
 			$stmt->execute() or die($stmt->error);
 		}
 
