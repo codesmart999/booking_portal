@@ -20,9 +20,22 @@ if ( isset($_POST['Submit'])){
 	$phone_number = $arrAppData['phone_number'];
 	$comment = $arrAppData['comment'];
 
-	$stmt = $db->prepare("INSERT INTO `customers` (FullName, Email, PostalAddr, Phone, Comment) VALUES (?, ?, ?, ?, ?)");
-	$stmt->bind_param('sssss', $business_name, $email_addr, $postAddress, $phone_number, $comment);
-	$stmt->execute() or die($stmt->error);
+	// Check Email
+	$stmt_check = $db->prepare("SELECT COUNT(*) FROM `customers` WHERE Email = ?");
+	$stmt_check->bind_param('s', $email_addr);
+	$stmt_check->execute();
+	$stmt_check->bind_result($count);
+	$stmt_check->fetch();
+	$stmt_check->close();
+
+	// If the user does not exist, insert the new record
+	if ($count == 0) {
+		$stmt = $db->prepare("INSERT INTO `customers` (FullName, Email, PostalAddr, Phone, Comment) VALUES (?, ?, ?, ?, ?)");
+		$stmt->bind_param('sssss', $business_name, $email_addr, $postAddress, $phone_number, $comment);
+		$stmt->execute() or die($stmt->error);
+	}
+
+	
 
 	$customerId = $db->insert_id;
 	$system_id = $arrAppData['service'];
