@@ -112,7 +112,8 @@ if (!empty($_REQUEST['year']) && !empty($_REQUEST['month']) && !empty($_REQUEST[
     echo json_encode($data);
 	exit();
 
-} if ($_POST['action'] == "change_availability") {
+} 
+if ($_POST['action'] == "change_availability") {
     $date = isset($_POST['date']) ? intval($_POST['date']) : 0;
     $value = isset($_POST['value']) ? $_POST['value'] : [];
     $systemId = isset($_POST['systemId']) ? $_POST['systemId'] : [];
@@ -130,7 +131,6 @@ if (!empty($_REQUEST['year']) && !empty($_REQUEST['month']) && !empty($_REQUEST[
         $invertedStatus = ($status == "1") ? "0" : "1";
         // Extract hours and minutes from the time slot
         list($fromInMinutes, $toInMinutes) = explode('-', $timeSlot);
-
      
         insertIntoUnavailableBookingPeriods($systemId, $date, $fromInMinutes, $toInMinutes, $invertedStatus);
         
@@ -142,49 +142,41 @@ if (!empty($_REQUEST['year']) && !empty($_REQUEST['month']) && !empty($_REQUEST[
     exit();
 }
 
-// Function to insert into unavailable_bookingperiods table
-function insertIntoUnavailableBookingPeriods($systemId, $date, $fromInMinutes, $toInMinutes, $status) {
-    // Get database connection
-    $db = getDBConnection();
-
-    // Format date
-    $formattedDate = date('Y-m-d', $date);
-
-    // Check if the record already exists
-    $stmt = $db->prepare("SELECT COUNT(*) FROM setting_bookingperiods_special WHERE SystemId = ? AND SetDate = ? AND FromInMinutes = ? AND ToInMinutes = ?");
-    $stmt->execute([$systemId, $formattedDate, $fromInMinutes, $toInMinutes]);
-    $stmt->bind_result($existingRecordsCount);
-    $stmt->fetch();
-    $stmt->close();
-
-    /// If no matching record found, insert the new record
-    if ($existingRecordsCount == 0) {
-        // Prepare and execute SQL statement to insert the record
-        $insertStmt = $db->prepare("INSERT INTO setting_bookingperiods_special (SystemId, SetDate, FromInMinutes, ToInMinutes, isAvailable) VALUES (?, ?, ?, ?, ?)");
-        if (!$insertStmt) {
-            die('Error in preparing insert SQL statement: ' . $db->error);
-        }
-
-        $insertStmt->bind_param('isiii', $systemId, $formattedDate, $fromInMinutes, $toInMinutes, $status);
-        if (!$insertStmt->execute()) {
-            die('Error executing insert SQL statement: ' . $insertStmt->error);
-        }
-
-        $insertStmt->close();
-    }else {
-        $updateStmt = $db->prepare("UPDATE setting_bookingperiods_special SET isAvailable = ? WHERE SystemId=? AND SetDate = ? AND FromInMinutes = ? AND ToInMinutes = ?");
-        if (!$updateStmt) {
-            die('Error in preparing insert SQL statement: ' . $db->error);
-        }
-
-        $updateStmt->bind_param('iisii', $status, $systemId, $formattedDate, $fromInMinutes, $toInMinutes);
-        if (!$updateStmt->execute()) {
-            die('Error executing insert SQL statement: ' . $updateStmt->error);
-        }
-
-        $updateStmt->close();
+if ($_POST['action'] == "change_availability_date_range") {
+    $date = isset($_POST['date']) ? intval($_POST['date']) : 0;
+    $flag = isset($_POST['flag']) ? intval($_POST['flag']) : [];
+    $systemId = isset($_POST['systemId']) ? $_POST['systemId'] : [];
+    
+    // Validate input
+    if ($date == 0 || empty($systemId)) {
+        // Handle invalid input, maybe return an error response
+        return;
     }
+    $formattedDate = date('Y-m-d', $date);
+     
+    // Get the day of the week (0 for Sunday, 1 for Monday, ..., 6 for Saturday)
+    $dayOfWeek = date('w', $date);
+    $availableTimeslot = getWeeklyTimePeriodsByDateRange($systemId, $formattedDate, $formattedDate);
+    //$availablesInfo = getTimePeriodsByDay($systemId, $formattedDate, $formattedDate);
+    //print_r($formattedDate);
+    foreach ($availableTimeslot[$dayOfWeek]["timeslot"] as $slot) {
+        if ($slot['isAvailable'] == $flag){
+            insertIntoUnavailableBookingPeriods($systemId, $date, $slot['FromInMinutes'], $slot['ToInMinutes'], !$flag);
+        }
+    }
+    // if (isset($availablesInfo[$formattedDate])){
+    //     foreach ($availablesInfo[$formattedDate] as $key => $value) {
+    //         // Check if the value is 1
+    //         $time_slot_parts = explode('-', $key);
+    //         if ($value == $flag) {
+    //             insertIntoUnavailableBookingPeriods($systemId, $date, $time_slot_parts[0], $time_slot_parts[1], !$flag);
+    //         }
+    //     }
+    // }
 
+    // Exit after processing
+    exit();
 }
+
 
 ?>

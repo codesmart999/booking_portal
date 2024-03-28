@@ -19,7 +19,7 @@ if ($result->num_rows > 0) {
         <div class="col-md-12" bgcolor="#FFFFFF" valign="top" align="left">
 
             <div class="card">
-                <div class="card-header" bgcolor="#E8EEF7">
+                <div class="card-header" bgcolor="#E8EEF7" style ="font-size: 1rem;">
                     Access an Individual System
                 </div>
                 <div class="card-body" bgcolor="#FFFFFF">

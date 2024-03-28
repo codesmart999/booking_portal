@@ -16,7 +16,7 @@ if (!isset($_GET['endDate'])) {
     $endDate = date('Y-m-t', strtotime($startDate));
 }
 
-//if request url is ?systemId=5 
+//if request url is url?systemId=5 then -> set start date as today
 if (!isset($_GET['startDate'])) {
     $startDate = date('Y-m-d');
     $endDate = date('Y-m-d');
@@ -26,85 +26,18 @@ if ($startDate === $endDate) {
     $showFlag = DAYILY_SHOWING_MODE;
 }
 
-// Prepare and execute a query to retrieve data from the database for the specified date range and systemId
-$sql = "SELECT bookings.BookingId, bookings.BookingDate, bookings.BookingFrom, bookings.BookingTo, customers.FullName
-        FROM bookings
-        INNER JOIN customers ON bookings.CustomerId = customers.CustomerId
-        WHERE bookings.SystemId = ? AND DATE(bookings.BookingDate) BETWEEN ? AND ?";
-
-// Prepare the statement
-$stmt = $db->prepare($sql);
-$stmt->bind_param("iss", $systemId, $startDate, $endDate);
-$stmt->execute();
-$stmt->bind_result($bookingId, $bookingDate, $bookingFrom, $bookingTo, $fullName);
-
-// Initialize an array to store the booking information
-$bookingInfo = [];
-
-// Fetch the results
-while ($stmt->fetch()) {
-
-    $bookingTimeSlot = $bookingFrom . '-' . $bookingTo;
-
-    // Store the booking information for the corresponding date and time slot
-    $bookingInfo[$bookingDate][$bookingTimeSlot] = $fullName;
-}
+//get BookedInfo
+$bookingInfo = getBookedInfo($systemId, $startDate, $endDate);
 
 //count bookings
 $bookCount = count($bookingInfo);
 
-// Prepare and execute a query to retrieve available time slots for the specified systemId
-$sql = "SELECT weekday, FromInMinutes, ToInMinutes, isAvailable
-        FROM setting_bookingperiods
-        WHERE SystemId = IFNULL(
-                    (SELECT SystemId 
-                    FROM setting_bookingperiods 
-                    WHERE SystemId = ?
-                    LIMIT 1),
-                    0)";
+//Get available/unavailable timesolt by week
+$availableSlots = getWeeklyTimePeriodsByDateRange($systemId, $startDate, $endDate);
 
-$stmt = $db->prepare($sql);
-$stmt->bind_param("i", $systemId);
-$stmt->execute();
+//Get available/unavailable timesolt in by day - special db
+//$availablesInfo = getTimePeriodsByDay($systemId, $startDate, $endDate);
 
-// Bind the result variables
-$stmt->bind_result($weekday, $fromMinutes, $toMinutes, $isAvailable);
-
-// Initialize an array to store the available time slots
-$availableSlots = [];
-// Fetch the booking periods
-while ($stmt->fetch()) {
-    // Store the available time slot information
-    $availableSlots[$weekday][] = [
-        'FromInMinutes' => $fromMinutes,
-        'ToInMinutes' => $toMinutes,
-        'isAvailable' => $isAvailable
-    ];
-}
-
-// Get the earliest available time slot for Monday (weekday 1)
-$earliestTimeSlot = PHP_INT_MAX;
-foreach ($availableSlots[1] as $slot) {
-    if ($slot['FromInMinutes'] < $earliestTimeSlot) {
-        $earliestTimeSlot = $slot['FromInMinutes'];
-    }
-}
-
-//Get unavailable time period with SytemId and Data Range
-$stmt = $db->prepare("SELECT SetDate, FromInMinutes, ToInMinutes, isAvailable FROM setting_bookingperiods_special WHERE SystemId = ? AND SetDate >= ? AND SetDate <= ?");
-
-$stmt->bind_param("iss", $systemId, $startDate, $endDate);
-$stmt->execute();
-$stmt->bind_result($date, $fromInMinutes, $toInMinutes, $isAvailable);
-
-// Initialize an array to store the booking information
-$availablesInfo = [];
-
-// Fetch the results
-while ($stmt->fetch()) {
-    $time_slot = $fromInMinutes . '-' . $toInMinutes;
-    $availablesInfo[$date][$time_slot] = $isAvailable;
-}
 
 // Iterate over each date in the date range
 $currentDateTime = strtotime(date('Y-m-d'));
@@ -112,7 +45,6 @@ $startDateTime = strtotime($startDate);
 $endDateTime = strtotime($endDate);
 
 $tableTitle = formatDateRange($startDate, $endDate, $showFlag);
-
 
 $weekDates = getWeekDates($endDate);
 //building TABLE HEADER part
@@ -194,7 +126,10 @@ if ($showFlag == MONTHLY_SHOWING_MODE){
 }
 $i = 0;
 while ($startDateTime <= $endDateTime) {
-    
+
+    $dateYMD = date('Y-m-d', $startDateTime); //change 17000000 -> 2024-03-22
+    //$dateYMDString = json_encode($dateYMD);
+
     if ($showFlag == MONTHLY_SHOWING_MODE){//if you click on Month(JAN -DEC) or Year calendar
         $i += 1;
         $dayOfWeek = date("D", $startDateTime); //This will output the day of the week (e.g., "Sat")
@@ -202,20 +137,25 @@ while ($startDateTime <= $endDateTime) {
 
         $availableSlotCount = 0;
         $unavailableSlotCount = 0;
-        $bookedCount = 0;
+
+        $bookedCount = isset($bookingInfo[$dateYMD]) ? count($bookingInfo[$dateYMD]) : 0;
 
         if (isset($availableSlots[$weekday])) {
-            $availableSlotCount = count($availableSlots[$weekday]);
-        } else {
-            $unavailableSlotCount = 20;
+            $availableSlotCount = $availableSlots[$weekday][1];
+            $unavailableSlotCount = $availableSlots[$weekday][0];
         }
+        $availableSlotCount -= $bookedCount;
 
-        $availableStr = $availableSlotCount > 0 ? '<td width="12%" bgcolor="FFFFFF" valign="top" align="left"><font face="Arial" size="2">&nbsp;' . $availableSlotCount . '&nbsp;<a target="main" href="javascript:changeAvailabilityDateRange("","N")">Change</a></font></td>' : '<td width="12%" bgcolor="FFFFFF" valign="top" align="left"><font face="Arial" size="2">&nbsp;&nbsp;</font></td>';
-        $unavailableStr = $unavailableSlotCount > 0 ? '<td width="12%" bgcolor="FFE2A6" valign="top" align="left"><font face="Arial" size="2">&nbsp;' . $unavailableSlotCount . '&nbsp;<a target="main" href="javascript:changeAvailabilityDateRange("","Y")">Change</a></font></td>' : '<td width="12%" bgcolor="FFFFFF" valign="top" align="left"><font face="Arial" size="2">&nbsp;&nbsp;</font></td>'; 
+        //some logic to calc because there is special booking periods
 
-        echo '<tr id ="monthly_show_body_tr">
-                <td width="8%" bgcolor="FFFFFF" valign="top" align="left"><font face="Arial" size="2">&nbsp;<a target="main" href="amenux.asp?dDate=4/30/2024">' . $i . ' ' . $dayOfWeek . '</a></font></td>
-                <td width="39%" bgcolor="FFFFFF" valign="top" align="left"><font face="Arial" size="2">&nbsp;&nbsp;&nbsp;&nbsp;<a target="main" href="amenux.asp?dDate=4/30/2024">Book</a>&nbsp;</font></td>' . $availableStr . $unavailableStr . '</tr>';
+        $availableSlotCount = ($availableSlotCount < 0) ? 0 : $availableSlotCount; //exception handling;
+        $unavailableSlotCount = ($unavailableSlotCount < 0) ? 0 : $unavailableSlotCount; //exception handling;
+
+        $dateTdStr = ($dateYMD == $todayDate)? '<td width="8%" bgcolor="yellow" valign="top" align="left"><font face="Arial" size="2">&nbsp;<a target="main" href="javascript:redirectToSelectedDate(&quot;'.$dateYMD.'&quot;)">' . $i . ' ' . $dayOfWeek . '</a></font></td>' :  '<td width="8%" bgcolor="FFFFFF" valign="top" align="left"><font face="Arial" size="2">&nbsp;<a target="main" href="javascript:redirectToSelectedDate(&quot;'.$dateYMD.'&quot;)">' . $i . ' ' . $dayOfWeek . '</a></font></td>';
+        $availableTdStr = $availableSlotCount > 0 ? '<td width="12%" bgcolor="FFFFFF" valign="top" align="left"><font face="Arial" size="2">&nbsp;' . $availableSlotCount . '&nbsp;<a target="main" href="javascript:changeAvailabilityDateRange(&quot;'.$startDateTime.'&quot;,1)">Change</a></font></td>' : '<td width="12%" bgcolor="FFFFFF" valign="top" align="left"><font face="Arial" size="2">&nbsp;&nbsp;</font></td>';
+        $unavailableTdStr = $unavailableSlotCount > 0 ? '<td width="12%" bgcolor="FFE2A6" valign="top" align="left"><font face="Arial" size="2">&nbsp;' . $unavailableSlotCount . '&nbsp;<a target="main" href="javascript:changeAvailabilityDateRange(&quot;'.$startDateTime.'&quot;,0)">Change</a></font></td>' : '<td width="12%" bgcolor="FFFFFF" valign="top" align="left"><font face="Arial" size="2">&nbsp;&nbsp;</font></td>'; 
+        $bookTdStr = $bookedCount > 0 ? '<td width="39%" bgcolor="CCFFCC" valign="top" align="left"><font face="Arial" size="2">&nbsp;'.$bookedCount.'&nbsp;&nbsp;<a target="main" href="javascript:redirectToSelectedDate(&quot;'.$dateYMD.'&quot;)">Book/Cancel</a>&nbsp;</font></td>' : '<td width="39%" bgcolor="FFFFFF" valign="top" align="left"><font face="Arial" size="2">&nbsp;&nbsp;&nbsp;&nbsp;<a target="main" href="javascript:redirectToSelectedDate(&quot;'.$dateYMD.'&quot;)">Book</a>&nbsp;</font></td>';
+        echo '<tr id ="monthly_show_body_tr">' . $dateTdStr . $bookTdStr . $availableTdStr . $unavailableTdStr . '</tr>';
 
     } else { //if you click on Weeks calendary / Month calendar
         
@@ -247,18 +187,29 @@ while ($startDateTime <= $endDateTime) {
             }
             $i += 1;
         }
-        if (isset($availableSlots[$weekday])) {
-?>          
+       ?>
             <tr id="<?php echo $startDateTime?>">
                 <td width="50%" colspan="1" bgcolor="#FFFFFF" valign="top">
                     <font face="arial" size="2">
 <?php       
             $index = 0;
             // Time slots are available for this weekday
-            $availableSlotCount = count($availableSlots[$weekday]);
-            foreach ($availableSlots[$weekday] as $slot) {
+            //[0] => Array (
+            // [0] => 1
+            // [1] => 0
+            // ["timeslot"] => Array (
+            //     [FromInMinutes] => 900
+            //     [ToInMinutes] => 960
+            //     [isAvailable] => 0
+            // )
+            // )
+            $availableSlotCount = $availableSlots[$weekday][1];
+            $unavailableSlotCount = $availableSlots[$weekday][0];
+            $halfIndex = ceil(($availableSlotCount + $unavailableSlotCount) / 2) + 1;
+            foreach ($availableSlots[$weekday]["timeslot"] as $slot) {
                 $index += 1;
-                if ($index == $availableSlotCount/2+1) {
+
+                if ($index == $halfIndex) {
                     echo '</font></td>';
                     echo '<td width="50%" bgcolor="#FFFFFF" valign="top"><font face="arial" size="2">';
                 } 
@@ -281,19 +232,18 @@ while ($startDateTime <= $endDateTime) {
                 // Combine start and end times
                 $timeRender = date('g:i A', strtotime($startTime)) . ' - ' . date('g:i A', strtotime($endTime));
 
-
                 $background_color = "FFFFFF"; // White for available
                 $fullName = "";
                 $available = 1; //available
                 // Check if the time slot is booked
-                if (isset($bookingInfo[date('Y-m-d', $startDateTime)][$timeSlot])) { //booked case
+                if (isset($bookingInfo[$dateYMD][$timeSlot])) { //booked case
                     $background_color = "CCFFCC"; //booked color
                     // Time slot is booked
-                    $fullName = $bookingInfo[date('Y-m-d', $startDateTime)][$timeSlot];
+                    $fullName = $bookingInfo[$dateYMD][$timeSlot];
                     $available = 2; //booked
                 }
-
-                if (isset($availablesInfo[date('Y-m-d', $startDateTime)][$timeSlot]) && $availablesInfo[date('Y-m-d', $startDateTime)][$timeSlot] == 0) { //unavailable case
+                
+                if (isset($availableSlots[$weekday][$timeSlot]) && $availableSlots[$weekday][$timeSlot] == 0) { //unavailable case
                     $background_color = "FFE2A6"; //unavailable
                     $available = 0; //unavailable
                 }
@@ -302,51 +252,7 @@ while ($startDateTime <= $endDateTime) {
             echo '</font>';
             echo '</td>';
             echo '</tr>';
-        } else {
-            ?>
-            <tr id="<?php echo $startDateTime?>">
-            <td width="50%" colspan="1" bgcolor="#FFFFFF" valign="top" >
-            <font face="arial" size="2">
-            <?php
-            $index = 0; 
-            // Render the entire day as unavailable in 15-minute intervals
-            for ($minutes = 480; $minutes < 1080; $minutes += 15) {
-                $index += 1;
-                if ($index == 21) {
-                    echo '</font>';
-                    echo '</td>';
-                    echo '<td width="50%" bgcolor="#FFFFFF" valign="top" >';
-                    echo '<font face="arial" size="2">';
-                } 
-                $background_color = "FFE2A6"; // Light yellow for unavailable
-
-                // Calculate start and end times
-                $timeSlot = $minutes.'-'.($minutes+15);
-
-                $startTimeHour = floor($minutes / 60);
-                $startTimeMinute = ($minutes % 60);
-                $endTimeHour = floor(($minutes + 15) / 60);
-                $endTimeMinute = (($minutes + 15) % 60);
-
-                // Format start time
-                $startTime = sprintf('%d:%02d', $startTimeHour, $startTimeMinute);
-
-                // Format end time
-                $endTime = sprintf('%d:%02d', $endTimeHour, $endTimeMinute);
-                // Combine start and end times
-                $available = 0;
-                
-                if (isset($availablesInfo[date('Y-m-d', $startDateTime)][$timeSlot]) && $availablesInfo[date('Y-m-d', $startDateTime)][$timeSlot] == 1) { //available case
-                    $background_color = "FFFFFF"; //available
-                    $available = 1; //available
-                }
-                $timeRender = date('g:i A', strtotime($startTime)) . ' - ' . date('g:i A', strtotime($endTime));
-                echo '&nbsp;<input type="checkbox" name="timeslot" date = "'.$startDateTime.'" status ="'.$available.'" style="margin-top: 5px"value="'.$minutes.'-'.($minutes + 15).'">&nbsp;<span style="background-color: #'.$background_color.'">'.$timeRender.'</span>&nbsp;&nbsp;<br/>';
-            }
-            echo '</font>';
-            echo '</td>';
-            echo '</tr>';
-        }
+        
         if ($showFlag == DAYILY_SHOWING_MODE) {
             ?>
             <tr id="trHeader">
@@ -460,6 +366,38 @@ while ($startDateTime <= $endDateTime) {
             console.error("Element with ID " + currentDate + " not found.");
         }
 
+    }
+
+    function redirectToSelectedDate(selectedDate){
+        
+        const newUrl = `${window.location.origin}${window.location.pathname}?SystemId=${<?php echo $systemId; ?>}&startDate=`+selectedDate+`&endDate=`+selectedDate;
+        window.location.href = newUrl;
+    }
+
+    //flag 'N' ==> make unavailable, 'Y' ==> make available
+    function changeAvailabilityDateRange(selectedDate, flag){
+        console.log(selectedDate);
+        // Send AJAX request only if data is not empty
+        $.ajax({
+            url: '/api/calendar_ajax_api.php', // URL to your PHP script that handles saving the value
+            method: 'POST',
+            data: {
+                action: 'change_availability_date_range', // Action parameter
+                date: selectedDate,
+                flag: flag,
+                systemId: <?php echo $systemId; ?>
+            },
+            success: function(response) {
+                // Handle the server response if needed
+                
+                console.log('Toggle value saved successfully.');
+                location.reload();
+            },
+            error: function(xhr, status, error) {
+                // Handle errors if the AJAX request fails
+                alert('Error saving value:', error);
+            }
+        });
     }
 
    // Get all checkbox elements

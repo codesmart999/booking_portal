@@ -385,4 +385,263 @@
 		);
 	}
 	
+	//get available/unvavailable time periods from setting_bookingperiods DB
+	function getTimePeriodsByWeek($systemId){
+
+		$db = getDBConnection();
+		// Prepare and execute a query to retrieve available time slots for the specified systemId
+		$sql = "SELECT weekday, FromInMinutes, ToInMinutes, isAvailable
+				FROM setting_bookingperiods
+				WHERE SystemId = IFNULL(
+							(SELECT SystemId 
+							FROM setting_bookingperiods 
+							WHERE SystemId = ?
+							LIMIT 1),
+							0)";
+
+		$stmt = $db->prepare($sql);
+		$stmt->bind_param("i", $systemId);
+		$stmt->execute();
+
+		// Bind the result variables
+		$stmt->bind_result($weekday, $fromMinutes, $toMinutes, $isAvailable);
+
+		// Initialize an array to store the available time slots
+		$result = [];
+		// Fetch the booking periods
+
+		$isAvailableCountByWeekday = []; //temp variable to check $weekday is new.
+		while ($stmt->fetch()) {
+			// Increment the corresponding counter based on isAvailable value and weekday
+			if (!isset($isAvailableCountByWeekday[$weekday])) {
+				$result[$weekday] = [
+					0 => 0,
+					1 => 0
+				];
+				$isAvailableCountByWeekday[$weekday] = 1; //temp
+			}
+			
+			// Store the available time slot information
+			$result[$weekday]["timeslot"][] = [
+				'FromInMinutes' => $fromMinutes,
+				'ToInMinutes' => $toMinutes,
+				'isAvailable' => $isAvailable
+			];
+			$result[$weekday][$isAvailable]+=1;
+		}
+		return $result;
+	}
+
+	//
+	function getWeeklyTimePeriodsByDateRange($systemId, $startDate, $endDate){
+		$db = getDBConnection();
+		// Prepare and execute a query to retrieve available time slots for the specified systemId
+		$sql = "SELECT
+				Week_TB.weekday, 
+				Week_TB.FromInMinutes, 
+				Week_TB.ToInMinutes, 
+				COALESCE(SP_TB.isAvailable, Week_TB.isAvailable) AS isAvailable
+			FROM
+				(
+					SELECT
+						setting_bookingperiods.*
+					FROM
+						setting_bookingperiods
+				) AS Week_TB
+				LEFT JOIN
+				(
+					SELECT
+						id,FromInMinutes, ToInMinutes, isAvailable,
+						MOD(DAYOFWEEK(SetDate) + 6, 7) AS weekday_calc
+					FROM
+						setting_bookingperiods_special
+					WHERE
+						systemId = ? AND
+						DATE(SetDate) BETWEEN ? AND ?
+				) AS SP_TB
+				ON 
+					Week_TB.FromInMinutes = SP_TB.FromInMinutes AND
+					Week_TB.ToInMinutes = SP_TB.ToInMinutes AND
+					Week_TB.weekday = SP_TB.weekday_calc
+			ORDER BY
+				Week_TB.weekday ASC,
+				Week_TB.FromInMinutes ASC
+				";
+
+		$stmt = $db->prepare($sql);
+		$stmt->bind_param("iss", $systemId, $startDate, $endDate);
+		$stmt->execute();
+		$stmt->bind_result($weekday, $fromMinutes, $toMinutes, $isAvailable);
+
+
+		// Initialize an array to store the available time slots
+		$result = [];
+		// Fetch the booking periods
+
+		$isAvailableCountByWeekday = []; //temp variable to check $weekday is new.
+		while ($stmt->fetch()) {
+			// Increment the corresponding counter based on isAvailable value and weekday
+			if (!isset($isAvailableCountByWeekday[$weekday])) {
+				$result[$weekday] = [
+					0 => 0,
+					1 => 0
+				];
+				$isAvailableCountByWeekday[$weekday] = 1; //temp
+			}
+
+			$time_slot = $fromMinutes . '-' . $toMinutes;
+			// Store the available time slot information
+			$result[$weekday]["timeslot"][] = [
+				'FromInMinutes' => $fromMinutes,
+				'ToInMinutes' => $toMinutes,
+				'isAvailable' => $isAvailable
+			];
+			$result[$weekday][$time_slot] = $isAvailable;
+			$result[$weekday][$isAvailable]+=1;
+		}
+		return $result;
+		
+	}
+
+	//get available/unvavailable time periods from setting_bookingperiods DB BY weekid
+	function getOneDayTimePeriodByWeekDay($systemId, $weekday){
+
+		$db = getDBConnection();
+		// Prepare and execute a query to retrieve available time slots for the specified systemId
+		$sql = "SELECT weekday, FromInMinutes, ToInMinutes, isAvailable
+				FROM setting_bookingperiods
+				WHERE SystemId = IFNULL(
+							(SELECT SystemId 
+							FROM setting_bookingperiods 
+							WHERE SystemId = ?
+							LIMIT 1),
+							0) AND weekday = ?";
+
+		$stmt = $db->prepare($sql);
+		$stmt->bind_param("ii", $systemId, $weekday);
+		$stmt->execute();
+
+		// Bind the result variables
+		$stmt->bind_result($weekday, $fromMinutes, $toMinutes, $isAvailable);
+
+		// Initialize an array to store the available time slots
+		$result = [];
+		// Fetch the booking periods
+
+		$isAvailableCountByWeekday = []; //temp variable to check $weekday is new.
+		while ($stmt->fetch()) {
+			// Increment the corresponding counter based on isAvailable value and weekday
+			if (!isset($isAvailableCountByWeekday[$weekday])) {
+				$result[$weekday] = [
+					0 => 0,
+					1 => 0
+				];
+				$isAvailableCountByWeekday[$weekday] = 1; //temp
+			}
+			
+			// Store the available time slot information
+			$result[$weekday]["timeslot"][] = [
+				'FromInMinutes' => $fromMinutes,
+				'ToInMinutes' => $toMinutes,
+				'isAvailable' => $isAvailable
+			];
+			$result[$weekday][$isAvailable]+=1;
+		}
+		return $result;
+	}
+
+	//Get available/unavailable time periods from setting_bookingperiods_special DB
+	function getTimePeriodsByDay($systemId, $startDate, $endDate){
+		
+		$db = getDBConnection();
+		//Get unavailable time period with SytemId and Data Range
+		$stmt = $db->prepare("SELECT SetDate, FromInMinutes, ToInMinutes, isAvailable FROM setting_bookingperiods_special WHERE SystemId = ? AND SetDate >= ? AND SetDate <= ?");
+
+		$stmt->bind_param("iss", $systemId, $startDate, $endDate);
+		$stmt->execute();
+		$stmt->bind_result($date, $fromInMinutes, $toInMinutes, $isAvailable);
+
+		// Initialize an array to store the booking information
+		$availablesInfo = [];
+
+		// Fetch the results
+		while ($stmt->fetch()) {
+			$time_slot = $fromInMinutes . '-' . $toInMinutes;
+			$availablesInfo[$date][$time_slot] = $isAvailable;
+		}
+		return $availablesInfo;
+	}
+
+	//getBookedInfo
+	function getBookedInfo($systemId, $startDate, $endDate)
+	{
+		$db = getDBConnection();
+		// Prepare and execute a query to retrieve data from the database for the specified date range and systemId
+		$sql = "SELECT bookings.BookingId, bookings.BookingDate, bookings.BookingFrom, bookings.BookingTo, customers.FullName
+				FROM bookings
+				INNER JOIN customers ON bookings.CustomerId = customers.CustomerId
+				WHERE bookings.SystemId = ? AND DATE(bookings.BookingDate) BETWEEN ? AND ?";
+
+		// Prepare the statement
+		$stmt = $db->prepare($sql);
+		$stmt->bind_param("iss", $systemId, $startDate, $endDate);
+		$stmt->execute();
+		$stmt->bind_result($bookingId, $bookingDate, $bookingFrom, $bookingTo, $fullName);
+
+		// Initialize an array to store the booking information
+		$bookingInfo = [];
+
+		// Fetch the results
+		while ($stmt->fetch()) {
+
+			$bookingTimeSlot = $bookingFrom . '-' . $bookingTo;
+			// Store the booking information for the corresponding date and time slot
+			$bookingInfo[$bookingDate][$bookingTimeSlot] = $fullName;
+		}
+		return $bookingInfo;
+	}
+
+	// Function to insert into unavailable_bookingperiods table
+	function insertIntoUnavailableBookingPeriods($systemId, $date, $fromInMinutes, $toInMinutes, $status) {
+		// Get database connection
+		$db = getDBConnection();
+
+		// Format date
+		$formattedDate = date('Y-m-d', $date);
+
+		// Check if the record already exists
+		$stmt = $db->prepare("SELECT COUNT(*) FROM setting_bookingperiods_special WHERE SystemId = ? AND SetDate = ? AND FromInMinutes = ? AND ToInMinutes = ?");
+		$stmt->execute([$systemId, $formattedDate, $fromInMinutes, $toInMinutes]);
+		$stmt->bind_result($existingRecordsCount);
+		$stmt->fetch();
+		$stmt->close();
+
+		/// If no matching record found, insert the new record
+		if ($existingRecordsCount == 0) {
+			// Prepare and execute SQL statement to insert the record
+			$insertStmt = $db->prepare("INSERT INTO setting_bookingperiods_special (SystemId, SetDate, FromInMinutes, ToInMinutes, isAvailable) VALUES (?, ?, ?, ?, ?)");
+			if (!$insertStmt) {
+				die('Error in preparing insert SQL statement: ' . $db->error);
+			}
+
+			$insertStmt->bind_param('isiii', $systemId, $formattedDate, $fromInMinutes, $toInMinutes, $status);
+			if (!$insertStmt->execute()) {
+				die('Error executing insert SQL statement: ' . $insertStmt->error);
+			}
+
+			$insertStmt->close();
+		}else {
+			$updateStmt = $db->prepare("UPDATE setting_bookingperiods_special SET isAvailable = ? WHERE SystemId=? AND SetDate = ? AND FromInMinutes = ? AND ToInMinutes = ?");
+			if (!$updateStmt) {
+				die('Error in preparing insert SQL statement: ' . $db->error);
+			}
+
+			$updateStmt->bind_param('iisii', $status, $systemId, $formattedDate, $fromInMinutes, $toInMinutes);
+			if (!$updateStmt->execute()) {
+				die('Error executing insert SQL statement: ' . $updateStmt->error);
+			}
+
+			$updateStmt->close();
+    	}
+	}
 ?>

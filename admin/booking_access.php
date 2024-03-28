@@ -105,9 +105,12 @@ $dayOfWeek = date('D', $timestamp);
 $dayOfMonth = date('j', $timestamp);
 
 $currentDateTime = strtotime(date('Y-m-d'));
-$current_year = date('Y'); // Get the current year
-$current_month = date('n'); // Get the current month without leading zeros
-$current_day = date('d'); // Get the current day
+
+$todayDate = date('Y-m-d');
+
+$this_year = date('Y'); // Get the current year
+$this_month = date('n'); // Get the current month without leading zeros
+$this_day = date('d'); // Get the current day
 $array_weeks_in_month = cal_weeks_in_month($year, $month);
 
 $date = new DateTime("$year-$month-$day");
@@ -133,7 +136,7 @@ $prevDay = $date->format('Y-m-d')
             <table width="100%" border="0" cellspacing="0" cellpadding="0">
                 <tr bgcolor="#FFFFFF" style="border-size: 0px;">
                     <td bgcolor="#FFFFFF" valign="top" width="20%" align="left" style="white-space: nowrap">
-                        <font face="Arial" color="#000000" size="2"><strong>Administrator:</strong> <?php echo $administratorName; ?></font>
+                        <font face="Arial" color="#000000" size="2"><strong>Administrator:</strong> <span style ="font-size: 0.9rem; font-weight: bold;"><?php echo $administratorName; ?></span></font>
                     </td>
                     <td bgcolor="#FFFFFF" valign="top" width="80%" style="text-align: right">
                         <font face="Arial" color="#000000" size="2"><b>
@@ -245,7 +248,7 @@ $prevDay = $date->format('Y-m-d')
                                 echo '<tr>';
                                 foreach ($array_months as $index => $month) {
                                     $class = '';
-                                    if ($current_year == $year && $current_month == $index + 1) {
+                                    if ($this_year == $year && $this_month == $index + 1) {
                                         $class = 'highlight-month'; // Add highlight class if it's the current month and year
                                     }
                                     echo '<td class="month-name ' . $class . '" data-year="' . $year . '" data-month="' . ($index + 1) . '">' . $month . '</td>';
@@ -271,7 +274,7 @@ $prevDay = $date->format('Y-m-d')
                                 <?php                           
                                     echo '<tr>';
                                     for ($i = $year - 1; $i <= $year + 2; $i++) {
-                                        $class = ($i == $current_year) ? 'highlight-year' : ''; // Add highlight class to the current year
+                                        $class = ($i == $this_year) ? 'highlight-year' : ''; // Add highlight class to the current year
                                         echo '<td class="year-number ' . $class . '" data-year="' . $i . '">' . $i . '</td>';
                                     }
                                     echo '</tr>';
@@ -361,7 +364,7 @@ $prevDay = $date->format('Y-m-d')
     });
 
     function redirectToToday() {
-        const newUrl = `${window.location.origin}${window.location.pathname}?SystemId=${<?php echo $systemId; ?>}&startDate=<?php echo $current_day;?>&endDate=<?php echo $current_day;?>`;
+        const newUrl = `${window.location.origin}${window.location.pathname}?SystemId=${<?php echo $systemId; ?>}&startDate=<?php echo $this_day;?>&endDate=<?php echo $this_day;?>`;
         window.location.href = newUrl;
     }                                                                                                   
 
