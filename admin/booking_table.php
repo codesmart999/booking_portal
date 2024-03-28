@@ -16,6 +16,12 @@ if (!isset($_GET['endDate'])) {
     $endDate = date('Y-m-t', strtotime($startDate));
 }
 
+//if request url is ?systemId=5 
+if (!isset($_GET['startDate'])) {
+    $startDate = date('Y-m-d');
+    $endDate = date('Y-m-d');
+}
+
 if ($startDate === $endDate) {
     $showFlag = DAYILY_SHOWING_MODE;
 }
@@ -28,46 +34,24 @@ $sql = "SELECT bookings.BookingId, bookings.BookingDate, bookings.BookingFrom, b
 
 // Prepare the statement
 $stmt = $db->prepare($sql);
-
-// Bind parameters
 $stmt->bind_param("iss", $systemId, $startDate, $endDate);
-
-// Execute the statement
 $stmt->execute();
-
-// Bind result variables
 $stmt->bind_result($bookingId, $bookingDate, $bookingFrom, $bookingTo, $fullName);
-
-// Initialize an array to store the booking information
-$bookings = [];
-
-// Fetch the results
-while ($stmt->fetch()) {
-    $bookings[] = [
-        'BookingId' => $bookingId,
-        'BookingDate' => $bookingDate,
-        'BookingFrom' => $bookingFrom,
-        'BookingTo' => $bookingTo,
-        'FullName' => $fullName
-    ];
-}
 
 // Initialize an array to store the booking information
 $bookingInfo = [];
 
-// Store the booking information in an array indexed by date and time slot
-foreach ($bookings as $booking) {
-    $bookingDate = $booking['BookingDate'];
-    $bookingFrom = $booking['BookingFrom'];
-    $bookingTo = $booking['BookingTo'];
-    $fullName = $booking['FullName'];
+// Fetch the results
+while ($stmt->fetch()) {
 
-    // Format the booking time slot
     $bookingTimeSlot = $bookingFrom . '-' . $bookingTo;
 
     // Store the booking information for the corresponding date and time slot
     $bookingInfo[$bookingDate][$bookingTimeSlot] = $fullName;
 }
+
+//count bookings
+$bookCount = count($bookingInfo);
 
 // Prepare and execute a query to retrieve available time slots for the specified systemId
 $sql = "SELECT weekday, FromInMinutes, ToInMinutes, isAvailable
@@ -98,8 +82,6 @@ while ($stmt->fetch()) {
     ];
 }
 
-$bookCount = count($bookingInfo);
-
 // Get the earliest available time slot for Monday (weekday 1)
 $earliestTimeSlot = PHP_INT_MAX;
 foreach ($availableSlots[1] as $slot) {
@@ -107,6 +89,23 @@ foreach ($availableSlots[1] as $slot) {
         $earliestTimeSlot = $slot['FromInMinutes'];
     }
 }
+
+//Get unavailable time period with SytemId and Data Range
+$stmt = $db->prepare("SELECT SetDate, FromInMinutes, ToInMinutes, isAvailable FROM setting_bookingperiods_special WHERE SystemId = ? AND SetDate >= ? AND SetDate <= ?");
+
+$stmt->bind_param("iss", $systemId, $startDate, $endDate);
+$stmt->execute();
+$stmt->bind_result($date, $fromInMinutes, $toInMinutes, $isAvailable);
+
+// Initialize an array to store the booking information
+$availablesInfo = [];
+
+// Fetch the results
+while ($stmt->fetch()) {
+    $time_slot = $fromInMinutes . '-' . $toInMinutes;
+    $availablesInfo[$date][$time_slot] = $isAvailable;
+}
+
 // Iterate over each date in the date range
 $currentDateTime = strtotime(date('Y-m-d'));
 $startDateTime = strtotime($startDate);
@@ -114,8 +113,8 @@ $endDateTime = strtotime($endDate);
 
 $tableTitle = formatDateRange($startDate, $endDate, $showFlag);
 
-$weekDates = getWeekDates($endDate);
 
+$weekDates = getWeekDates($endDate);
 //building TABLE HEADER part
 if ($showFlag == MONTHLY_SHOWING_MODE){
 ?>
@@ -196,7 +195,7 @@ if ($showFlag == MONTHLY_SHOWING_MODE){
 $i = 0;
 while ($startDateTime <= $endDateTime) {
     
-    if ($showFlag == MONTHLY_SHOWING_MODE){
+    if ($showFlag == MONTHLY_SHOWING_MODE){//if you click on Month(JAN -DEC) or Year calendar
         $i += 1;
         $dayOfWeek = date("D", $startDateTime); //This will output the day of the week (e.g., "Sat")
         $weekday = date('N', $startDateTime) % 7;
@@ -204,17 +203,22 @@ while ($startDateTime <= $endDateTime) {
         $availableSlotCount = 0;
         $unavailableSlotCount = 0;
         $bookedCount = 0;
+
         if (isset($availableSlots[$weekday])) {
             $availableSlotCount = count($availableSlots[$weekday]);
         } else {
             $unavailableSlotCount = 20;
         }
+
         $availableStr = $availableSlotCount > 0 ? '<td width="12%" bgcolor="FFFFFF" valign="top" align="left"><font face="Arial" size="2">&nbsp;' . $availableSlotCount . '&nbsp;<a target="main" href="javascript:changeAvailabilityDateRange("","N")">Change</a></font></td>' : '<td width="12%" bgcolor="FFFFFF" valign="top" align="left"><font face="Arial" size="2">&nbsp;&nbsp;</font></td>';
         $unavailableStr = $unavailableSlotCount > 0 ? '<td width="12%" bgcolor="FFE2A6" valign="top" align="left"><font face="Arial" size="2">&nbsp;' . $unavailableSlotCount . '&nbsp;<a target="main" href="javascript:changeAvailabilityDateRange("","Y")">Change</a></font></td>' : '<td width="12%" bgcolor="FFFFFF" valign="top" align="left"><font face="Arial" size="2">&nbsp;&nbsp;</font></td>'; 
+
         echo '<tr id ="monthly_show_body_tr">
                 <td width="8%" bgcolor="FFFFFF" valign="top" align="left"><font face="Arial" size="2">&nbsp;<a target="main" href="amenux.asp?dDate=4/30/2024">' . $i . ' ' . $dayOfWeek . '</a></font></td>
                 <td width="39%" bgcolor="FFFFFF" valign="top" align="left"><font face="Arial" size="2">&nbsp;&nbsp;&nbsp;&nbsp;<a target="main" href="amenux.asp?dDate=4/30/2024">Book</a>&nbsp;</font></td>' . $availableStr . $unavailableStr . '</tr>';
-    } else {
+
+    } else { //if you click on Weeks calendary / Month calendar
+        
         $weekday = date('N', $startDateTime) % 7; // Get the weekday (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
         if ($showFlag == WEEKLY_SHOWING_MODE){
             if ($i == 0)
@@ -226,7 +230,7 @@ while ($startDateTime <= $endDateTime) {
                         <input id="doChangeAvail" style="float: left;" data-dochange="false" type="submit" value="Change Availability" name="action" class="buttons" onclick="return changeAvailability(<?php echo strtotime('-1 day', $startDateTime);?>)">
                         &nbsp;&nbsp;
                         <span style="text-align: center;">
-                            <?php echo getNextDayFormatted($startDateTime); ?>
+                            <?php echo date('l, F j, Y', $startDateTime); ?>
                         </span>
                         <span style="float: right; display: flex;">
                             <a href="#" onclick="prevWeek()">
@@ -244,11 +248,11 @@ while ($startDateTime <= $endDateTime) {
             $i += 1;
         }
         if (isset($availableSlots[$weekday])) {
-?>
+?>          
             <tr id="<?php echo $startDateTime?>">
                 <td width="50%" colspan="1" bgcolor="#FFFFFF" valign="top">
                     <font face="arial" size="2">
-<?php
+<?php       
             $index = 0;
             // Time slots are available for this weekday
             $availableSlotCount = count($availableSlots[$weekday]);
@@ -287,7 +291,11 @@ while ($startDateTime <= $endDateTime) {
                     // Time slot is booked
                     $fullName = $bookingInfo[date('Y-m-d', $startDateTime)][$timeSlot];
                     $available = 2; //booked
-                    
+                }
+
+                if (isset($availablesInfo[date('Y-m-d', $startDateTime)][$timeSlot]) && $availablesInfo[date('Y-m-d', $startDateTime)][$timeSlot] == 0) { //unavailable case
+                    $background_color = "FFE2A6"; //unavailable
+                    $available = 0; //unavailable
                 }
                 echo '&nbsp;<input type="checkbox" name="timeslot" date = "'.$startDateTime.'" status = "'.$available.'" style="margin-top: 5px" value="'.$fromMinutes.'-'.$toMinutes.'">&nbsp;<span style="background-color: #'.$background_color.'">'.$timeRender.'</span>&nbsp;'.$fullName.'&nbsp;<br/>';
             }
@@ -313,6 +321,8 @@ while ($startDateTime <= $endDateTime) {
                 $background_color = "FFE2A6"; // Light yellow for unavailable
 
                 // Calculate start and end times
+                $timeSlot = $minutes.'-'.($minutes+15);
+
                 $startTimeHour = floor($minutes / 60);
                 $startTimeMinute = ($minutes % 60);
                 $endTimeHour = floor(($minutes + 15) / 60);
@@ -324,8 +334,14 @@ while ($startDateTime <= $endDateTime) {
                 // Format end time
                 $endTime = sprintf('%d:%02d', $endTimeHour, $endTimeMinute);
                 // Combine start and end times
+                $available = 0;
+                
+                if (isset($availablesInfo[date('Y-m-d', $startDateTime)][$timeSlot]) && $availablesInfo[date('Y-m-d', $startDateTime)][$timeSlot] == 1) { //available case
+                    $background_color = "FFFFFF"; //available
+                    $available = 1; //available
+                }
                 $timeRender = date('g:i A', strtotime($startTime)) . ' - ' . date('g:i A', strtotime($endTime));
-                echo '&nbsp;<input type="checkbox" name="timeslot" date = "'.$startDateTime.'" status ="0" style="margin-top: 5px"value="'.$minutes.'-'.($minutes + 15).'">&nbsp;<span style="background-color: #'.$background_color.'">'.$timeRender.'</span>&nbsp;&nbsp;<br/>';
+                echo '&nbsp;<input type="checkbox" name="timeslot" date = "'.$startDateTime.'" status ="'.$available.'" style="margin-top: 5px"value="'.$minutes.'-'.($minutes + 15).'">&nbsp;<span style="background-color: #'.$background_color.'">'.$timeRender.'</span>&nbsp;&nbsp;<br/>';
             }
             echo '</font>';
             echo '</td>';
@@ -342,11 +358,11 @@ while ($startDateTime <= $endDateTime) {
                     </span>
                     <span style="float: right; display: flex;">
                         <a href="#" onclick="prevDay()">
-                            <img border="0" title="Previous Week" src="/images/arrowhead_week_astern.gif" align="middle">
+                            <img border="0" title="Previous Day" src="/images/arrowhead_week_astern.gif" align="middle">
                         </a>
                         <img border="0" src="/images/day.gif" align="middle">
                         <a href="#" onclick="nextDay()">
-                            <img border="0" title="Next Week" src="/images/arrowhead_week_ahead.gif" align="middle">
+                            <img border="0" title="Next Day" src="/images/arrowhead_week_ahead.gif" align="middle">
                         </a>
                     </span>
                 </td>
@@ -362,12 +378,12 @@ while ($startDateTime <= $endDateTime) {
 
 <script>
     function prevDay() {
-        const newUrl = `${window.location.origin}${window.location.pathname}?SystemId=${<?php echo $systemId; ?>}&startDate=<?php echo $prevDay['year']; ?>-<?php echo $prevDay['month']; ?>-<?php echo $prevDay['day']; ?>`;
+        const newUrl = `${window.location.origin}${window.location.pathname}?SystemId=${<?php echo $systemId; ?>}&startDate=<?php echo $prevDay;?>&endDate=<?php echo $prevDay;?>`;
         window.location.href = newUrl;
     }
 
     function nextDay() {
-        const newUrl = `${window.location.origin}${window.location.pathname}?SystemId=${<?php echo $systemId; ?>}&startDate=<?php echo $nextDay['year']; ?>-<?php echo $nextDay['month']; ?>-<?php echo $nextDay['day']; ?>`;
+        const newUrl = `${window.location.origin}${window.location.pathname}?SystemId=${<?php echo $systemId; ?>}&startDate=<?php echo $nextDay?>&endDate=<?php echo $prevDay;?>`;
         window.location.href = newUrl;
     }
 
@@ -421,15 +437,18 @@ while ($startDateTime <= $endDateTime) {
                     data: {
                         action: 'change_availability', // Action parameter
                         date: date,
-                        value: data
+                        value: data,
+                        systemId: <?php echo $systemId; ?>
                     },
                     success: function(response) {
                         // Handle the server response if needed
+                        
                         console.log('Toggle value saved successfully.');
+                        location.reload();
                     },
                     error: function(xhr, status, error) {
                         // Handle errors if the AJAX request fails
-                        console.error('Error saving toggle value:', error);
+                        alert('Error saving value:', error);
                     }
                 });
             } else {

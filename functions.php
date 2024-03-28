@@ -346,7 +346,7 @@
 		$startOfWeekTimestamp = strtotime('last Monday', $inputTimestamp);
 
 		// Calculate the end of the current week (Sunday)
-		$endOfWeekTimestamp = strtotime('next Sunday', $inputTimestamp);
+		$endOfWeekTimestamp = strtotime('this Sunday', $inputTimestamp);
 
 		// Calculate the start of the previous week (Monday)
 		$startOfPrevWeekTimestamp = strtotime('-1 week', $startOfWeekTimestamp);
