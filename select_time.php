@@ -51,7 +51,7 @@ if ( $arrAppData['location'] == ""){
 			<tr>
 				<td colspan = "2" class="text-center app_desc fst-italic">
 					<p><?php echo $arrServices[$arrAppData['service']]['fullname']; ?></p>
-					<p><b><?php echo $arrLocations[$arrAppData['location']]['name']; ?></b> - <?php echo $arrLocations[$arrAppData['location']]['address']; ?></p>
+					<p><b><?php echo getLocationNameById($arrAppData['location']); ?></b> - <?php echo getLocationAddressById($arrAppData['location']); ?></p>
 					<?php echo $message; ?>
 				</td>
 			</tr>

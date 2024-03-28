@@ -39,15 +39,24 @@
 	}
 
 	// get location name from location Id
-	function getLocationName( $locationId) {
+	function getLocationNameById( $locationId) {
 		global $arrLocations;
 
-		foreach( $arrLocations as $name => $arrInfo ) {
-			if( $arrInfo['id'] == $locationId )
-				return $name;
+		if (empty($arrLocations[$locationId])) {
+			return "";
 		}
+		
+		return $arrLocations[$locationId]['name'];
+	}
 
-		return "";
+	function getLocationAddressById( $locationId) {
+		global $arrLocations;
+
+		if (empty($arrLocations[$locationId])) {
+			return "";
+		}
+		
+		return $arrLocations[$locationId]['address'];
 	}
 
     // Check Availability by Selected Date
