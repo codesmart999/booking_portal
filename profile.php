@@ -46,8 +46,12 @@ if ( isset($_POST['Submit'])){
 	$booking_code = generateRandomCode($customerId . $system_id . $arrAppData['date_appointment'] . $booking_from . $booking_to);
 	
 	$stmt = $db->prepare("INSERT INTO `bookings` (ServiceId, SystemId, CustomerId, BookingDate, BookingFrom, BookingTo, BookingCode) VALUES (?, ?, ?, ?, ?, ?, ?)");
-	$stmt->bind_param('iiissss', $service_id, $system_id, $customerId, $booking_date, $booking_from, $booking_to, $booking_code);
-	$stmt->execute() or die($stmt->error);
+	foreach ($arrAppData['booking_time'] as $time) {
+		list($booking_from, $booking_to) = explode('-', $time);
+
+		$stmt->bind_param('iiissss', $service_id, $system_id, $customerId, $booking_date, $booking_from, $booking_to, $booking_code);
+		$stmt->execute() or die($stmt->error);
+	}
 	$stmt->close();
 
 	$bookID = $db->insert_id;
