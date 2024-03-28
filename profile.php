@@ -5,38 +5,33 @@ require_once('header.php');
 
 $db = getDBConnection();
 
-if( isset($_POST['Submit'])){
+if ( isset($_POST['Submit'])){
 	
-	$bussiness_man = $arrAppData['business_name'];
+	$business_name = $arrAppData['business_name'];
 	$email_addr = $arrAppData['email_addr'];
 
-	$postAddress = array (
+	$postAddress = json_encode(array (
 		'street' => $arrAppData['street'],
 		'city' => $arrAppData['city'],
 		'state' => $arrAppData['state'],
 		'postcode' => $arrAppData['postcode']
-	);
+	));
 
 	$phone_number = $arrAppData['phone_number'];
 	$comment = $arrAppData['comment'];
 
-	//print_r($arrAppData['booking_time'][0]);
-
 	$stmt = $db->prepare("INSERT INTO `customers` (FullName, Email, PostalAddr, Phone, Comment) VALUES (?, ?, ?, ?, ?)");
-	$stmt->bind_param('sssss', $bussiness_man, $email_addr, json_encode($postAddress), $phone_number, $comment);
+	$stmt->bind_param('sssss', $business_name, $email_addr, $postAddress, $phone_number, $comment);
 	$stmt->execute() or die($stmt->error);
 
 	$customerId = $db->insert_id;
 	$system_id = $arrAppData['service'];
-	$date_appointment = DateTime::createFromFormat('d/m/Y', $arrAppData['date_appointment']);
+	$date_appointment = DateTime::createFromFormat('d/m/Y', $arrAppData['date_appointment_final']);
 	$booking_date = $date_appointment->format('Y-m-d');
-	$booking_time = $arrAppData['booking_time'][0];
-	$times = extractStartAndEndTime($booking_time);
+	
+	list($booking_from, $booking_to) = extractStartAndEndTime($arrAppData['booking_time']);
 
-	$booking_from =$times["start_time"];
-	$booking_to = $times["end_time"];
-
-	$booking_code = generateRandomCode($customerId.$system_id.$arrAppData['date_appointment'].$booking_from.$booking_to);
+	$booking_code = generateRandomCode($customerId . $system_id . $arrAppData['date_appointment'] . $booking_from . $booking_to);
 	
 	$stmt = $db->prepare("INSERT INTO `bookings` (SystemId, CustomerId, BookingDate, BookingFrom, BookingTo, BookingCode) VALUES (?, ?, ?, ?, ?, ?)");
 	$stmt->bind_param('iissss', $system_id, $customerId, $booking_date, $booking_from, $booking_to, $booking_code);
@@ -50,14 +45,14 @@ if( isset($_POST['Submit'])){
 	}
 	
 	exit(0);
-	
 }
 
-if( $arrAppData['booking_time'] == ""){
+if ( $arrAppData['booking_time'] == ""){
 	header('Location: '. SECURE_URL . SELECT_PAGE, true, 301);
 	exit(0);
 }
-$format_date = format_date( $arrAppData['date_appointment'] );
+
+$format_date = format_date( $arrAppData['date_appointment_final'] );
 ?>
 
 <h4 class="page-name">Profile ></h4>
@@ -71,11 +66,13 @@ $format_date = format_date( $arrAppData['date_appointment'] );
 			<tr>
 				<td colspan = "2" class="text-center app_desc fst-italic">
 					<p><?php echo $format_date; ?></p>
-					<p><?php echo $arrAppData['location']; ?></p>
+					<p><?php echo $arrLocations[$arrAppData['location']]['name'] . ' - ' . $arrLocations[$arrAppData['location']]['address']; ?></p>
 					<p><?php echo $arrServices[$arrAppData['service']]['fullname']; ?></p>
 					<?php
 						foreach( $arrAppData['booking_time'] as $time ){
-							if( $time ) echo '<p>'.$arrTimeSheets[$time].'</p>';
+							list($from_in_mins, $to_in_mins) = explode('-', $time);
+
+							echo '<p>' . get_display_text_from_minutes($from_in_mins, $to_in_mins) . '</p>';
 						}
 					?>
 				</td>

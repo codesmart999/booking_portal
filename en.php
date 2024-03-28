@@ -7,7 +7,8 @@
 		"name_exists" => "Sorry, That name is alrady used.",
 		"success_register" => "Registered Successully.",
 		"success_update" => "Updated Successully.",
-		"success_delete" => "Deleted Successully."
+		"success_delete" => "Deleted Successully.",
+		"err_consecutive_time" => "Sorry! Please Select Consecutive Times",
 	];
 
 	function _lang( $key ) {
