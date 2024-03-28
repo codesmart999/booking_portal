@@ -3,6 +3,11 @@
 $menu = "select";
 require_once('header.php');
 
+if ( !isset($_SESSION['arrAvailableSystems']) || !isset($_SESSION['arrSystemBookingPeriodsByDaysDiff']) ){
+	header('Location: '. SECURE_URL . START_PAGE, true, 301);
+	exit(0);
+}
+
 $arrAvailableSystems = $_SESSION['arrAvailableSystems'];
 $arrSystemBookingPeriodsByDaysDiff = $_SESSION['arrSystemBookingPeriodsByDaysDiff'];
 $message = '';
@@ -18,15 +23,17 @@ if ( isset($_POST['Submit'])){
 	foreach ($arr_booking_times as $value) {
 		list($from_in_mins, $to_in_mins) = explode('-', $value);
 		if ($prev_ending != -1 && $prev_ending != $from_in_mins) {
-			$prev_ending = -1;
+			$prev_ending = -1; // Time slots are not consecutive.
 			break;
 		}
 		$prev_ending = $to_in_mins;
 	}
 	
+	// Are time slots consecutive?
 	if ($prev_ending != -1) {
 		$_SESSION['appointment_data']['date_appointment_final'] = date('d/m/Y', strtotime($booking_date));
 		$_SESSION['appointment_data']['booking_time'] = $arr_booking_times;
+		$_SESSION['appointment_data']['system'] = $system_id;
 
 		header('Location: '. SECURE_URL . PROFILE_PAGE, true, 301);
 		exit(0);
@@ -87,10 +94,12 @@ if ( $arrAppData['location'] == ""){
 										$val = get_display_text_from_minutes($objBookingPeriod['FromInMinutes'], $objBookingPeriod['ToInMinutes']);
 										
 										$selected = "";
-										// foreach( $arrAppData['booking_time'] as $book_time ){
-										// 	if( $key == $book_time && $arrAppData['date_appointment'] == $date )
-										// 		$selected = "selected";
-										// }
+										if ($arrAppData['system'] == $systemId) {
+											foreach( $arrAppData['booking_time'] as $book_time ){
+												if ( $key == $book_time && $arrAppData['date_appointment'] == $date )
+													$selected = "selected";
+											}
+										}
 										
 										echo '<option value="' . $key . '" ' . $selected . '>' . $val . '</option>';
 									}

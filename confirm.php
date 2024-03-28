@@ -3,15 +3,16 @@
 $menu = "confirm";
 require_once('header.php');
 
-if( $arrAppData['business_name'] == ""){
+if ( empty($arrAppData['business_name']) ) {
 	header('Location: '. SECURE_URL . PROFILE_PAGE, true, 301);
 	exit(0);
 }
 
 $format_date = format_date( $arrAppData['date_appointment'] );
 $booking_code = $arrAppData['booking_code'];
+$arrSystems = $_SESSION['arrAvailableSystems'];
 // TODO: uncomment after testing
-//unset($_SESSION['appointment_data']);
+unset($_SESSION['appointment_data']);
 ?>
 
 <h4 class="page-name">Confirmation ></h4>
@@ -22,14 +23,16 @@ $booking_code = $arrAppData['booking_code'];
 	<table class="appForm table">
 		<tr>
 			<td colspan = "2" class="text-center app_desc fst-italic">
-				<p><?php echo $format_date . " " . $arrAppData['location']; ?></p>
+				<p><?php echo $format_date; ?></p>
 				<p><?php echo $arrServices[$arrAppData['service']]['fullname']; ?></p>
+				<p><b><?php echo getLocationNameById($arrAppData['location']); ?></b> - <?php echo getLocationAddressById($arrAppData['location']); ?></p>
+				<p><?php echo $arrSystems[$arrAppData['system']]['fullname']; ?></p>
+				<p>Reference: <?php echo $booking_code; ?></p>
 				<?php
-					foreach( $arrAppData['booking_time'] as $time ){
-						if( $time ) {
-							echo '<p>Nurse Newcastle</p>';
-							echo '<p>'.$time.' Reference: '.$booking_code.'</p>';
-						}
+					foreach ( $arrAppData['booking_time'] as $time ) {
+						list($from_in_mins, $to_in_mins) = explode('-', $time);
+
+						echo '<p>' . get_display_text_from_minutes($from_in_mins, $to_in_mins) . '</p>';
 					}
 				?>
 				<p>Business Name: <?php echo $arrAppData['business_name']; ?></p>

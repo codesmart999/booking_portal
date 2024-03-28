@@ -21,24 +21,23 @@ if ( isset($_POST['Submit'])){
 	$comment = $arrAppData['comment'];
 
 	// Check Email
-	$stmt_check = $db->prepare("SELECT COUNT(*) FROM `customers` WHERE Email = ?");
-	$stmt_check->bind_param('s', $email_addr);
-	$stmt_check->execute();
-	$stmt_check->bind_result($count);
-	$stmt_check->fetch();
-	$stmt_check->close();
-
+	$customerId = 0;
+	$stmt = $db->prepare("SELECT CustomerId FROM `customers` WHERE Email = ?");
+	$stmt->bind_param('s', $email_addr);
+	$stmt->execute();
+	$stmt->bind_result($customerId);
+	$stmt->store_result();
+	
 	// If the user does not exist, insert the new record
-	if ($count == 0) {
+	if (!$stmt->fetch() || empty($customerId)) {
 		$stmt = $db->prepare("INSERT INTO `customers` (FullName, Email, PostalAddr, Phone, Comment) VALUES (?, ?, ?, ?, ?)");
 		$stmt->bind_param('sssss', $business_name, $email_addr, $postAddress, $phone_number, $comment);
 		$stmt->execute() or die($stmt->error);
+		$customerId = $db->insert_id;
 	}
-
 	
-
-	$customerId = $db->insert_id;
-	$system_id = $arrAppData['service'];
+	$service_id = $arrAppData['service'];
+	$system_id = $arrAppData['system'];
 	$date_appointment = DateTime::createFromFormat('d/m/Y', $arrAppData['date_appointment_final']);
 	$booking_date = $date_appointment->format('Y-m-d');
 	
@@ -46,9 +45,10 @@ if ( isset($_POST['Submit'])){
 
 	$booking_code = generateRandomCode($customerId . $system_id . $arrAppData['date_appointment'] . $booking_from . $booking_to);
 	
-	$stmt = $db->prepare("INSERT INTO `bookings` (SystemId, CustomerId, BookingDate, BookingFrom, BookingTo, BookingCode) VALUES (?, ?, ?, ?, ?, ?)");
-	$stmt->bind_param('iissss', $system_id, $customerId, $booking_date, $booking_from, $booking_to, $booking_code);
+	$stmt = $db->prepare("INSERT INTO `bookings` (ServiceId, SystemId, CustomerId, BookingDate, BookingFrom, BookingTo, BookingCode) VALUES (?, ?, ?, ?, ?, ?, ?)");
+	$stmt->bind_param('iiissss', $service_id, $system_id, $customerId, $booking_date, $booking_from, $booking_to, $booking_code);
 	$stmt->execute() or die($stmt->error);
+	$stmt->close();
 
 	$bookID = $db->insert_id;
 
@@ -60,7 +60,7 @@ if ( isset($_POST['Submit'])){
 	exit(0);
 }
 
-if ( $arrAppData['booking_time'] == ""){
+if ( empty($arrAppData['booking_time']) ){
 	header('Location: '. SECURE_URL . SELECT_PAGE, true, 301);
 	exit(0);
 }

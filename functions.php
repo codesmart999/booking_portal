@@ -73,6 +73,10 @@
     	
 		$result = getAvailableSystems( $selectedDate );
 
+		unset($_SESSION['arrAvailableSystems']);
+		unset($_SESSION['arrSystemBookingPeriodsByDaysDiff']);
+		unset($_SESSION['appointment_data']['booking_time']);
+
 		if (empty($result))
 			return false;
 
