@@ -68,8 +68,8 @@ if ($showFlag == MONTHLY_SHOWING_MODE){
         <tr id="monthly_show_header">
             <td bgcolor="FFFFFF" colspan="4"> 
                 <font face="Arial" size="2" color="#000000">
-                    <a href="javascript:changeAvailabilityMonth()" target="main" onclick="return confirm('This will make ALL future booking periods available in this month view.\nNo change will be made to periods already booked.\nAre you sure you want to proceed?')" class="link">Make All Available</a>&nbsp;&nbsp;
-                    <a href="javascript:changeAvailabilityMonth()" target="main" onclick="return confirm('This will make ALL future booking periods unavailable in this month view.\nNo change will be made to periods already booked.\nAre you sure you want to proceed?')" class="link">Make All Unavailable</a>&nbsp;&nbsp;
+                    <a href="javascript:changeAvailabilityMonth()" target="_self" onclick="return confirm('This will make ALL future booking periods available in this month view.\nNo change will be made to periods already booked.\nAre you sure you want to proceed?')" class="link">Make All Available</a>&nbsp;&nbsp;
+                    <a href="javascript:changeAvailabilityMonth()" target="_self" onclick="return confirm('This will make ALL future booking periods unavailable in this month view.\nNo change will be made to periods already booked.\nAre you sure you want to proceed?')" class="link">Make All Unavailable</a>&nbsp;&nbsp;
                 </font>
             </td>
         </tr>
@@ -151,10 +151,10 @@ while ($startDateTime <= $endDateTime) {
         $availableSlotCount = ($availableSlotCount < 0) ? 0 : $availableSlotCount; //exception handling;
         $unavailableSlotCount = ($unavailableSlotCount < 0) ? 0 : $unavailableSlotCount; //exception handling;
 
-        $dateTdStr = ($dateYMD == $todayDate)? '<td width="8%" bgcolor="yellow" valign="top" align="left"><font face="Arial" size="2">&nbsp;<a target="main" href="#" onclick="redirectToSelectedDate(&quot;'.$dateYMD.'&quot;)">' . $i . ' ' . $dayOfWeek . '</a></font></td>' :  '<td width="8%" bgcolor="FFFFFF" valign="top" align="left"><font face="Arial" size="2">&nbsp;<a target="main" href="#" onclick="redirectToSelectedDate(&quot;'.$dateYMD.'&quot;)">' . $i . ' ' . $dayOfWeek . '</a></font></td>';
-        $availableTdStr = $availableSlotCount > 0 ? '<td width="12%" bgcolor="FFFFFF" valign="top" align="left"><font face="Arial" size="2">&nbsp;' . $availableSlotCount . '&nbsp;<a target="main" href="#" onclick="changeAvailabilityDateRange(&quot;'.$startDateTime.'&quot;,1)">Change</a></font></td>' : '<td width="12%" bgcolor="FFFFFF" valign="top" align="left"><font face="Arial" size="2">&nbsp;&nbsp;</font></td>';
-        $unavailableTdStr = $unavailableSlotCount > 0 ? '<td width="12%" bgcolor="FFE2A6" valign="top" align="left"><font face="Arial" size="2">&nbsp;' . $unavailableSlotCount . '&nbsp;<a target="main" href="#" onclick="changeAvailabilityDateRange(&quot;'.$startDateTime.'&quot;,0)">Change</a></font></td>' : '<td width="12%" bgcolor="FFFFFF" valign="top" align="left"><font face="Arial" size="2">&nbsp;&nbsp;</font></td>'; 
-        $bookTdStr = $bookedCount > 0 ? '<td width="39%" bgcolor="CCFFCC" valign="top" align="left"><font face="Arial" size="2">&nbsp;'.$bookedCount.'&nbsp;&nbsp;<a target="main" href="#" onclick="redirectToSelectedDate(&quot;'.$dateYMD.'&quot;)">Book/Cancel</a>&nbsp;</font></td>' : '<td width="39%" bgcolor="FFFFFF" valign="top" align="left"><font face="Arial" size="2">&nbsp;&nbsp;&nbsp;&nbsp;<a target="main" href="#" onclick="redirectToSelectedDate(&quot;'.$dateYMD.'&quot;)">Book</a>&nbsp;</font></td>';
+        $dateTdStr = ($dateYMD == $todayDate)? '<td width="8%" bgcolor="yellow" valign="top" align="left"><font face="Arial" size="2">&nbsp;<a target="_self" href="#" onclick="redirectToSelectedDate(&quot;'.$dateYMD.'&quot;)">' . $i . ' ' . $dayOfWeek . '</a></font></td>' :  '<td width="8%" bgcolor="FFFFFF" valign="top" align="left"><font face="Arial" size="2">&nbsp;<a target="_self" href="#" onclick="redirectToSelectedDate(&quot;'.$dateYMD.'&quot;)">' . $i . ' ' . $dayOfWeek . '</a></font></td>';
+        $availableTdStr = $availableSlotCount > 0 ? '<td width="12%" bgcolor="FFFFFF" valign="top" align="left"><font face="Arial" size="2">&nbsp;' . $availableSlotCount . '&nbsp;<a target="_self" href="#" onclick="changeAvailabilityDateRange(&quot;'.$startDateTime.'&quot;,1)">Change</a></font></td>' : '<td width="12%" bgcolor="FFFFFF" valign="top" align="left"><font face="Arial" size="2">&nbsp;&nbsp;</font></td>';
+        $unavailableTdStr = $unavailableSlotCount > 0 ? '<td width="12%" bgcolor="FFE2A6" valign="top" align="left"><font face="Arial" size="2">&nbsp;' . $unavailableSlotCount . '&nbsp;<a target="_self" href="#" onclick="changeAvailabilityDateRange(&quot;'.$startDateTime.'&quot;,0)">Change</a></font></td>' : '<td width="12%" bgcolor="FFFFFF" valign="top" align="left"><font face="Arial" size="2">&nbsp;&nbsp;</font></td>'; 
+        $bookTdStr = $bookedCount > 0 ? '<td width="39%" bgcolor="CCFFCC" valign="top" align="left"><font face="Arial" size="2">&nbsp;'.$bookedCount.'&nbsp;&nbsp;<a target="_self" href="#" onclick="redirectToSelectedDate(&quot;'.$dateYMD.'&quot;)">Book/Cancel</a>&nbsp;</font></td>' : '<td width="39%" bgcolor="FFFFFF" valign="top" align="left"><font face="Arial" size="2">&nbsp;&nbsp;&nbsp;&nbsp;<a target="_self" href="#" onclick="redirectToSelectedDate(&quot;'.$dateYMD.'&quot;)">Book</a>&nbsp;</font></td>';
         echo '<tr id ="monthly_show_body_tr">' . $dateTdStr . $bookTdStr . $availableTdStr . $unavailableTdStr . '</tr>';
 
     } else { //if you click on Weeks calendary / Month calendar
@@ -257,8 +257,8 @@ while ($startDateTime <= $endDateTime) {
                                 style="background-color: #'.$background_color.'">'
                                 .$timeRender.'
                             </span>';
-                        echo '<a target="main" href="#" onclick="bookedClientView('.$customer_id.');"><span class="CustName">'.$businessName.'<br/></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
-                        echo '<a target="main" href="#" onclick="bookedAddComments('.$booking_id.');">';
+                        echo '<a target="_self" href="#" onclick="bookedClientView('.$customer_id.');"><span class="CustName">'.$businessName.'<br/></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
+                        echo '<a target="_self" href="#" onclick="bookedAddComments('.$booking_id.');">';
                         if ($hasComment){
                             echo '<img title="Comment Added" border="0" src="/images/comment.png">
                                 </a>';
@@ -266,10 +266,10 @@ while ($startDateTime <= $endDateTime) {
                             echo '<img title="Add Comments" border="0" src="/images/nocomment.png">
                                 </a>';
                         }
-                        echo '<a target="main" href="#" onclick="bookedQA('.$booking_id.');">
+                        echo '<a target="_self" href="#" onclick="bookedQA('.$booking_id.');">
                                 <img title="Questions and Answers" border="0" src="/images/i1.png">
                              </a>';
-                        echo '<a target="main" href="#" onclick="bookedViewBookingDetails('.$booking_id.');">
+                        echo '<a target="_self" href="#" onclick="bookedViewBookingDetails('.$booking_id.');">
                                     <img title="View Booking Details" border="0" src="/images/bookdetail.png">
                                 </a>
                             <br>';
