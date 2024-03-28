@@ -33,7 +33,9 @@ $bookingInfo = getBookedInfo($systemId, $startDate, $endDate);
 $bookCount = count($bookingInfo);
 
 //Get available/unavailable timesolt by week
-$availableSlots = getWeeklyTimePeriodsByDateRange($systemId, $startDate, $endDate);
+$availableSlots =  ($showFlag == MONTHLY_SHOWING_MODE) ? getAvailabilityData($systemId, $startDate, $endDate) : getAvailableInfoInOneWeekRange($systemId, $startDate, $endDate);
+
+//$availableSlots = getAvailabilityData($systemId, $startDate, $endDate);
 
 //Get available/unavailable timesolt in by day - special db
 //$availablesInfo = getTimePeriodsByDay($systemId, $startDate, $endDate);
@@ -53,7 +55,6 @@ if ($showFlag == MONTHLY_SHOWING_MODE){
     <thead>
         <tr>
             <td style="width:50%; border-right: 0 solid black;" bgcolor="#C5D4F0" valign="top" align="center" colspan="4">
-                
                 <font face="Arial" size="2" color="#000000">
                     <span class="big-font">
                         <b>
@@ -139,10 +140,10 @@ while ($startDateTime <= $endDateTime) {
         $unavailableSlotCount = 0;
 
         $bookedCount = isset($bookingInfo[$dateYMD]) ? count($bookingInfo[$dateYMD]) : 0;
-
-        if (isset($availableSlots[$weekday])) {
-            $availableSlotCount = $availableSlots[$weekday][1];
-            $unavailableSlotCount = $availableSlots[$weekday][0];
+        
+        if (isset($availableSlots[$dateYMD])) {
+            $availableSlotCount = $availableSlots[$dateYMD]["nAvailable"];
+            $unavailableSlotCount = $availableSlots[$dateYMD]["nUnavailable"];
         }
         $availableSlotCount -= $bookedCount;
 

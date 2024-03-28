@@ -132,7 +132,7 @@ $prevDay = $date->format('Y-m-d')
 <div class="container-fluid">
     <div class="row">
         <!-- Administrator and System Info -->
-        <div class="col-md-12" bgcolor="#FFFFFF" valign="top" align="left">
+        <div class="col-md-12" id = "adminDashBoardTitle"bgcolor="#FFFFFF" valign="top" align="left">
             <table width="100%" border="0" cellspacing="0" cellpadding="0">
                 <tr bgcolor="#FFFFFF" style="border-size: 0px;">
                     <td bgcolor="#FFFFFF" valign="top" width="20%" align="left" style="white-space: nowrap">

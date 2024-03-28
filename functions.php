@@ -385,7 +385,103 @@
 		);
 	}
 
+	/**
+	 * Executes an SQL query to retrieve availability data for a specific date range.
+	 *
+	 * @param int 		$systemId 	
+	 * @param string 	$startDate The start date of the date range (YYYY-MM-DD).
+	 * @param string 	$endDate   The end date of the date range (YYYY-MM-DD).
+	 *
+	 * @return array Associative array containing availability data for each date in the range.
+	 */
+	function getAvailabilityData($systemId, $startDate, $endDate) {
 
+		// SQL query to retrieve availability data
+		$db = getDBConnection();
+
+		$sql = "SELECT 
+					TB2.SetDate, 
+					SUM(CASE WHEN COALESCE(SP.isAvailable, TB2.isAvailable) = 1 THEN 1 ELSE 0 END) AS nAvailable,
+					SUM(CASE WHEN COALESCE(SP.isAvailable, TB2.isAvailable) = 0 THEN 1 ELSE 0 END) AS nUnAvailable
+				FROM 
+					(
+						SELECT 
+							date_column AS SetDate, 
+							D1.weekday, 
+							FromInMinutes, 
+							ToInMinutes, 
+							isRegular, 
+							isAvailable 
+						FROM 
+							(
+								SELECT
+									date_column,
+									MOD(DAYOFWEEK(date_column) + 6, 7) AS weekday
+								FROM
+									(
+										SELECT
+											DATE(?) + INTERVAL (t4*10000 + t3*1000 + t2*100 + t1*10 + t0) DAY AS date_column
+										FROM
+											(SELECT 0 t0 UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) t0,
+											(SELECT 0 t1 UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) t1,
+											(SELECT 0 t2 UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) t2,
+											(SELECT 0 t3 UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) t3,
+											(SELECT 0 t4 UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) t4
+									) dates
+								WHERE
+									date_column BETWEEN ? AND ?
+							) AS D1 
+						LEFT JOIN 
+							(
+								SELECT * FROM setting_bookingperiods 
+								WHERE 
+									SystemId = IFNULL(
+										(
+											SELECT 
+												SystemId 
+											FROM 
+												setting_bookingperiods 
+											WHERE 
+												SystemId = ?
+											LIMIT 1
+										),
+										0
+									)
+							) AS SB
+						ON 
+							D1.weekday = SB.weekday 
+						ORDER BY 
+							D1.date_column
+					) AS TB2 
+				LEFT JOIN 
+					setting_bookingperiods_special AS SP 
+				ON 
+					TB2.SetDate = SP.SetDate 
+					AND TB2.FromInMinutes = SP.FromInMinutes 
+					AND TB2.ToInMinutes = SP.ToInMinutes 
+				GROUP BY 
+					TB2.SetDate 
+				ORDER BY 
+					TB2.SetDate;
+		";
+
+		// Prepare the SQL statement
+		$stmt = $db ->prepare($sql);
+
+		// Bind parameters and execute the query
+		$stmt->bind_param("sssi", $startDate, $startDate, $endDate, $systemId);
+		$stmt->execute();
+		$stmt->bind_result($setDate, $nAvailable, $nUnAvailable);
+
+		// Initialize an array to store the available time slots
+		$result = [];
+		// Fetch the booking periods
+		while ($stmt->fetch()) {
+			$result[$setDate]["nAvailable"] = $nAvailable;
+			$result[$setDate]["nUnavailable"] = $nUnAvailable;
+		}
+		return $result;
+	}
 	
 	//Get Available and Unavailable count in Date Range 
 	//USAGE: To show available/unavailable days on calendar
@@ -462,13 +558,34 @@
 			$result[$setDate]["weekday"] = $weekday;
 		}
 		return $result;
-		
 	}
 
 
-	//Get Available and Unavailable count in Date Range 
-	//USAGE: To show available/unavailable days on calendar
-	function getAvailableCountInWeek($systemId){
+	/**
+	 * Retrieves available time slots with their respective counts for a given week in the system.
+	 *
+	 * This function queries the system to fetch available time slots for a specified week and calculates
+	 * the count of available slots for each time slot. It provides an overview of the availability within
+	 * the specified week.
+	 *
+	 * @param int $systemId The ID of the system for which availability is being queried.
+	 *
+	 * @return array An associative array containing available time slots with their respective counts.
+	 *               The array structure is as follows:
+	 *               - Key: Date in Y-m-d format (e.g., "2024-03-28").
+	 *               - Value: An array containing time slots as keys and the count of available slots as values.
+	 *               Example: [
+	 *                   //Sample Return Result
+	 *							[0] => Array
+	 *					//     (
+	 *					//         [nAvailable] => 0
+	 *					//         [nUnavailable] => 4
+	 *					//     )
+	 *                   ],
+	 *                   // Additional dates and time slots...
+	 *               ]
+	 */
+	function getAvailableWithCountInWeek($systemId){
 		$db = getDBConnection();
 		// Prepare and execute a query to retrieve available time slots for the specified systemId
 		$sql = "SELECT 
@@ -564,7 +681,7 @@
 	}
 
 	//Get one Week time periods with DateRange by comibining BookingPeriods DB and Special DB
-	function getWeeklyTimePeriodsByDateRange($systemId, $startDate, $endDate){
+	function getAvailableInfoInOneWeekRange($systemId, $startDate, $endDate){
 		$db = getDBConnection();
 		// Prepare and execute a query to retrieve available time slots for the specified systemId
 		$sql = "SELECT

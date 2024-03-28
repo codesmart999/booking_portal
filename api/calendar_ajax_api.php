@@ -32,7 +32,9 @@ if (!empty($_REQUEST['year']) && !empty($_REQUEST['month']) && !empty($_REQUEST[
     //         [nUnavailable] => 0
     //         [weekday] => 1
     //     )
-    $weekAvailableInfo = getAvailableCountInWeek($systemId);
+    //__debug($monthAvailableInfo);
+    $weekAvailableInfo = getAvailableWithCountInWeek($systemId);
+    //__debug($weekAvailableInfo);
     //Sample Return Result
     //[0] => Array
     //     (
@@ -201,7 +203,7 @@ if ($_POST['action'] == "change_availability_date_range") {
      
     // Get the day of the week (0 for Sunday, 1 for Monday, ..., 6 for Saturday)
     $dayOfWeek = date('w', $date);
-    $availableTimeslot = getWeeklyTimePeriodsByDateRange($systemId, $formattedDate, $formattedDate);
+    $availableTimeslot = getAvailableInfoInOneWeekRange($systemId, $formattedDate, $formattedDate);
     //$availablesInfo = getTimePeriodsByDay($systemId, $formattedDate, $formattedDate);
     //print_r($formattedDate);
     foreach ($availableTimeslot[$dayOfWeek]["timeslot"] as $slot) {
