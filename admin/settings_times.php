@@ -187,17 +187,17 @@ require_once('footer.php');
 	$settingValue = json_decode($arrSettings[$settingKey]['value'], true);
 ?>
 <div class="modal fade" id="regularModal" tabindex="-1" role="dialog" aria-labelledby="saveModalLabel" aria-hidden="true">
-    <form method="post" class="form-horizontal setting_form" id="">
-    	<input type="hidden" name="settingKey" id="settingKey" value="<?php echo $settingKey;?>" />
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="saveModalLabel">Regular Booking Period</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
+	<div class="modal-dialog" role="document">
+		<form method="post" class="form-horizontal setting_form" id="">
+			<input type="hidden" name="settingKey" id="settingKey" value="<?php echo $settingKey;?>" />
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="saveModalLabel">Regular Booking Period</h5>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body">
 					<?php 
 						for( $day = 1; $day <= 7; $day++ ) { 
 							$dayKey = $day % 7;
@@ -213,110 +213,110 @@ require_once('footer.php');
 						?>
 					</h6>
 					<div class="form-group">
-                    	<table style="width:100%; margin-bottom:0">
-                    		<tr>
-                    			<td width="33%">Start Time</td>
-                    			<td width="33%">End Time</td>
-                    			<td width="33%">Period Duration</td>
-                    		</tr>
-                    		<tr>
-                    			<td width="33%">
-                    				<?php $optionKey = "weekday_start_hour[" . $dayKey . "]"; ?>
-	                    			<select name="<?php echo $optionKey; ?>">
-			                        	<?php
-			                    		for( $i = 1; $i <= 12; $i++){
-				                        	$selected = "";
-			                    			if( $regular_weekday_start_hour[$dayKey] == $i )
-			                    				$selected = "selected";
-			                    			echo '<option value="'.$i.'" '.$selected.'>'.$i.'</option>';
-			                    		}
-			                    		?>
-			                        </select>
+						<table style="width:100%; margin-bottom:0">
+							<tr>
+								<td width="33%">Start Time</td>
+								<td width="33%">End Time</td>
+								<td width="33%">Period Duration</td>
+							</tr>
+							<tr>
+								<td width="33%">
+									<?php $optionKey = "weekday_start_hour[" . $dayKey . "]"; ?>
+									<select name="<?php echo $optionKey; ?>">
+										<?php
+										for( $i = 1; $i <= 12; $i++){
+											$selected = "";
+											if( $regular_weekday_start_hour[$dayKey] == $i )
+												$selected = "selected";
+											echo '<option value="'.$i.'" '.$selected.'>'.$i.'</option>';
+										}
+										?>
+									</select>
 									<?php $optionKey = "weekday_start_minutes[" . $dayKey . "]"; ?>
-	                    			<select name="<?php echo $optionKey; ?>">
-			                        	<option value="00">00</option>
-			                        	<?php
-			                    		for( $i = 5; $i < 60; $i += 1){
-				                        	$selected = "";
-			                    			if( $regular_weekday_start_minutes[$dayKey] == $i )
-			                    				$selected = "selected";
-			                    			echo '<option value="'.$i.'" '.$selected.'>'.sprintf("%02d", $i).'</option>';
-			                    		}
-			                    		?>
-			                        </select>
-                    				<?php $optionKey = "weekday_start_AP[" . $dayKey . "]"; ?>
-	                    			<select name="<?php echo $optionKey; ?>">
-			                        	<option value="AM" <?php if (strtolower($regular_weekday_start_AP[$dayKey]) == "am") echo 'selected';?>>AM</option>
-			                        	<option value="PM" <?php if (strtolower($regular_weekday_start_AP[$dayKey]) == "pm") echo 'selected';?>>PM</option>
-			                        </select>
-			                    </td>
-                    			<td width="33%">
-	                    			<?php $optionKey = "weekday_end_hour[" . $dayKey . "]"; ?>
-	                    			<select name="<?php echo $optionKey; ?>">
-			                        	<?php
-			                    		for( $i = 1; $i <= 12; $i++){
-				                        	$selected = "";
-			                    			if( $regular_weekday_end_hour[$dayKey] == $i )
-			                    				$selected = "selected";
-			                    			echo '<option value="'.$i.'" '.$selected.'>'.$i.'</option>';
-			                    		}
-			                    		?>
-			                        </select>
-                    				<?php $optionKey = "weekday_end_minutes[" . $dayKey . "]"; ?>
-	                    			<select name="<?php echo $optionKey; ?>">
-			                        	<option value="00">00</option>
-			                        	<?php
-			                    		for( $i = 5; $i < 60; $i += 1){
-				                        	$selected = "";
-			                    			if( $regular_weekday_end_minutes[$dayKey] == $i )
-			                    				$selected = "selected";
-			                    			echo '<option value="'.$i.'" '.$selected.'>'.sprintf("%02d", $i).'</option>';
-			                    		}
-			                    		?>
-			                        </select>
-                    				<?php $optionKey = "weekday_end_AP[" . $dayKey . "]"; ?>
-	                    			<select name="<?php echo $optionKey; ?>">
-			                        	<option value="AM" <?php if ($regular_weekday_end_AP[$dayKey] == "AM") echo 'selected';?>>AM</option>
-			                        	<option value="PM" <?php if ($regular_weekday_end_AP[$dayKey] == "PM") echo 'selected';?>>PM</option>
-			                        </select>
-			                    </td>
-			                    <td width="33%">
-                    				<?php $optionKey = "weekday_duration_hours[" . $dayKey . "]"; ?>
-	                    			<select name="<?php echo $optionKey; ?>">
-			                        	<?php
-			                    		for( $i = 0; $i < 24; $i++){
-			                    			$selected = "";
-			                    			if( $regular_weekday_duration_hours[$dayKey] == $i )
-			                    				$selected = "selected";
-			                    			echo '<option value="'.$i.'" '.$selected.'>'.$i.'</option>';
-			                    		}
-			                    		?>
-			                        </select>
-                    				<?php $optionKey = "weekday_duration_minutes[" . $dayKey . "]"; ?>
-	                    			<select name="<?php echo $optionKey; ?>">
-			                        	<option value="00">00</option>
-			                        	<?php
-			                    		for( $i = 5; $i < 60; $i += 1){
-				                        	$selected = "";
-			                    			if( $regular_weekday_duration_minutes[$dayKey] == $i )
-			                    				$selected = "selected";
-			                    			echo '<option value="'.$i.'" '.$selected.'>'.sprintf("%02d", $i).'</option>';
-			                    		}
-			                    		?>
-			                        </select>
-			                    </td>
-                    		</tr>
-                    	</table>
-                    </div>
-                	<?php } ?>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-primary btn-sm" name="Save" value="Save" id="btnSave">Save</button>
-                </div>
-            </div>
-        </div>
-    </form>
+									<select name="<?php echo $optionKey; ?>">
+										<option value="00">00</option>
+										<?php
+										for( $i = 5; $i < 60; $i += 1){
+											$selected = "";
+											if( $regular_weekday_start_minutes[$dayKey] == $i )
+												$selected = "selected";
+											echo '<option value="'.$i.'" '.$selected.'>'.sprintf("%02d", $i).'</option>';
+										}
+										?>
+									</select>
+									<?php $optionKey = "weekday_start_AP[" . $dayKey . "]"; ?>
+									<select name="<?php echo $optionKey; ?>">
+										<option value="AM" <?php if (strtolower($regular_weekday_start_AP[$dayKey]) == "am") echo 'selected';?>>AM</option>
+										<option value="PM" <?php if (strtolower($regular_weekday_start_AP[$dayKey]) == "pm") echo 'selected';?>>PM</option>
+									</select>
+								</td>
+								<td width="33%">
+									<?php $optionKey = "weekday_end_hour[" . $dayKey . "]"; ?>
+									<select name="<?php echo $optionKey; ?>">
+										<?php
+										for( $i = 1; $i <= 12; $i++){
+											$selected = "";
+											if( $regular_weekday_end_hour[$dayKey] == $i )
+												$selected = "selected";
+											echo '<option value="'.$i.'" '.$selected.'>'.$i.'</option>';
+										}
+										?>
+									</select>
+									<?php $optionKey = "weekday_end_minutes[" . $dayKey . "]"; ?>
+									<select name="<?php echo $optionKey; ?>">
+										<option value="00">00</option>
+										<?php
+										for( $i = 5; $i < 60; $i += 1){
+											$selected = "";
+											if( $regular_weekday_end_minutes[$dayKey] == $i )
+												$selected = "selected";
+											echo '<option value="'.$i.'" '.$selected.'>'.sprintf("%02d", $i).'</option>';
+										}
+										?>
+									</select>
+									<?php $optionKey = "weekday_end_AP[" . $dayKey . "]"; ?>
+									<select name="<?php echo $optionKey; ?>">
+										<option value="AM" <?php if ($regular_weekday_end_AP[$dayKey] == "AM") echo 'selected';?>>AM</option>
+										<option value="PM" <?php if ($regular_weekday_end_AP[$dayKey] == "PM") echo 'selected';?>>PM</option>
+									</select>
+								</td>
+								<td width="33%">
+									<?php $optionKey = "weekday_duration_hours[" . $dayKey . "]"; ?>
+									<select name="<?php echo $optionKey; ?>">
+										<?php
+										for( $i = 0; $i < 24; $i++){
+											$selected = "";
+											if( $regular_weekday_duration_hours[$dayKey] == $i )
+												$selected = "selected";
+											echo '<option value="'.$i.'" '.$selected.'>'.$i.'</option>';
+										}
+										?>
+									</select>
+									<?php $optionKey = "weekday_duration_minutes[" . $dayKey . "]"; ?>
+									<select name="<?php echo $optionKey; ?>">
+										<option value="00">00</option>
+										<?php
+										for( $i = 5; $i < 60; $i += 1){
+											$selected = "";
+											if( $regular_weekday_duration_minutes[$dayKey] == $i )
+												$selected = "selected";
+											echo '<option value="'.$i.'" '.$selected.'>'.sprintf("%02d", $i).'</option>';
+										}
+										?>
+									</select>
+								</td>
+							</tr>
+						</table>
+					</div>
+					<?php } ?>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>
+					<button type="submit" class="btn btn-primary btn-sm" name="Save" value="Save" id="btnSave">Save</button>
+				</div>
+			</div>
+		</form>
+	</div>
 </div>
 
 <?php
@@ -324,111 +324,111 @@ require_once('footer.php');
 	$settingValue = json_decode($arrSettings[$settingKey]['value'], true);
 ?>
 <div class="modal fade" id="irregularModal" tabindex="-1" role="dialog" aria-labelledby="saveModalLabel" aria-hidden="true">
-    <form method="post" class="form-horizontal setting_form" id="IRREGULAR_TIME_FORM">
-    	<input type="hidden" name="settingKey" id="settingKey" value="<?php echo $settingKey;?>" />
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title step1" id="saveModalLabel">Select Individual Day to Assign Irregular Booking Periods</h5>
-					<h5 class="modal-title step2">Set Irregular Booking Periods</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                	<div class="step1" >
-                      <?php 
-                        for( $day = 0; $day < 7; $day++ ) { 
-                          $dayLabel = date('l', strtotime("Sunday +{$day} days"));
-                          // $dayKey = date('D', strtotime("Sunday +{$day} days"));
+	<div class="modal-dialog" role="document">
+		<form method="post" class="form-horizontal setting_form" id="IRREGULAR_TIME_FORM">
+			<input type="hidden" name="settingKey" id="settingKey" value="<?php echo $settingKey;?>" />
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title step1" id="saveModalLabel">Select Individual Day to Assign Irregular Booking Periods</h5>
+					<h5 class="modal-title step2">Set Irregular Booking Periods (<span class="span_cur_weekday"></span>)</h5>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body">
+					<div class="step1" >
+					<?php 
+						for( $day = 0; $day < 7; $day++ ) { 
+						$dayLabel = date('l', strtotime("Sunday +{$day} days"));
+						// $dayKey = date('D', strtotime("Sunday +{$day} days"));
 
-                          $optionKey = "choose_ir_day_" . $day;
-                          $disabled = "";
-                          if ( empty($arr_availability_by_weekday[$day]) ) {
-                            $dayLabel .= ' (Unavailable)';
-                            $disabled = "disabled";
-                          }
-                      ?>
-	                    <div class="form-group">
-	                        <input class="choose_ir_day" type="radio" id="<?php echo $optionKey?>" name="weekday" value="<?php echo $day?>" <?php echo $disabled; ?>/>
-	                    	<label for="<?php echo $optionKey?>"><?php echo $dayLabel; ?></label>
-	                    </div>
-	                    <?php } ?>
-	                </div>
-	                <div class="step2">
-	                	<table style="width:100%; margin-bottom:0">
-                    		<tr>
-                    			<td width="33%">Start Time</td>
-                    			<td width="33%">End Time</td>
-                    			<td width="33%"></td>
-                    		</tr>
-                    		<tr>
-                    			<td>
-                    				<select id="irregular_start_hour">
-			                        	<?php
-			                    		for( $i = 1; $i <= 12; $i++){
-			                    			echo '<option value="'.$i.'">'.$i.'</option>';
-			                    		}
-			                    		?>
-			                        </select>
-			                      	<select id="irregular_start_minutes">
-			                        	<option value="00">00</option>
-			                        	<?php
-			                    		for( $i = 5; $i < 60; $i += 1){
-			                    			echo '<option value="'.$i.'">'.sprintf("%02d", $i).'</option>';
-			                    		}
-			                    		?>
-			                        </select>
-			                        <select id="irregular_start_AP">
-			                        	<option value="AM">AM</option>
-			                        	<option value="PM">PM</option>
-			                        </select>
-                    			</td>
+						$optionKey = "choose_ir_day_" . $day;
+						$disabled = "";
+						if ( empty($arr_availability_by_weekday[$day]) ) {
+							$dayLabel .= ' (Unavailable)';
+							$disabled = "disabled";
+						}
+					?>
+						<div class="form-group">
+							<input class="choose_ir_day" type="radio" id="<?php echo $optionKey?>" name="weekday" value="<?php echo $day?>" <?php echo $disabled; ?>/>
+							<label for="<?php echo $optionKey?>"><?php echo $dayLabel; ?></label>
+						</div>
+						<?php } ?>
+					</div>
+					<div class="step2">
+						<table style="width:100%; margin-bottom:0">
+							<tr>
+								<td width="33%">Start Time</td>
+								<td width="33%">End Time</td>
+								<td width="33%"></td>
+							</tr>
+							<tr>
 								<td>
-                    				<select id="irregular_end_hour">
-			                        	<?php
-			                    		for( $i = 1; $i <= 12; $i++){
-			                    			echo '<option value="'.$i.'">'.$i.'</option>';
-			                    		}
-			                    		?>
-			                        </select>
-			                      	<select id="irregular_end_minutes">
-			                        	<option value="00">00</option>
-			                        	<?php
-			                    		for( $i = 5; $i < 60; $i += 1){
-			                    			echo '<option value="'.$i.'">'.sprintf("%02d", $i).'</option>';
-			                    		}
-			                    		?>
-			                        </select>
-			                        <select id="irregular_end_AP">
-			                        	<option value="AM">AM</option>
-			                        	<option value="PM">PM</option>
-			                        </select>
-                    			</td>
-                    			<td>
-                    				<button type="button" id="btn_add_irregular_bookingperiods" class="btn btn-primary btn-sm">Include</button>
-                    			</td>
-                    		</tr>
-                    	</table>
-                    	<div class="form-group text-center mt-2 flex">
-                    		<select name="list_bookingperiods[]" id="list_bookingperiods" multiple="multiple" style="height:400px; width: 200px;">
-                    		</select>
-                    		<div class="mt-2">
-	                    		<button type="button" class="btn btn-primary btn-sm" id="delIrTimes">Delete</button>
-	                    		<button type="button" class="btn btn-primary btn-sm" id="delIrAll">Delete All</button>
-	                    	</div>
-                    	</div>
-	                </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary btn-sm step1" data-dismiss="modal">Close</button>
+									<select id="irregular_start_hour">
+										<?php
+										for( $i = 1; $i <= 12; $i++){
+											echo '<option value="'.$i.'">'.$i.'</option>';
+										}
+										?>
+									</select>
+									<select id="irregular_start_minutes">
+										<option value="00">00</option>
+										<?php
+										for( $i = 5; $i < 60; $i += 1){
+											echo '<option value="'.$i.'">'.sprintf("%02d", $i).'</option>';
+										}
+										?>
+									</select>
+									<select id="irregular_start_AP">
+										<option value="AM">AM</option>
+										<option value="PM">PM</option>
+									</select>
+								</td>
+								<td>
+									<select id="irregular_end_hour">
+										<?php
+										for( $i = 1; $i <= 12; $i++){
+											echo '<option value="'.$i.'">'.$i.'</option>';
+										}
+										?>
+									</select>
+									<select id="irregular_end_minutes">
+										<option value="00">00</option>
+										<?php
+										for( $i = 5; $i < 60; $i += 1){
+											echo '<option value="'.$i.'">'.sprintf("%02d", $i).'</option>';
+										}
+										?>
+									</select>
+									<select id="irregular_end_AP">
+										<option value="AM">AM</option>
+										<option value="PM">PM</option>
+									</select>
+								</td>
+								<td>
+									<button type="button" id="btn_add_irregular_bookingperiods" class="btn btn-primary btn-sm">Include</button>
+								</td>
+							</tr>
+						</table>
+						<div class="form-group text-center mt-2 flex">
+							<select name="list_bookingperiods[]" id="list_bookingperiods" multiple="multiple" style="height:400px; width: 200px;">
+							</select>
+							<div class="mt-2">
+								<button type="button" class="btn btn-primary btn-sm" id="delIrTimes">Delete</button>
+								<button type="button" class="btn btn-primary btn-sm" id="delIrAll">Delete All</button>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary btn-sm step1" data-dismiss="modal">Close</button>
 					<button type="button" class="btn btn-primary btn-sm step1 btn-next" disabled>Next</button>
 					<button type="button" class="btn btn-secondary btn-sm step2 btn-previous">Previous</button>
-                    <button type="button" class="btn btn-primary btn-sm step2" name="Save" value="Save" id="btnIrSave">Save</button>
-                </div>
-            </div>
-        </div>
-    </form>
+					<button type="button" class="btn btn-primary btn-sm step2" name="Save" value="Save" id="btnIrSave">Save</button>
+				</div>
+			</div>
+		</form>
+	</div>
 </div>
 
 <?php
@@ -436,18 +436,19 @@ require_once('footer.php');
 	$settingValue = json_decode($arrSettings[$settingKey]['value'], true);
 ?>
 <div class="modal fade" id="bookingPeriodModal" tabindex="-1" role="dialog" aria-labelledby="saveModalLabel" aria-hidden="true">
-    <form method="post" class="form-horizontal setting_form" id="AVAILABLE_PERIOD_FORM">
-    	<input type="hidden" name="settingKey" id="settingKey" value="<?php echo $settingKey;?>" />
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="saveModalLabel">Unavailable/Available Booking Periods</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                	<div class="step1">
+	<div class="modal-dialog" role="document"  style="max-width: 800px; margin: 1.75rem auto;">
+		<form method="post" class="form-horizontal setting_form" id="AVAILABLE_PERIOD_FORM">
+			<input type="hidden" name="settingKey" id="settingKey" value="<?php echo $settingKey;?>" />
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title step1" id="saveModalLabel">Unavailable/Available Booking Periods</h5>
+					<h5 class="modal-title step2">Unavailable/Available Booking Periods (<span class="span_cur_weekday"></span>)</h5>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body">
+					<div class="step1">
 					<?php 
 						for( $day = 0; $day < 7; $day++ ) { 
 							$dayLabel = date('l', strtotime("Sunday +{$day} days"));
@@ -460,15 +461,15 @@ require_once('footer.php');
 								$disabled = "disabled";
 							}
 					?> 
-	                    <div class="form-group">
-                        <input class="choose_bp_day" type="radio" id="<?php echo $optionKey?>" name="weekday" value="<?php echo $day?>" <?php echo $disabled; ?>/>
-	                    	<label for="<?php echo $optionKey?>"><?php echo $dayLabel; ?></label>
-	                    </div>
-	                <?php } ?>
-	                </div>
-	                <div class="step2">
-                    	<div class="form-group text-center mt-2 flex">
-                        <table border="0" cellspacing="0" cellpadding="5" width="100%" class="table">
+						<div class="form-group">
+						<input class="choose_bp_day" type="radio" id="<?php echo $optionKey?>" name="weekday" value="<?php echo $day?>" <?php echo $disabled; ?>/>
+							<label for="<?php echo $optionKey?>"><?php echo $dayLabel; ?></label>
+						</div>
+					<?php } ?>
+					</div>
+					<div class="step2">
+						<div class="form-group text-center mt-2 flex">
+						<table border="0" cellspacing="0" cellpadding="5" width="100%" class="table">
 							<thead>
 							<tr>
 								<td width="40" nowrap>Select</td>
@@ -478,35 +479,35 @@ require_once('footer.php');
 							</thead>
 							<tbody id="tbl_bookingperiods">
 							</tbody>
-                        </table>
-                    	</div>
-	                </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary btn-sm step1" data-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary btn-sm step1 btn-next" disabled>Next</button>
-                    <button type="button" class="btn btn-secondary btn-sm step2 d-none btn-previous">Previous</button>
-                    <button type="button" class="btn btn-primary btn-sm step2 d-none" name="Save" value="Save" id="btnBpSave">Save</button>
-                </div>
-            </div>
-        </div>
-    </form>
+						</table>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary btn-sm step1" data-dismiss="modal">Close</button>
+					<button type="button" class="btn btn-primary btn-sm step1 btn-next" disabled>Next</button>
+					<button type="button" class="btn btn-secondary btn-sm step2 d-none btn-previous">Previous</button>
+					<button type="button" class="btn btn-primary btn-sm step2 d-none" name="Save" value="Save" id="btnBpSave">Save</button>
+				</div>
+			</div>
+		</form>
+	</div>
 </div>
 <?php
 	$settingKey = "AVAILABLE_WEEK_DAYS";
 ?>
 <div class="modal fade" id="bookingDaysModal" tabindex="-1" role="dialog" aria-labelledby="saveModalLabel" aria-hidden="true">
-    <form method="post" class="form-horizontal setting_form" id="">
-    	<input type="hidden" name="settingKey" id="settingKey" value="<?php echo $settingKey;?>" />
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="saveModalLabel">Unavailable/Available Week Days</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body table-responsive">
+	<div class="modal-dialog" role="document">
+		<form method="post" class="form-horizontal setting_form" id="">
+			<input type="hidden" name="settingKey" id="settingKey" value="<?php echo $settingKey;?>" />
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="saveModalLabel">Unavailable/Available Week Days</h5>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body table-responsive">
 					<table border="0" cellspacing="0" cellpadding="5" width="100%" class="table step1">
 						<thead>
 							<tr>
@@ -530,7 +531,7 @@ require_once('footer.php');
 							?>
 							<tr>
 								<td width="20" nowrap>
-									<input class="chk_availability" type="checkbox" id="<?php echo $optionKey?>" name="period_availability[]" value="<?php echo $day;?>" <?php echo $checked?>/>
+									<input class="chk_availability" type="checkbox" id="<?php echo $optionKey?>" name="weekday_availability[]" value="<?php echo $day;?>" <?php echo $checked?>/>
 								</td>
 								<td width="40" nowrap>
 									<label for="<?php echo $optionKey?>"><?php echo $dayLabel; ?></label>
@@ -542,7 +543,6 @@ require_once('footer.php');
 							<?php } ?>
 						</tbody>
 					</table>
-
 					<h6 class="step2">Select individual Systems that you want the changes applied to</p>
 					<table border="0" cellspacing="0" cellpadding="5" width="100%" class="table step2">
 						<thead>
@@ -555,16 +555,16 @@ require_once('footer.php');
 
 						</tbody>
 					</table>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary btn-sm step1" data-dismiss="modal">Close</button>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary btn-sm step1" data-dismiss="modal">Close</button>
 					<button type="button" class="btn btn-primary btn-sm step1 btn-next" data-modal-name="available_weekdays">Next</button>
 					<button type="button" class="btn btn-secondary btn-sm step2 btn-previous" >Previous</button>
-                    <button type="submit" class="btn btn-primary btn-sm step2" name="Save" value="Save" id="btnSave">Save</button>
-                </div>
-            </div>
-        </div>
-    </form>
+					<button type="submit" class="btn btn-primary btn-sm step2" name="Save" value="Save" id="btnSave">Save</button>
+				</div>
+			</div>
+		</form>
+	</div>
 </div>
 <script>
 	$(document).ready(function() { 
@@ -665,7 +665,7 @@ require_once('footer.php');
 			$("#AVAILABLE_PERIOD_FORM .btn-next").removeAttr("disabled");
 
 			$('#tbl_bookingperiods').html();
-			
+
 			var weekday = $(this).val();
 			var formData = [];
 			formData.push({ name: "action", value: "get_bookingperiods_by_weekday" });
@@ -708,6 +708,12 @@ require_once('footer.php');
 			e.preventDefault();
 			$('.step2').removeClass('d-none');
 			$('.step1').addClass('d-none');
+
+			var parentForm = $(this).closest('form');
+			var weekday = parentForm.find('input[type="radio"]:checked').val();
+			
+			const getDayName = dayNumber => ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayNumber];
+			parentForm.find('.span_cur_weekday').html(getDayName(weekday));
 
 			if ($(this).attr('data-modal-name') == 'available_weekdays') {
 				var formData = [];

@@ -116,3 +116,18 @@ h6.day-title {
 	-ms-transform: translateX(26px);
 	transform: translateX(26px);
   }
+
+  /* tbl_style in tbl_bookingperiods */
+	#AVAILABLE_PERIOD_FORM table tr td {
+		/* CSS styles for <td> elements */
+		padding: 0;
+		padding-left: 0.5em;
+		
+		/* padding: 0 0 0 0.1em; */
+		
+		/* padding: 0 0.1em; */
+	}
+
+	#AVAILABLE_PERIOD_FORM table tbody tr td:first-child {
+		padding-top: 0.7em;
+	}
