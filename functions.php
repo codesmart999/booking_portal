@@ -77,7 +77,7 @@
 		unset($_SESSION['arrSystemBookingPeriodsByDaysDiff']);
 		unset($_SESSION['appointment_data']['booking_time']);
 
-		if (empty($result))
+		if (empty($result) || empty($result['arrSystems']) || empty($result['arrBookingPeriodsByDaysDiff']))
 			return false;
 
 		$_SESSION['arrAvailableSystems'] = $result['arrSystems'];
