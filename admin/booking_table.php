@@ -33,22 +33,21 @@ $bookingInfo = getBookedInfo($systemId, $startDate, $endDate);
 $bookCount = count($bookingInfo);
 
 //Get available/unavailable timesolt by week
-$availableSlots =  ($showFlag == MONTHLY_SHOWING_MODE) ? getAvailabilityData($systemId, $startDate, $endDate) : getAvailableInfoInOneWeekRange($systemId, $startDate, $endDate);
-
-//$availableSlots = getAvailabilityData($systemId, $startDate, $endDate);
-
-//Get available/unavailable timesolt in by day - special db
-//$availablesInfo = getTimePeriodsByDay($systemId, $startDate, $endDate);
-
+$availableSlots =  ($showFlag == MONTHLY_SHOWING_MODE) ? getAvailabilityDataWithCounts($systemId, $startDate, $endDate) : getAvailableInfoInOneWeekRange($systemId, $startDate, $endDate);
 
 // Iterate over each date in the date range
 $currentDateTime = strtotime(date('Y-m-d'));
 $startDateTime = strtotime($startDate);
+$tmpStartDateTime = $startDateTime;
 $endDateTime = strtotime($endDate);
 
 $tableTitle = formatDateRange($startDate, $endDate, $showFlag);
 
 $weekDates = getWeekDates($endDate);
+
+//For Make All Available/Make All Unavaiable Button Event on Monthly show list 
+$availableDatedInMonth = (isset($availableSlots[1])) ? json_encode($availableSlots[1]) : json_encode(array());
+$unavailableDatedInMonth = (isset($availableSlots[0])) ? json_encode($availableSlots[0]) : json_encode(array());
 //building TABLE HEADER part
 if ($showFlag == MONTHLY_SHOWING_MODE){
 ?>
@@ -69,8 +68,8 @@ if ($showFlag == MONTHLY_SHOWING_MODE){
         <tr id="monthly_show_header">
             <td bgcolor="FFFFFF" colspan="4"> 
                 <font face="Arial" size="2" color="#000000">
-                    <a href="javascript:changeAvailabilityMonth()" target="_self" onclick="return confirm('This will make ALL future booking periods available in this month view.\nNo change will be made to periods already booked.\nAre you sure you want to proceed?')" class="link">Make All Available</a>&nbsp;&nbsp;
-                    <a href="javascript:changeAvailabilityMonth()" target="_self" onclick="return confirm('This will make ALL future booking periods unavailable in this month view.\nNo change will be made to periods already booked.\nAre you sure you want to proceed?')" class="link">Make All Unavailable</a>&nbsp;&nbsp;
+                    <a href="javascript:changeAvailabilityMonth(0)" target="_self" onclick="return confirm('This will make ALL future booking periods available in this month view.\nNo change will be made to periods already booked.\nAre you sure you want to proceed?')" class="link">Make All Available</a>&nbsp;&nbsp;
+                    <a href="javascript:changeAvailabilityMonth(1)" target="_self" onclick="return confirm('This will make ALL future booking periods unavailable in this month view.\nNo change will be made to periods already booked.\nAre you sure you want to proceed?')" class="link">Make All Unavailable</a>&nbsp;&nbsp;
                 </font>
             </td>
         </tr>
@@ -427,6 +426,30 @@ while ($startDateTime <= $endDateTime) {
             success: function(response) {
                 // Handle the server response if needed
                 
+                console.log('Toggle value saved successfully.');
+                location.reload();
+            },
+            error: function(xhr, status, error) {
+                // Handle errors if the AJAX request fails
+                alert('Error saving value:', error);
+            }
+        });
+    }
+
+    function changeAvailabilityMonth(flag){
+        // Send AJAX request only if data is not empty
+        $.ajax({
+            url: '/api/calendar_ajax_api.php', // URL to your PHP script that handles saving the value
+            method: 'POST',
+            data: {
+                action: 'change_availability_month', // Action parameter
+                data: flag == 1 ? JSON.stringify({ dates: <?php echo $availableDatedInMonth; ?> }) : JSON.stringify({ dates: <?php echo $unavailableDatedInMonth; ?> }),
+                flag: flag,
+                startDate: <?php echo $tmpStartDateTime;?>,
+                systemId: <?php echo $systemId; ?>
+            },
+            success: function(response) {
+                // Handle the server response if needed
                 console.log('Toggle value saved successfully.');
                 location.reload();
             },

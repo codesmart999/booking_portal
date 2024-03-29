@@ -394,7 +394,7 @@
 	 *
 	 * @return array Associative array containing availability data for each date in the range.
 	 */
-	function getAvailabilityData($systemId, $startDate, $endDate) {
+	function getAvailabilityDataWithCounts($systemId, $startDate, $endDate) {
 
 		// SQL query to retrieve availability data
 		$db = getDBConnection();
@@ -479,6 +479,115 @@
 		while ($stmt->fetch()) {
 			$result[$setDate]["nAvailable"] = $nAvailable;
 			$result[$setDate]["nUnavailable"] = $nUnAvailable;
+
+			if ($nAvailable != 0) //store this value for Make All Available/Make All Unavialble
+				$result[1][] = $setDate;
+			if ($nUnAvailable!= 0)
+				$result[0][] = $setDate;
+		}
+		return $result;
+	}
+
+	/**
+	 * Executes an SQL query to retrieve availability data for a specific date range.
+	 *
+	 * @param int 		$systemId 	
+	 * @param string 	$startDate The start date of the date range (YYYY-MM-DD).
+	 * @param string 	$endDate   The end date of the date range (YYYY-MM-DD).
+	 *
+	 * @return array Associative array containing availability data for each date in the range.
+	 */
+	function getAvailabilityData($systemId, $startDate, $endDate) {
+		
+		// SQL query to retrieve availability data
+		$db = getDBConnection();
+
+		$sql = "SELECT 
+					TB2.SetDate, 
+					COALESCE(SP.isAvailable, TB2.isAvailable) AS isAvailable,
+					TB2.FromInMinutes,
+					TB2.ToInMinutes
+				FROM 
+					(
+						SELECT 
+							date_column AS SetDate, 
+							D1.weekday, 
+							FromInMinutes, 
+							ToInMinutes, 
+							isRegular, 
+							isAvailable 
+						FROM 
+							(
+								SELECT
+									date_column,
+									MOD(DAYOFWEEK(date_column) + 6, 7) AS weekday
+								FROM
+									(
+										SELECT
+											DATE(?) + INTERVAL (t4*10000 + t3*1000 + t2*100 + t1*10 + t0) DAY AS date_column
+										FROM
+											(SELECT 0 t0 UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) t0,
+											(SELECT 0 t1 UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) t1,
+											(SELECT 0 t2 UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) t2,
+											(SELECT 0 t3 UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) t3,
+											(SELECT 0 t4 UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) t4
+									) dates
+								WHERE
+									date_column BETWEEN ? AND ?
+							) AS D1 
+						LEFT JOIN 
+							(
+								SELECT * FROM setting_bookingperiods 
+								WHERE 
+									SystemId = IFNULL(
+										(
+											SELECT 
+												SystemId 
+											FROM 
+												setting_bookingperiods 
+											WHERE 
+												SystemId = ?
+											LIMIT 1
+										),
+										0
+									)
+							) AS SB
+						ON 
+							D1.weekday = SB.weekday 
+						ORDER BY 
+							D1.date_column
+					) AS TB2 
+				LEFT JOIN 
+					setting_bookingperiods_special AS SP 
+				ON 
+					TB2.SetDate = SP.SetDate 
+					AND TB2.FromInMinutes = SP.FromInMinutes 
+					AND TB2.ToInMinutes = SP.ToInMinutes 
+				ORDER BY 
+					TB2.SetDate;
+		";
+
+		// Prepare the SQL statement
+		$stmt = $db ->prepare($sql);
+
+		// Bind parameters and execute the query
+		$stmt->bind_param("sssi", $startDate, $startDate, $endDate, $systemId);
+		$stmt->execute();
+		$stmt->bind_result($setDate, $isAvailable, $fromMinutes, $toInMinutes);
+		
+		// Initialize an array to store the available time slots
+		$result = [];
+		// Fetch the booking periods
+		while ($stmt->fetch()) {
+			
+			$time_slot = $fromMinutes . '-' . $toInMinutes;
+
+			$result[$setDate]["timeslot"][] = [
+				'FromInMinutes' => $fromMinutes,
+				'ToInMinutes' => $toInMinutes,
+				'isAvailable' => $isAvailable
+			];
+			
 		}
 		return $result;
 	}
@@ -551,6 +660,7 @@
 
 		// Initialize an array to store the available time slots
 		$result = [];
+		
 		// Fetch the booking periods
 		while ($stmt->fetch()) {
 			$result[$setDate]["nAvailable"] = $nAvailable;
@@ -757,6 +867,7 @@
 		return $result;
 		
 	}
+	
 
 	//get available/unvavailable time periods from setting_bookingperiods DB BY weekid
 	function getOneDayTimePeriodByWeekDay($systemId, $weekday){
@@ -921,5 +1032,27 @@
 
 			$updateStmt->close();
     	}
+	}
+
+	function OnDeleteSpecialTimePeriods($systemId, $firstDayOfMonthFormatted, $lastDayOfMonthFormatted){
+		$db = getDBConnection();
+        $sql = "DELETE FROM setting_bookingperiods_special WHERE SystemId =? AND SetDate BETWEEN? AND?";
+        $stmt = $db->prepare($sql);
+        $stmt->bind_param("iss", $systemId, $firstDayOfMonthFormatted, $lastDayOfMonthFormatted);
+        $stmt->execute();
+        $stmt->close();
+	}
+
+	function InsertManyInSpecialTimePeriods ($values) {
+		$db = getDBConnection();
+		
+		$sql = "INSERT INTO setting_bookingperiods_special (SystemId, SetDate, FromInMinutes, ToInMinutes, isAvailable) VALUES $values";
+		__debug($sql);
+		$stmt = $db->prepare($sql);
+		if (!$stmt->execute()) {
+			die('Error executing insert SQL statement: ' . $insertStmt->error);
+		}
+
+		$stmt->close();
 	}
 ?>
