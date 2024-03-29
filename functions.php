@@ -771,7 +771,8 @@
 
 		// Check if the record already exists
 		$stmt = $db->prepare("SELECT COUNT(*) FROM setting_bookingperiods_special WHERE SystemId = ? AND SetDate = ? AND FromInMinutes = ? AND ToInMinutes = ?");
-		$stmt->execute([$systemId, $formattedDate, $fromInMinutes, $toInMinutes]);
+		$stmt->bind_param("isii", $systemId, $formattedDate, $fromInMinutes, $toInMinutes);
+		$stmt->execute();
 		$stmt->bind_result($existingRecordsCount);
 		$stmt->fetch();
 		$stmt->close();

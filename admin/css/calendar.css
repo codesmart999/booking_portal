@@ -345,3 +345,7 @@ table.lightgrey-weekends tbody td:nth-child(n+6) {
 	color: red;
 	text-decoration: underline !important;
 }
+
+#timeSlotsTable img {
+	float: none;
+}
