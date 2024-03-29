@@ -30,7 +30,7 @@ if ($startDate === $endDate) {
 $bookingInfo = getBookedInfo($systemId, $startDate, $endDate);
 
 //count bookings
-$bookCount = count($bookingInfo);
+$bookCount = getNumberOfBookings($bookingInfo);
 
 //Get available/unavailable timesolt by week
 $availableSlots =  ($showFlag == MONTHLY_SHOWING_MODE) ? getAvailabilityDataWithCounts($systemId, $startDate, $endDate) : getAvailableInfoInOneWeekRange($systemId, $startDate, $endDate);

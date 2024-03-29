@@ -385,6 +385,26 @@
 		);
 	}
 
+	//get Number of bookings
+	function getNumberOfBookings($data){
+		// Array to store unique booking nodes
+		$uniqueBookingNodes = [];
+
+		// Iterate over the given array and count unique booking nodes
+		foreach ($data as $date => $slots) {
+			foreach ($slots as $slot => $booking) {
+				// Form a unique identifier for each booking node
+				$bookingNode = $booking['customer_id'] . '_' . $booking['business_name'] . '_' . $booking['booking_code'];
+				
+				// Increment count for the unique booking node
+				$uniqueBookingNodes[$bookingNode] = isset($uniqueBookingNodes[$bookingNode]) ? $uniqueBookingNodes[$bookingNode] + 1 : 1;
+			}
+		}
+		
+		return count($uniqueBookingNodes);
+	}
+
+
 	/**
 	 * Executes an SQL query to retrieve availability data for a specific date range.
 	 *
