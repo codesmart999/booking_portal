@@ -143,7 +143,7 @@ $prevDay = $date->format('Y-m-d')
                             <span title="<?php echo $systemName; ?>" style="font-size: 14px;"><?php echo $systemName; ?></span>
                             &nbsp;&nbsp;&nbsp;
                             <a target="_self" href="#" onclick="redirectToToday()" style="color: blue;" onmouseover="this.style.color='red';" onmouseout="this.style.color='blue';" onmouseover="window.status='Calendar View for Today';return true" onmouseout="window.status='';return true">Today</a>
-                            <a href="javascript:popUp('options/options_services_display.asp');" style="color: blue;" onmouseover="this.style.color='red';" onmouseout="this.style.color='blue';">Services List</a>&nbsp; <!-- Updated link -->
+                            <a href="javascript:popUp('options/options_services_display.asp');" style="color: blue;" onmouseover="this.style.color='red';" onmouseout="this.style.color='blue';">Services</a>&nbsp; <!-- Updated link -->
                             <a target="_self" href="options/options.asp" style="color: blue;" onmouseover="this.style.color='red';" onmouseout="this.style.color='blue';" onmouseover="window.status='Access Options Menu';return true" onmouseout="window.status='';return true">Options</a>&nbsp; 
                         </font>
                     </td>

@@ -270,7 +270,7 @@ while ($startDateTime <= $endDateTime) {
                                 .$timeRender.'
                             </span>';
                         echo '<a target="_self" href="#" onclick="bookedClientView('.$customer_id.');"><span class="CustName">'.$businessName.'<br/></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
-                        echo '<a target="_self" href="#" onclick="bookedAddComments('.$booking_id.');">';
+                        echo '<a target="_self" href="#" onclick="bookedAddComments(&quot;'.$bookingCode.'&quot;);">';
                         if ($hasComment){
                             echo '<img title="Comment Added" border="0" src="/images/comment.png">
                                 </a>';
@@ -281,7 +281,7 @@ while ($startDateTime <= $endDateTime) {
                         // echo '<a target="_self" href="#" onclick="bookedQA('.$booking_id.');">
                         //         <img title="Questions and Answers" border="0" src="/images/i1.png">
                         //      </a>';
-                        echo '<a target="_self" href="#" onclick="bookedViewBookingDetails('.$booking_id.');">
+                        echo '<a target="_self" href="#" onclick="bookedViewBookingDetails(&quot;'.$bookingCode.'&quot;);">
                                     <img title="View Booking Details" border="0" src="/images/bookdetail.png">
                                 </a>
                             <br>';

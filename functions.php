@@ -1101,4 +1101,21 @@
 
 		$stmt->close();
 	}
+
+	function getBookedInfoByBookingCode($booking_code) {
+	    $db = getDBConnection();
+        $sql = "SELECT FullName, BookingDate, BookingFrom, BookingTo FROM (SELECT * FROM bookings WHERE BookingCode = ? ORDER BY BookingFrom) AS T1 JOIN customers ON T1.CustomerId = customers.CustomerId";
+        $stmt = $db->prepare($sql);
+		$stmt->bind_param("s", $booking_code);
+        $stmt->execute();
+		$stmt->bind_result($businessName, $bookingDate, $fromInMinutes, $toInMinutes);
+		$bookingInfo = [];
+
+		// Fetch the results
+		while ($stmt->fetch()) {
+			
+		}
+		$stmt->close();
+	}
+	
 ?>
