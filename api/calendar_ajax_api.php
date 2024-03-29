@@ -160,7 +160,9 @@ if (!empty($_REQUEST['year']) && !empty($_REQUEST['month']) && !empty($_REQUEST[
 	exit();
 
 } 
-if ($_POST['action'] == "change_availability") {
+
+//GET DATA FROM DB FOR CHAGNE_AVIALITY ACTION
+if (!empty($_REQUEST['action']) && $_POST['action'] == "change_availability") {
     $date = isset($_POST['date']) ? intval($_POST['date']) : 0;
     $value = isset($_POST['value']) ? $_POST['value'] : [];
     $systemId = isset($_POST['systemId']) ? $_POST['systemId'] : [];
@@ -188,7 +190,7 @@ if ($_POST['action'] == "change_availability") {
     exit();
 }
 
-if ($_POST['action'] == "change_availability_date_range") {
+if (!empty($_REQUEST['action']) && $_POST['action'] == "change_availability_date_range") {
     $date = isset($_POST['date']) ? intval($_POST['date']) : 0;
     $flag = isset($_POST['flag']) ? intval($_POST['flag']) : [];
     $systemId = isset($_POST['systemId']) ? $_POST['systemId'] : [];
@@ -227,7 +229,7 @@ if ($_POST['action'] == "change_availability_date_range") {
 }
 
 //API for action "Make All Available/ Make All Unavialable" Button on Montly Show Table
-if ($_POST['action'] == "change_availability_month") {
+if (!empty($_REQUEST['action']) && $_POST['action'] == "change_availability_month") {
     $data = isset($_POST['data']) ? json_decode($_POST['data']) : [];
     $flag = isset($_POST['flag']) ? intval($_POST['flag']) : [];
     $systemId = isset($_POST['systemId']) ? $_POST['systemId'] : [];

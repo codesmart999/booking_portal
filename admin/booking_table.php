@@ -4,6 +4,11 @@ require_once('header.php');
 // Get the database connection
 $db = getDBConnection();
 
+if (!isset($systemId) || !isset($startDate)){ //exception
+    header('Location: '. SECURE_URL . ADMIN_INDEX, true, 301);
+    exit; // Make sure to exit after redirection to prevent further script execution
+}
+
 $showFlag = WEEKLY_SHOWING_MODE;
 
 if (!isset($_GET['endDate'])) {
@@ -24,6 +29,11 @@ if (!isset($_GET['startDate'])) {
 
 if ($startDate === $endDate) {
     $showFlag = DAYILY_SHOWING_MODE;
+}
+
+$isGroupBooking = 0;
+if (isset($_GET['groupBooking'])) {
+    $isGroupBooking = $_GET['groupBooking'];
 }
 
 //get BookedInfo
@@ -113,8 +123,9 @@ if ($showFlag == MONTHLY_SHOWING_MODE){
                 </span>
                 <span style="float: right;" >
                     &nbsp;&nbsp;<font size="2" face="Arial" color="#0000FF">&nbsp; •
-                    <!-- </font><font size="2" face="Arial" color="#FFFFFF"> <a href="#">Group&nbsp;Bookings</a></font><font size="2" face="Arial" color="#0000FF">&nbsp; &nbsp;• 
-                    </font><font size="2" face="Arial" color="#FFFFFF"> <a href="#">Change&nbsp;Display</a></font><font size="2" face="Arial" color="#0000FF">&nbsp; &nbsp;•  -->
+                    </font><font size="2" face="Arial" color="#FFFFFF"> <a href="#" target="_self" onclick = "onGroupBooking()"><?php if($isGroupBooking) echo "Single&nbsp;Bookings"; else echo "Group&nbsp;Bookings";?></a></font><font size="2" face="Arial" color="#0000FF">&nbsp; &nbsp;
+                    
+                    <!-- </font><font size="2" face="Arial" color="#FFFFFF"> <a href="#">Change&nbsp;Display</a></font><font size="2" face="Arial" color="#0000FF">&nbsp; &nbsp; -->
                     </font><font size="2" face="Arial" color="#FFFFFF"> <a href="#" onmouseover="showLocation(true)" onmouseout="showLocation(false)">Show Location</a>
                     </font>
                 </span>
@@ -208,6 +219,7 @@ while ($startDateTime <= $endDateTime) {
             $halfIndex = ceil(($availableSlotCount + $unavailableSlotCount) / 2) + 1;
             if (isset($availableSlots[$weekday]["timeslot"])){//exception handling
                 
+                $bookedInfo = [];
                 foreach ($availableSlots[$weekday]["timeslot"] as $slot) {
                     $index += 1;
 
@@ -220,39 +232,39 @@ while ($startDateTime <= $endDateTime) {
                     $isAvailable = $slot['isAvailable'];
 
                     $timeSlot = "$fromMinutes-$toMinutes";
-
-                    // Format the start time
-                    $startHour = floor($fromMinutes / 60);
-                    $startMinute = $fromMinutes % 60;
-                    $startTime = sprintf('%d:%02d', $startHour, $startMinute);
-
-                    // Format the end time
-                    $endHour = floor($toMinutes / 60);
-                    $endMinute = $toMinutes % 60;
-                    $endTime = sprintf('%d:%02d', $endHour, $endMinute);
-
-                    // Combine start and end times
-                    $timeRender = date('g:i A', strtotime($startTime)) . ' - ' . date('g:i A', strtotime($endTime));
-
+                    $timeRender = formatTimeRange($fromMinutes, $toMinutes);
+                    
                     $background_color = "FFFFFF"; // White for available
                     $fullName = "";
                     $available = 1; //available
                     // Check if the time slot is booked
                     if (isset($bookingInfo[$dateYMD][$timeSlot])) { //booked case
-                        $background_color = "CCFFCC"; //booked color
+                        $bookingCode = $bookingInfo[$dateYMD][$timeSlot]["booking_code"];
+                         $background_color = "CCFFCC"; //booked color
                         // Time slot is booked
                         $businessName = $bookingInfo[$dateYMD][$timeSlot]["business_name"];
                         $booking_id = $bookingInfo[$dateYMD][$timeSlot]["booking_id"];
                         $customer_id = $bookingInfo[$dateYMD][$timeSlot]["customer_id"];
                         $available = 2; //booked
                         $hasComment = empty($bookingInfo[$dateYMD][$timeSlot]["booking_comments"]) ? 0 : 1;
+                        if ($isGroupBooking){
+                            if ($bookingInfo[$dateYMD][$bookingCode][1] == $toMinutes){
+                               
+                                $timeSlot = $bookingInfo[$dateYMD][$bookingCode][0]."-".$bookingInfo[$dateYMD][$bookingCode][1];
+                                $timeRender = formatTimeRange($bookingInfo[$dateYMD][$bookingCode][0], $bookingInfo[$dateYMD][$bookingCode][1]);
+                            }
+                            else{
+                                continue;
+                            }
+                        }
+                       
                         echo '&nbsp;
                             <input type="checkbox" 
                                 name="timeslot" 
                                 date = "'.$startDateTime.'" 
                                 status = "'.$available.'" 
                                 style="margin-top: 5px" 
-                                value="'.$fromMinutes.'-'.$toMinutes.'">&nbsp;
+                                value="'.$timeSlot.'">&nbsp;
                             <span 
                                 style="background-color: #'.$background_color.'">'
                                 .$timeRender.'
@@ -458,6 +470,11 @@ while ($startDateTime <= $endDateTime) {
                 alert('Error saving value:', error);
             }
         });
+    }
+
+    function onGroupBooking(){
+        const newUrl = `${window.location.origin}${window.location.pathname}?SystemId=${<?php echo $systemId; ?>}&startDate=<?php echo $startDate;?>&endDate=<?php echo $endDate;?>&groupBooking=<?php echo !$isGroupBooking;?>`;
+        window.location.href = newUrl;
     }
 
    // Get all checkbox elements

@@ -385,6 +385,23 @@
 		);
 	}
 
+	function formatTimeRange($fromMinutes, $toMinutes) {
+	    // Format the start time
+	    $startHour = floor($fromMinutes / 60);
+	    $startMinute = $fromMinutes % 60;
+	    $startTime = sprintf('%d:%02d', $startHour, $startMinute);
+	
+	    // Format the end time
+	    $endHour = floor($toMinutes / 60);
+	    $endMinute = $toMinutes % 60;
+	    $endTime = sprintf('%d:%02d', $endHour, $endMinute);
+	
+	    // Combine start and end times
+	    $timeRender = date('g:i A', strtotime($startTime)) . ' - ' . date('g:i A', strtotime($endTime));
+	
+	    return $timeRender;
+	}
+	
 	//get Number of bookings
 	function getNumberOfBookings($data){
 		// Array to store unique booking nodes
@@ -394,13 +411,15 @@
 		foreach ($data as $date => $slots) {
 			foreach ($slots as $slot => $booking) {
 				// Form a unique identifier for each booking node
-				$bookingNode = $booking['customer_id'] . '_' . $booking['business_name'] . '_' . $booking['booking_code'];
+				if (isset($booking['customer_id']) && isset($booking['customer_id'])){
+					$bookingNode = $booking['customer_id'] . '_' . $booking['customer_id'] . '_' . $booking['booking_code'];
 				
 				// Increment count for the unique booking node
 				$uniqueBookingNodes[$bookingNode] = isset($uniqueBookingNodes[$bookingNode]) ? $uniqueBookingNodes[$bookingNode] + 1 : 1;
+				}
 			}
 		}
-		
+
 		return count($uniqueBookingNodes);
 	}
 
@@ -1005,6 +1024,13 @@
 			$bookingInfo[$bookingDate][$bookingTimeSlot]['booking_code'] = $bookingCode;
 			$bookingInfo[$bookingDate][$bookingTimeSlot]['booking_comments'] = $bookingComments;
 			$bookingInfo[$bookingDate][$bookingTimeSlot]['booking_id'] = $bookingId;
+			if (isset($bookingInfo[$bookingDate][$bookingCode][0])){
+				if ($bookingInfo[$bookingDate][$bookingCode][1] == $bookingFrom){
+					$bookingInfo[$bookingDate][$bookingCode][1] = $bookingTo;
+				}
+			}else{
+				$bookingInfo[$bookingDate][$bookingCode] = [$bookingFrom, $bookingTo];
+			}
 		}
 		return $bookingInfo;
 	}
