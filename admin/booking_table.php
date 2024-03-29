@@ -4,6 +4,11 @@ require_once('header.php');
 // Get the database connection
 $db = getDBConnection();
 
+if (!isset($systemId) || !isset($startDate)){ //exception
+    header('Location: '. SECURE_URL . ADMIN_INDEX, true, 301);
+    exit; // Make sure to exit after redirection to prevent further script execution
+}
+
 $showFlag = WEEKLY_SHOWING_MODE;
 
 if (!isset($_GET['endDate'])) {
@@ -26,34 +31,39 @@ if ($startDate === $endDate) {
     $showFlag = DAYILY_SHOWING_MODE;
 }
 
+$isGroupBooking = 0;
+if (isset($_GET['groupBooking'])) {
+    $isGroupBooking = $_GET['groupBooking'];
+}
+
 //get BookedInfo
 $bookingInfo = getBookedInfo($systemId, $startDate, $endDate);
 
 //count bookings
-$bookCount = count($bookingInfo);
+$bookCount = getNumberOfBookings($bookingInfo);
 
 //Get available/unavailable timesolt by week
-$availableSlots = getWeeklyTimePeriodsByDateRange($systemId, $startDate, $endDate);
-
-//Get available/unavailable timesolt in by day - special db
-//$availablesInfo = getTimePeriodsByDay($systemId, $startDate, $endDate);
-
+$availableSlots =  ($showFlag == MONTHLY_SHOWING_MODE) ? getAvailabilityDataWithCounts($systemId, $startDate, $endDate) : getAvailableInfoInOneWeekRange($systemId, $startDate, $endDate);
 
 // Iterate over each date in the date range
 $currentDateTime = strtotime(date('Y-m-d'));
 $startDateTime = strtotime($startDate);
+$tmpStartDateTime = $startDateTime;
 $endDateTime = strtotime($endDate);
 
 $tableTitle = formatDateRange($startDate, $endDate, $showFlag);
 
 $weekDates = getWeekDates($endDate);
+
+//For Make All Available/Make All Unavaiable Button Event on Monthly show list 
+$availableDatedInMonth = (isset($availableSlots[1])) ? json_encode($availableSlots[1]) : json_encode(array());
+$unavailableDatedInMonth = (isset($availableSlots[0])) ? json_encode($availableSlots[0]) : json_encode(array());
 //building TABLE HEADER part
 if ($showFlag == MONTHLY_SHOWING_MODE){
 ?>
     <thead>
         <tr>
             <td style="width:50%; border-right: 0 solid black;" bgcolor="#C5D4F0" valign="top" align="center" colspan="4">
-                
                 <font face="Arial" size="2" color="#000000">
                     <span class="big-font">
                         <b>
@@ -68,8 +78,8 @@ if ($showFlag == MONTHLY_SHOWING_MODE){
         <tr id="monthly_show_header">
             <td bgcolor="FFFFFF" colspan="4"> 
                 <font face="Arial" size="2" color="#000000">
-                    <a href="javascript:changeAvailabilityMonth()" target="_self" onclick="return confirm('This will make ALL future booking periods available in this month view.\nNo change will be made to periods already booked.\nAre you sure you want to proceed?')" class="link">Make All Available</a>&nbsp;&nbsp;
-                    <a href="javascript:changeAvailabilityMonth()" target="_self" onclick="return confirm('This will make ALL future booking periods unavailable in this month view.\nNo change will be made to periods already booked.\nAre you sure you want to proceed?')" class="link">Make All Unavailable</a>&nbsp;&nbsp;
+                    <a href="javascript:changeAvailabilityMonth(0)" target="_self" onclick="return confirm('This will make ALL future booking periods available in this month view.\nNo change will be made to periods already booked.\nAre you sure you want to proceed?')" class="link">Make All Available</a>&nbsp;&nbsp;
+                    <a href="javascript:changeAvailabilityMonth(1)" target="_self" onclick="return confirm('This will make ALL future booking periods unavailable in this month view.\nNo change will be made to periods already booked.\nAre you sure you want to proceed?')" class="link">Make All Unavailable</a>&nbsp;&nbsp;
                 </font>
             </td>
         </tr>
@@ -113,8 +123,9 @@ if ($showFlag == MONTHLY_SHOWING_MODE){
                 </span>
                 <span style="float: right;" >
                     &nbsp;&nbsp;<font size="2" face="Arial" color="#0000FF">&nbsp; •
-                    <!-- </font><font size="2" face="Arial" color="#FFFFFF"> <a href="#">Group&nbsp;Bookings</a></font><font size="2" face="Arial" color="#0000FF">&nbsp; &nbsp;• 
-                    </font><font size="2" face="Arial" color="#FFFFFF"> <a href="#">Change&nbsp;Display</a></font><font size="2" face="Arial" color="#0000FF">&nbsp; &nbsp;•  -->
+                    </font><font size="2" face="Arial" color="#FFFFFF"> <a href="#" target="_self" onclick = "onGroupBooking()"><?php if($isGroupBooking) echo "Single&nbsp;Bookings"; else echo "Group&nbsp;Bookings";?></a></font><font size="2" face="Arial" color="#0000FF">&nbsp; &nbsp;
+                    
+                    <!-- </font><font size="2" face="Arial" color="#FFFFFF"> <a href="#">Change&nbsp;Display</a></font><font size="2" face="Arial" color="#0000FF">&nbsp; &nbsp; -->
                     </font><font size="2" face="Arial" color="#FFFFFF"> <a href="#" onmouseover="showLocation(true)" onmouseout="showLocation(false)">Show Location</a>
                     </font>
                 </span>
@@ -139,10 +150,10 @@ while ($startDateTime <= $endDateTime) {
         $unavailableSlotCount = 0;
 
         $bookedCount = isset($bookingInfo[$dateYMD]) ? count($bookingInfo[$dateYMD]) : 0;
-
-        if (isset($availableSlots[$weekday])) {
-            $availableSlotCount = $availableSlots[$weekday][1];
-            $unavailableSlotCount = $availableSlots[$weekday][0];
+        
+        if (isset($availableSlots[$dateYMD])) {
+            $availableSlotCount = $availableSlots[$dateYMD]["nAvailable"];
+            $unavailableSlotCount = $availableSlots[$dateYMD]["nUnavailable"];
         }
         $availableSlotCount -= $bookedCount;
 
@@ -208,6 +219,7 @@ while ($startDateTime <= $endDateTime) {
             $halfIndex = ceil(($availableSlotCount + $unavailableSlotCount) / 2) + 1;
             if (isset($availableSlots[$weekday]["timeslot"])){//exception handling
                 
+                $bookedInfo = [];
                 foreach ($availableSlots[$weekday]["timeslot"] as $slot) {
                     $index += 1;
 
@@ -220,45 +232,45 @@ while ($startDateTime <= $endDateTime) {
                     $isAvailable = $slot['isAvailable'];
 
                     $timeSlot = "$fromMinutes-$toMinutes";
-
-                    // Format the start time
-                    $startHour = floor($fromMinutes / 60);
-                    $startMinute = $fromMinutes % 60;
-                    $startTime = sprintf('%d:%02d', $startHour, $startMinute);
-
-                    // Format the end time
-                    $endHour = floor($toMinutes / 60);
-                    $endMinute = $toMinutes % 60;
-                    $endTime = sprintf('%d:%02d', $endHour, $endMinute);
-
-                    // Combine start and end times
-                    $timeRender = date('g:i A', strtotime($startTime)) . ' - ' . date('g:i A', strtotime($endTime));
-
+                    $timeRender = formatTimeRange($fromMinutes, $toMinutes);
+                    
                     $background_color = "FFFFFF"; // White for available
                     $fullName = "";
                     $available = 1; //available
                     // Check if the time slot is booked
                     if (isset($bookingInfo[$dateYMD][$timeSlot])) { //booked case
-                        $background_color = "CCFFCC"; //booked color
+                        $bookingCode = $bookingInfo[$dateYMD][$timeSlot]["booking_code"];
+                         $background_color = "CCFFCC"; //booked color
                         // Time slot is booked
                         $businessName = $bookingInfo[$dateYMD][$timeSlot]["business_name"];
                         $booking_id = $bookingInfo[$dateYMD][$timeSlot]["booking_id"];
                         $customer_id = $bookingInfo[$dateYMD][$timeSlot]["customer_id"];
                         $available = 2; //booked
                         $hasComment = empty($bookingInfo[$dateYMD][$timeSlot]["booking_comments"]) ? 0 : 1;
+                        if ($isGroupBooking){
+                            if ($bookingInfo[$dateYMD][$bookingCode][1] == $toMinutes){
+                               
+                                $timeSlot = $bookingInfo[$dateYMD][$bookingCode][0]."-".$bookingInfo[$dateYMD][$bookingCode][1];
+                                $timeRender = formatTimeRange($bookingInfo[$dateYMD][$bookingCode][0], $bookingInfo[$dateYMD][$bookingCode][1]);
+                            }
+                            else{
+                                continue;
+                            }
+                        }
+                       
                         echo '&nbsp;
                             <input type="checkbox" 
                                 name="timeslot" 
                                 date = "'.$startDateTime.'" 
                                 status = "'.$available.'" 
                                 style="margin-top: 5px" 
-                                value="'.$fromMinutes.'-'.$toMinutes.'">&nbsp;
+                                value="'.$timeSlot.'">&nbsp;
                             <span 
                                 style="background-color: #'.$background_color.'">'
                                 .$timeRender.'
                             </span>';
                         echo '<a target="_self" href="#" onclick="bookedClientView('.$customer_id.');"><span class="CustName">'.$businessName.'<br/></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
-                        echo '<a target="_self" href="#" onclick="bookedAddComments('.$booking_id.');">';
+                        echo '<a target="_self" href="#" onclick="bookedAddComments(&quot;'.$bookingCode.'&quot;);">';
                         if ($hasComment){
                             echo '<img title="Comment Added" border="0" src="/images/comment.png">
                                 </a>';
@@ -266,10 +278,10 @@ while ($startDateTime <= $endDateTime) {
                             echo '<img title="Add Comments" border="0" src="/images/nocomment.png">
                                 </a>';
                         }
-                        echo '<a target="_self" href="#" onclick="bookedQA('.$booking_id.');">
-                                <img title="Questions and Answers" border="0" src="/images/i1.png">
-                             </a>';
-                        echo '<a target="_self" href="#" onclick="bookedViewBookingDetails('.$booking_id.');">
+                        // echo '<a target="_self" href="#" onclick="bookedQA('.$booking_id.');">
+                        //         <img title="Questions and Answers" border="0" src="/images/i1.png">
+                        //      </a>';
+                        echo '<a target="_self" href="#" onclick="bookedViewBookingDetails(&quot;'.$bookingCode.'&quot;);">
                                     <img title="View Booking Details" border="0" src="/images/bookdetail.png">
                                 </a>
                             <br>';
@@ -434,6 +446,35 @@ while ($startDateTime <= $endDateTime) {
                 alert('Error saving value:', error);
             }
         });
+    }
+
+    function changeAvailabilityMonth(flag){
+        // Send AJAX request only if data is not empty
+        $.ajax({
+            url: '/api/calendar_ajax_api.php', // URL to your PHP script that handles saving the value
+            method: 'POST',
+            data: {
+                action: 'change_availability_month', // Action parameter
+                data: flag == 1 ? JSON.stringify({ dates: <?php echo $availableDatedInMonth; ?> }) : JSON.stringify({ dates: <?php echo $unavailableDatedInMonth; ?> }),
+                flag: flag,
+                startDate: <?php echo $tmpStartDateTime;?>,
+                systemId: <?php echo $systemId; ?>
+            },
+            success: function(response) {
+                // Handle the server response if needed
+                console.log('Toggle value saved successfully.');
+                location.reload();
+            },
+            error: function(xhr, status, error) {
+                // Handle errors if the AJAX request fails
+                alert('Error saving value:', error);
+            }
+        });
+    }
+
+    function onGroupBooking(){
+        const newUrl = `${window.location.origin}${window.location.pathname}?SystemId=${<?php echo $systemId; ?>}&startDate=<?php echo $startDate;?>&endDate=<?php echo $endDate;?>&groupBooking=<?php echo !$isGroupBooking;?>`;
+        window.location.href = newUrl;
     }
 
    // Get all checkbox elements

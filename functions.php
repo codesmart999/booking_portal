@@ -385,7 +385,251 @@
 		);
 	}
 
+	function formatTimeRange($fromMinutes, $toMinutes) {
+	    // Format the start time
+	    $startHour = floor($fromMinutes / 60);
+	    $startMinute = $fromMinutes % 60;
+	    $startTime = sprintf('%d:%02d', $startHour, $startMinute);
+	
+	    // Format the end time
+	    $endHour = floor($toMinutes / 60);
+	    $endMinute = $toMinutes % 60;
+	    $endTime = sprintf('%d:%02d', $endHour, $endMinute);
+	
+	    // Combine start and end times
+	    $timeRender = date('g:i A', strtotime($startTime)) . ' - ' . date('g:i A', strtotime($endTime));
+	
+	    return $timeRender;
+	}
+	
+	//get Number of bookings
+	function getNumberOfBookings($data){
+		// Array to store unique booking nodes
+		$uniqueBookingNodes = [];
 
+		// Iterate over the given array and count unique booking nodes
+		foreach ($data as $date => $slots) {
+			foreach ($slots as $slot => $booking) {
+				// Form a unique identifier for each booking node
+				if (isset($booking['customer_id']) && isset($booking['customer_id'])){
+					$bookingNode = $booking['customer_id'] . '_' . $booking['customer_id'] . '_' . $booking['booking_code'];
+				
+				// Increment count for the unique booking node
+				$uniqueBookingNodes[$bookingNode] = isset($uniqueBookingNodes[$bookingNode]) ? $uniqueBookingNodes[$bookingNode] + 1 : 1;
+				}
+			}
+		}
+
+		return count($uniqueBookingNodes);
+	}
+
+
+	/**
+	 * Executes an SQL query to retrieve availability data for a specific date range.
+	 *
+	 * @param int 		$systemId 	
+	 * @param string 	$startDate The start date of the date range (YYYY-MM-DD).
+	 * @param string 	$endDate   The end date of the date range (YYYY-MM-DD).
+	 *
+	 * @return array Associative array containing availability data for each date in the range.
+	 */
+	function getAvailabilityDataWithCounts($systemId, $startDate, $endDate) {
+
+		// SQL query to retrieve availability data
+		$db = getDBConnection();
+
+		$sql = "SELECT 
+					TB2.SetDate, 
+					SUM(CASE WHEN COALESCE(SP.isAvailable, TB2.isAvailable) = 1 THEN 1 ELSE 0 END) AS nAvailable,
+					SUM(CASE WHEN COALESCE(SP.isAvailable, TB2.isAvailable) = 0 THEN 1 ELSE 0 END) AS nUnAvailable
+				FROM 
+					(
+						SELECT 
+							date_column AS SetDate, 
+							D1.weekday, 
+							FromInMinutes, 
+							ToInMinutes, 
+							isRegular, 
+							isAvailable 
+						FROM 
+							(
+								SELECT
+									date_column,
+									MOD(DAYOFWEEK(date_column) + 6, 7) AS weekday
+								FROM
+									(
+										SELECT
+											DATE(?) + INTERVAL (t4*10000 + t3*1000 + t2*100 + t1*10 + t0) DAY AS date_column
+										FROM
+											(SELECT 0 t0 UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) t0,
+											(SELECT 0 t1 UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) t1,
+											(SELECT 0 t2 UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) t2,
+											(SELECT 0 t3 UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) t3,
+											(SELECT 0 t4 UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) t4
+									) dates
+								WHERE
+									date_column BETWEEN ? AND ?
+							) AS D1 
+						LEFT JOIN 
+							(
+								SELECT * FROM setting_bookingperiods 
+								WHERE 
+									SystemId = IFNULL(
+										(
+											SELECT 
+												SystemId 
+											FROM 
+												setting_bookingperiods 
+											WHERE 
+												SystemId = ?
+											LIMIT 1
+										),
+										0
+									)
+							) AS SB
+						ON 
+							D1.weekday = SB.weekday 
+						ORDER BY 
+							D1.date_column
+					) AS TB2 
+				LEFT JOIN 
+					setting_bookingperiods_special AS SP 
+				ON 
+					TB2.SetDate = SP.SetDate 
+					AND TB2.FromInMinutes = SP.FromInMinutes 
+					AND TB2.ToInMinutes = SP.ToInMinutes 
+				GROUP BY 
+					TB2.SetDate 
+				ORDER BY 
+					TB2.SetDate;
+		";
+
+		// Prepare the SQL statement
+		$stmt = $db ->prepare($sql);
+
+		// Bind parameters and execute the query
+		$stmt->bind_param("sssi", $startDate, $startDate, $endDate, $systemId);
+		$stmt->execute();
+		$stmt->bind_result($setDate, $nAvailable, $nUnAvailable);
+
+		// Initialize an array to store the available time slots
+		$result = [];
+		// Fetch the booking periods
+		while ($stmt->fetch()) {
+			$result[$setDate]["nAvailable"] = $nAvailable;
+			$result[$setDate]["nUnavailable"] = $nUnAvailable;
+
+			if ($nAvailable != 0) //store this value for Make All Available/Make All Unavialble
+				$result[1][] = $setDate;
+			if ($nUnAvailable!= 0)
+				$result[0][] = $setDate;
+		}
+		return $result;
+	}
+
+	/**
+	 * Executes an SQL query to retrieve availability data for a specific date range.
+	 *
+	 * @param int 		$systemId 	
+	 * @param string 	$startDate The start date of the date range (YYYY-MM-DD).
+	 * @param string 	$endDate   The end date of the date range (YYYY-MM-DD).
+	 *
+	 * @return array Associative array containing availability data for each date in the range.
+	 */
+	function getAvailabilityData($systemId, $startDate, $endDate) {
+		
+		// SQL query to retrieve availability data
+		$db = getDBConnection();
+
+		$sql = "SELECT 
+					TB2.SetDate, 
+					COALESCE(SP.isAvailable, TB2.isAvailable) AS isAvailable,
+					TB2.FromInMinutes,
+					TB2.ToInMinutes
+				FROM 
+					(
+						SELECT 
+							date_column AS SetDate, 
+							D1.weekday, 
+							FromInMinutes, 
+							ToInMinutes, 
+							isRegular, 
+							isAvailable 
+						FROM 
+							(
+								SELECT
+									date_column,
+									MOD(DAYOFWEEK(date_column) + 6, 7) AS weekday
+								FROM
+									(
+										SELECT
+											DATE(?) + INTERVAL (t4*10000 + t3*1000 + t2*100 + t1*10 + t0) DAY AS date_column
+										FROM
+											(SELECT 0 t0 UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) t0,
+											(SELECT 0 t1 UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) t1,
+											(SELECT 0 t2 UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) t2,
+											(SELECT 0 t3 UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) t3,
+											(SELECT 0 t4 UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) t4
+									) dates
+								WHERE
+									date_column BETWEEN ? AND ?
+							) AS D1 
+						LEFT JOIN 
+							(
+								SELECT * FROM setting_bookingperiods 
+								WHERE 
+									SystemId = IFNULL(
+										(
+											SELECT 
+												SystemId 
+											FROM 
+												setting_bookingperiods 
+											WHERE 
+												SystemId = ?
+											LIMIT 1
+										),
+										0
+									)
+							) AS SB
+						ON 
+							D1.weekday = SB.weekday 
+						ORDER BY 
+							D1.date_column
+					) AS TB2 
+				LEFT JOIN 
+					setting_bookingperiods_special AS SP 
+				ON 
+					TB2.SetDate = SP.SetDate 
+					AND TB2.FromInMinutes = SP.FromInMinutes 
+					AND TB2.ToInMinutes = SP.ToInMinutes 
+				ORDER BY 
+					TB2.SetDate;
+		";
+
+		// Prepare the SQL statement
+		$stmt = $db ->prepare($sql);
+
+		// Bind parameters and execute the query
+		$stmt->bind_param("sssi", $startDate, $startDate, $endDate, $systemId);
+		$stmt->execute();
+		$stmt->bind_result($setDate, $isAvailable, $fromMinutes, $toInMinutes);
+		
+		// Initialize an array to store the available time slots
+		$result = [];
+		// Fetch the booking periods
+		while ($stmt->fetch()) {
+			
+			$time_slot = $fromMinutes . '-' . $toInMinutes;
+
+			$result[$setDate]["timeslot"][] = [
+				'FromInMinutes' => $fromMinutes,
+				'ToInMinutes' => $toInMinutes,
+				'isAvailable' => $isAvailable
+			];
+			
+		}
+		return $result;
+	}
 	
 	//Get Available and Unavailable count in Date Range 
 	//USAGE: To show available/unavailable days on calendar
@@ -455,6 +699,7 @@
 
 		// Initialize an array to store the available time slots
 		$result = [];
+		
 		// Fetch the booking periods
 		while ($stmt->fetch()) {
 			$result[$setDate]["nAvailable"] = $nAvailable;
@@ -462,13 +707,34 @@
 			$result[$setDate]["weekday"] = $weekday;
 		}
 		return $result;
-		
 	}
 
 
-	//Get Available and Unavailable count in Date Range 
-	//USAGE: To show available/unavailable days on calendar
-	function getAvailableCountInWeek($systemId){
+	/**
+	 * Retrieves available time slots with their respective counts for a given week in the system.
+	 *
+	 * This function queries the system to fetch available time slots for a specified week and calculates
+	 * the count of available slots for each time slot. It provides an overview of the availability within
+	 * the specified week.
+	 *
+	 * @param int $systemId The ID of the system for which availability is being queried.
+	 *
+	 * @return array An associative array containing available time slots with their respective counts.
+	 *               The array structure is as follows:
+	 *               - Key: Date in Y-m-d format (e.g., "2024-03-28").
+	 *               - Value: An array containing time slots as keys and the count of available slots as values.
+	 *               Example: [
+	 *                   //Sample Return Result
+	 *							[0] => Array
+	 *					//     (
+	 *					//         [nAvailable] => 0
+	 *					//         [nUnavailable] => 4
+	 *					//     )
+	 *                   ],
+	 *                   // Additional dates and time slots...
+	 *               ]
+	 */
+	function getAvailableWithCountInWeek($systemId){
 		$db = getDBConnection();
 		// Prepare and execute a query to retrieve available time slots for the specified systemId
 		$sql = "SELECT 
@@ -564,7 +830,7 @@
 	}
 
 	//Get one Week time periods with DateRange by comibining BookingPeriods DB and Special DB
-	function getWeeklyTimePeriodsByDateRange($systemId, $startDate, $endDate){
+	function getAvailableInfoInOneWeekRange($systemId, $startDate, $endDate){
 		$db = getDBConnection();
 		// Prepare and execute a query to retrieve available time slots for the specified systemId
 		$sql = "SELECT
@@ -640,6 +906,7 @@
 		return $result;
 		
 	}
+	
 
 	//get available/unvavailable time periods from setting_bookingperiods DB BY weekid
 	function getOneDayTimePeriodByWeekDay($systemId, $weekday){
@@ -757,6 +1024,13 @@
 			$bookingInfo[$bookingDate][$bookingTimeSlot]['booking_code'] = $bookingCode;
 			$bookingInfo[$bookingDate][$bookingTimeSlot]['booking_comments'] = $bookingComments;
 			$bookingInfo[$bookingDate][$bookingTimeSlot]['booking_id'] = $bookingId;
+			if (isset($bookingInfo[$bookingDate][$bookingCode][0])){
+				if ($bookingInfo[$bookingDate][$bookingCode][1] == $bookingFrom){
+					$bookingInfo[$bookingDate][$bookingCode][1] = $bookingTo;
+				}
+			}else{
+				$bookingInfo[$bookingDate][$bookingCode] = [$bookingFrom, $bookingTo];
+			}
 		}
 		return $bookingInfo;
 	}
@@ -805,4 +1079,43 @@
 			$updateStmt->close();
     	}
 	}
+
+	function OnDeleteSpecialTimePeriods($systemId, $firstDayOfMonthFormatted, $lastDayOfMonthFormatted){
+		$db = getDBConnection();
+        $sql = "DELETE FROM setting_bookingperiods_special WHERE SystemId =? AND SetDate BETWEEN? AND?";
+        $stmt = $db->prepare($sql);
+        $stmt->bind_param("iss", $systemId, $firstDayOfMonthFormatted, $lastDayOfMonthFormatted);
+        $stmt->execute();
+        $stmt->close();
+	}
+
+	function InsertManyInSpecialTimePeriods ($values) {
+		$db = getDBConnection();
+		
+		$sql = "INSERT INTO setting_bookingperiods_special (SystemId, SetDate, FromInMinutes, ToInMinutes, isAvailable) VALUES $values";
+		__debug($sql);
+		$stmt = $db->prepare($sql);
+		if (!$stmt->execute()) {
+			die('Error executing insert SQL statement: ' . $insertStmt->error);
+		}
+
+		$stmt->close();
+	}
+
+	function getBookedInfoByBookingCode($booking_code) {
+	    $db = getDBConnection();
+        $sql = "SELECT FullName, BookingDate, BookingFrom, BookingTo FROM (SELECT * FROM bookings WHERE BookingCode = ? ORDER BY BookingFrom) AS T1 JOIN customers ON T1.CustomerId = customers.CustomerId";
+        $stmt = $db->prepare($sql);
+		$stmt->bind_param("s", $booking_code);
+        $stmt->execute();
+		$stmt->bind_result($businessName, $bookingDate, $fromInMinutes, $toInMinutes);
+		$bookingInfo = [];
+
+		// Fetch the results
+		while ($stmt->fetch()) {
+			
+		}
+		$stmt->close();
+	}
+	
 ?>
