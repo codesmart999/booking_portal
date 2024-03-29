@@ -266,9 +266,9 @@ while ($startDateTime <= $endDateTime) {
                             echo '<img title="Add Comments" border="0" src="/images/nocomment.png">
                                 </a>';
                         }
-                        echo '<a target="_self" href="#" onclick="bookedQA('.$booking_id.');">
-                                <img title="Questions and Answers" border="0" src="/images/i1.png">
-                             </a>';
+                        // echo '<a target="_self" href="#" onclick="bookedQA('.$booking_id.');">
+                        //         <img title="Questions and Answers" border="0" src="/images/i1.png">
+                        //      </a>';
                         echo '<a target="_self" href="#" onclick="bookedViewBookingDetails('.$booking_id.');">
                                     <img title="View Booking Details" border="0" src="/images/bookdetail.png">
                                 </a>
