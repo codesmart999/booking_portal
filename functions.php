@@ -1104,18 +1104,149 @@
 
 	function getBookedInfoByBookingCode($booking_code) {
 	    $db = getDBConnection();
-        $sql = "SELECT FullName, BookingDate, BookingFrom, BookingTo FROM (SELECT * FROM bookings WHERE BookingCode = ? ORDER BY BookingFrom) AS T1 JOIN customers ON T1.CustomerId = customers.CustomerId";
+        $sql = "SELECT FullName, BookingCode, BookingDate, BookingFrom, BookingTo, Attended, Comments FROM (SELECT * FROM bookings WHERE BookingCode = ? ORDER BY BookingFrom) AS T1 JOIN customers ON T1.CustomerId = customers.CustomerId ORDER BY BookingFrom ASC";
         $stmt = $db->prepare($sql);
 		$stmt->bind_param("s", $booking_code);
         $stmt->execute();
-		$stmt->bind_result($businessName, $bookingDate, $fromInMinutes, $toInMinutes);
+		$stmt->bind_result($businessName, $bookingCode, $bookingDate, $fromInMinutes, $toInMinutes, $attended, $comments);
 		$bookingInfo = [];
 
 		// Fetch the results
+		$bookingTimeStart = 100000; // SET MAX VALUE
+		$bookingTimeEnd = 0;
 		while ($stmt->fetch()) {
-			
+			if ($bookingTimeStart > $fromInMinutes)
+				$bookingTimeStart= $fromInMinutes;
+			if ($bookingTimeEnd < $toInMinutes)
+				$bookingTimeEnd = $toInMinutes;
+			$bookingInfo["businessName"] = $businessName;
+			$bookingInfo["bookingCode"] = $bookingCode;
+			$bookingInfo["bookingDate"] = $bookingDate;
+			$bookingInfo["attended"] = $attended;
+			$bookingInfo["comments"] = $comments;
 		}
+		$bookingInfo["startTime"] = $bookingTimeStart;
+		$bookingInfo["endTime"] = $bookingTimeEnd;
+
 		$stmt->close();
+		return $bookingInfo;
+		
+	}
+
+
+	function addBookingComments($bookingCode, $new_comment){
+		$db = getDBConnection();
+		$stmt = $db->prepare("SELECT Comments FROM bookings WHERE BookingCode = ? LIMIT 1");
+		$stmt->bind_param("s", $bookingCode);
+		$stmt->execute();
+		$stmt->bind_result($comments);
+
+		if ($stmt->fetch()) {
+			$existing_comments = json_decode($comments, true);
+		} else {
+			$existing_comments = [];
+		}
+
+		if ($existing_comments === null) {
+			$existing_comments = [];
+		}
+
+		$stmt->close();
+		// Append new comment to existing comments
+		$all_comments = array_merge($existing_comments, [$new_comment]);
+		
+		// Encode all comments as JSON
+		$json_comments = json_encode($all_comments);
+
+		$updateStmt = $db->prepare("UPDATE bookings SET Comments = ? WHERE BookingCode = ?");
+		$updateStmt->bind_param("ss", $json_comments, $bookingCode);
+		$updateStmt->execute();
+	}
+
+	function updateBookingComments($bookingCode, $comment_id, $commentDate, $content){
+		$db = getDBConnection();
+		$stmt = $db->prepare("SELECT Comments FROM bookings WHERE BookingCode = ? LIMIT 1");
+		$stmt->bind_param("s", $bookingCode);
+		$stmt->execute();
+		$stmt->bind_result($comments);
+
+		if ($stmt->fetch()) {
+			$existing_comments = json_decode($comments, true);
+		} else {
+			$existing_comments = [];
+		}
+
+		if ($existing_comments === null) {
+			$existing_comments = [];
+		}
+
+		$stmt->close();
+		// Append new comment to existing comments
+		$index_to_update = null;
+		foreach ($existing_comments as $index => $comment) {
+			if ($comment['id'] == $comment_id) {
+				$index_to_update = $index;
+				break;
+			}
+		}
+
+		if ($index_to_update !== null) {
+			// Update the comment at the found index
+			$existing_comments[$index_to_update]["content"] = $content;
+			$existing_comments[$index_to_update]["datetime"] = $commentDate;
+		}
+		
+		$json_comments = json_encode($existing_comments);
+
+		$updateStmt = $db->prepare("UPDATE bookings SET Comments = ? WHERE BookingCode = ?");
+		$updateStmt->bind_param("ss", $json_comments, $bookingCode);
+		$updateStmt->execute();
+	}
+
+	function deletBookingCommentsWithCommentId($bookingCode, $comment_id){
+		$db = getDBConnection();
+		$stmt = $db->prepare("SELECT Comments FROM bookings WHERE BookingCode = ? LIMIT 1");
+		$stmt->bind_param("s", $bookingCode);
+		$stmt->execute();
+		$stmt->bind_result($comments);
+
+		if ($stmt->fetch()) {
+			$existing_comments = json_decode($comments, true);
+		} else {
+			$existing_comments = [];
+		}
+
+		if ($existing_comments === null) {
+			$existing_comments = [];
+		}
+
+		$stmt->close();
+
+		foreach ($existing_comments as $index => $comment) {
+			if ($comment['id'] == $comment_id) {
+				unset($existing_comments[$index]);
+				break;
+			}
+		}
+
+		$json_comments = json_encode($existing_comments);
+
+		$updateStmt = $db->prepare("UPDATE bookings SET Comments = ? WHERE BookingCode = ?");
+		$updateStmt->bind_param("ss", $json_comments, $bookingCode);
+		$updateStmt->execute();
+	}
+
+	function getUserInfo() {
+   
+		$db = getDBConnection();
+		$stmt = $db->prepare('SELECT UserId, Username FROM users');
+		$stmt->execute();
+		$stmt->bind_result($userId, $userName);
+		$result = [];
+		while ($stmt->fetch()) {
+			$result[$userId] = $userName;
+		}
+		return $result;
 	}
 	
 ?>
