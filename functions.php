@@ -989,7 +989,7 @@
 					bookings.BookingTo, 
 					bookings.BookingCode, 
 					bookings.Comments, 
-					bookings.Message, 
+					bookings.Messages, 
 					customers.FullName, 
 					customers.CustomerId
 				FROM bookings
@@ -1007,7 +1007,7 @@
 				$bookingTo, 
 				$bookingCode,
 				$bookingComments,
-				$bookingMessage,
+				$bookingMessages,
 				$customerBusiness, 
 				$customerId);
 

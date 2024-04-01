@@ -214,12 +214,17 @@
             for (var i = 0; i < arr_to_all_bookingperiods.length; i++) {
                 if (!arr_target_bookingperiods.length && arr_to_all_bookingperiods[i].id != chk_to_booking)
                     continue;
-                else if (duration_in_mins <=0)
+                else if (duration_in_mins <=0 || !arr_to_all_bookingperiods[i].isAvailable)
                     break;
                 else {
                     arr_target_bookingperiods.push(arr_to_all_bookingperiods[i].FromInMinutes + "-" + arr_to_all_bookingperiods[i].ToInMinutes);
                     duration_in_mins -= parseInt(arr_to_all_bookingperiods[i].ToInMinutes - arr_to_all_bookingperiods[i].FromInMinutes);
                 }
+            }
+
+            if (duration_in_mins > 0) {
+                alert("The available timeslots you selected are inappropriate in duration.");
+                return;
             }
 
             var formData = $("#FRM_MOVE_BOOKING").serializeArray();
@@ -241,9 +246,14 @@
 				if (!res || res.status == "error"){
 					$(".Message").removeClass("text-success");
 					$(".Message").addClass("text-danger");
+                    $(".Message").html("There was an error while moving booking in the server.");
 				} else {
 					$(".Message").removeClass("text-danger");
 					$(".Message").addClass("text-success");
+                    $(".Message").html("Updated Successfully.");
+
+                    loadFromBookingPeriods();
+                    loadToBookingPeriods();
 				}
 	        });
         });
