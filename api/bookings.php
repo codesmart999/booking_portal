@@ -35,6 +35,19 @@
             $res["booking_info"] = isset($bookingInfo[$date]) ? $bookingInfo[$date] : array();
             $res['booking_periods'] = $booking_periods;
             break;
+        case 'move_booking':
+            $stmt = $db->prepare("SELECT ServiceId, CustomerId, BookingCode, IsCancelled, Attended, Comments, Messages FROM bookings WHERE BookingCode=? LIMIT 1");
+            $stmt->bind_param('s', $_POST['chk_from_booking']);
+            $stmt->execute();
+            $stmt->bind_result($ServiceId, $CustomerId, $BookingCode, $IsCancelled, $Attended, $Comments, $Messages);
+            $stmt->store_result();
+            if ($stmt->fetch()) {
+                echo $ServiceId;
+                exit(0);
+            } else {
+                $res["status"] = "error";
+            }
+            break;
     }
 
     echo json_encode( $res );
