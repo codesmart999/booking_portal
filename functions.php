@@ -1248,5 +1248,128 @@
 		}
 		return $result;
 	}
+
+
+	function getCutomerInfoById($customer_id){
+		$db = getDBConnection();
+		$stmt = $db->prepare('SELECT FullName, Email, PostalAddr, Phone, Comment, RegDate FROM customers WHERE CustomerId =?');
+		$stmt->bind_param('i', $customer_id);
+		$stmt->execute();
+		$stmt->bind_result($fullName, $email, $postalAddr, $phone, $comment, $regDate);
+		$result = [];
+		while ($stmt->fetch()) {
+			$result["businessName"] = $fullName;
+            $result["email"] = $email;
+            $result["postalAddr"] = $postalAddr;
+            $result["phone"] = $phone;
+            $result["comments"] = $comment;
+			$result["regDate"] = $regDate;
+		}
+		$stmt->close();
+		return $result;
+	 }
+	 
+	 function addCustomerComment($customerId, $new_comment){
+		$db = getDBConnection();
+		$stmt = $db->prepare("SELECT Comment FROM customers WHERE CustomerId = ?");
+		$stmt->bind_param("s", $customerId);
+		$stmt->execute();
+		$stmt->bind_result($comments);
+
+		if ($stmt->fetch()) {
+			$existing_comments = json_decode($comments, true);
+		} else {
+			$existing_comments = [];
+		}
+
+		if ($existing_comments === null) {
+			$existing_comments = [];
+		}
+
+		$stmt->close();
+		// Append new comment to existing comments
+		$all_comments = array_merge($existing_comments, [$new_comment]);
+		
+		// Encode all comments as JSON
+		$json_comments = json_encode($all_comments);
+
+		$updateStmt = $db->prepare("UPDATE customers SET Comment = ? WHERE CustomerId = ?");
+		$updateStmt->bind_param("ss", $json_comments, $customerId);
+		$updateStmt->execute();
+	}
+
+	
+	function updateCustomerComment($customerId, $comment_id, $commentDate, $content){
+		$db = getDBConnection();
+		$stmt = $db->prepare("SELECT Comment FROM customers WHERE CustomerId = ?");
+		$stmt->bind_param("s", $customerId);
+		$stmt->execute();
+		$stmt->bind_result($comments);
+
+		if ($stmt->fetch()) {
+			$existing_comments = json_decode($comments, true);
+		} else {
+			$existing_comments = [];
+		}
+
+		if ($existing_comments === null) {
+			$existing_comments = [];
+		}
+
+		$stmt->close();
+		// Append new comment to existing comments
+		$index_to_update = null;
+		foreach ($existing_comments as $index => $comment) {
+			if ($comment['id'] == $comment_id) {
+				$index_to_update = $index;
+				break;
+			}
+		}
+
+		if ($index_to_update !== null) {
+			// Update the comment at the found index
+			$existing_comments[$index_to_update]["content"] = $content;
+			$existing_comments[$index_to_update]["datetime"] = $commentDate;
+		}
+		
+		$json_comments = json_encode($existing_comments);
+
+		$updateStmt = $db->prepare("UPDATE customers SET Comment = ? WHERE CustomerId = ?");
+		$updateStmt->bind_param("ss", $json_comments, $customerId);
+		$updateStmt->execute();
+	}
+
+	function deleteCustomerComment($customerId, $comment_id){
+		$db = getDBConnection();
+		$stmt = $db->prepare("SELECT Comment FROM customers WHERE CustomerId = ?");
+		$stmt->bind_param("s", $customerId);
+		$stmt->execute();
+		$stmt->bind_result($comments);
+
+		if ($stmt->fetch()) {
+			$existing_comments = json_decode($comments, true);
+		} else {
+			$existing_comments = [];
+		}
+
+		if ($existing_comments === null) {
+			$existing_comments = [];
+		}
+
+		$stmt->close();
+
+		foreach ($existing_comments as $index => $comment) {
+			if ($comment['id'] == $comment_id) {
+				unset($existing_comments[$index]);
+				break;
+			}
+		}
+
+		$json_comments = json_encode($existing_comments);
+
+		$updateStmt = $db->prepare("UPDATE customers SET Comment = ? WHERE CustomerId = ?");
+		$updateStmt->bind_param("ss", $json_comments, $customerId);
+		$updateStmt->execute();
+	}
 	
 ?>

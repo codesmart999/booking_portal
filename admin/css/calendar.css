@@ -323,3 +323,7 @@ pre.prettyprint.prettyprinted {
 	color: red;
 	text-decoration: underline !important;
 }
+
+.comment-update {
+	display: none;
+}
