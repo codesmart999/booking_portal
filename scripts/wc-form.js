@@ -15,6 +15,7 @@ jQuery(document).ready(function ($) {
         dateFormat: 'dd/mm/yy',
         onSelect: function () {
             $(this).blur();
+            $(this).trigger('dateSelected');
         }
     });
 

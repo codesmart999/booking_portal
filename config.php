@@ -65,6 +65,13 @@ $arrAdminMenu = [
 									"settings_email"		=> "Email Settings"
 								]
 							],
+	"bookings" 			=> [ 	"title" => "Manage Bookings",
+							"sub" => [
+								"move_bookings" 	=> "Move Bookings",
+								// "search_bookings" 	=> "Search Bookings",
+								// "view_history"		=> "View History"
+							]
+						],
 	"sub_admin" 		=> "Sub-Administrators",
 	"reports" 			=> "Reports",
 	"integration" 		=> "Data Integration",

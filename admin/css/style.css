@@ -68,17 +68,17 @@ h6.day-title {
 	display: inline-block;
 	width: 60px;
 	height: 34px;
-  }
+}
   
-  /* Actual toggle switch */
-  .toggle-switch input[type="checkbox"] {
+/* Actual toggle switch */
+.toggle-switch input[type="checkbox"] {
 	opacity: 0;
 	width: 0;
 	height: 0;
-  }
+}
   
-  /* Slider */
-  .toggle-slider {
+/* Slider */
+.toggle-slider {
 	position: absolute;
 	cursor: pointer;
 	top: 0;
@@ -89,10 +89,10 @@ h6.day-title {
 	-webkit-transition: .4s;
 	transition: .4s;
 	border-radius: 34px;
-  }
+}
   
-  /* Rounded slider */
-  .toggle-slider:before {
+/* Rounded slider */
+.toggle-slider:before {
 	position: absolute;
 	content: "";
 	height: 26px;
@@ -103,31 +103,86 @@ h6.day-title {
 	-webkit-transition: .4s;
 	transition: .4s;
 	border-radius: 50%;
-  }
+}
   
-  /* When checked, translate the slider */
-  input[type="checkbox"]:checked + .toggle-slider {
+/* When checked, translate the slider */
+input[type="checkbox"]:checked + .toggle-slider {
 	background-color: #2196F3;
-  }
+}
   
-  /* When checked, translate the slider */
-  input[type="checkbox"]:checked + .toggle-slider:before {
+/* When checked, translate the slider */
+input[type="checkbox"]:checked + .toggle-slider:before {
 	-webkit-transform: translateX(26px);
 	-ms-transform: translateX(26px);
 	transform: translateX(26px);
-  }
+}
 
-  /* tbl_style in tbl_bookingperiods */
-	#AVAILABLE_PERIOD_FORM table tr td {
-		/* CSS styles for <td> elements */
-		padding: 0;
-		padding-left: 0.5em;
-		
-		/* padding: 0 0 0 0.1em; */
-		
-		/* padding: 0 0.1em; */
-	}
+/* tbl_style in tbl_bookingperiods */
+#AVAILABLE_PERIOD_FORM table tr td {
+	/* CSS styles for <td> elements */
+	padding: 0;
+	padding-left: 0.5em;
+	
+	/* padding: 0 0 0 0.1em; */
+	
+	/* padding: 0 0.1em; */
+}
 
-	#AVAILABLE_PERIOD_FORM table tbody tr td:first-child {
-		padding-top: 0.7em;
-	}
+#AVAILABLE_PERIOD_FORM table tbody tr td:first-child {
+	padding-top: 0.7em;
+}
+
+.move-booking-container {
+	/* border: 1px solid #888; */
+}
+
+.move-booking-container .no-padding {
+	padding: 0px 0px 10px 0px !important;
+	border: 1px solid #888;
+}
+
+.move-booking-container h5 {
+	border: 1px solid #888;
+	border-left: 0px;
+	border-right: 0px;
+	background-color: #C5D4F0;
+}
+
+.move-booking-container label.form-control {
+	padding-top: 10px;
+}
+
+.move-booking-container .input-group {
+	/* border: 1px solid red; */
+}
+
+.move-booking-container .input-group-text {
+	border: none;
+	background: white;
+}
+
+.move-booking-container table {
+	background-image: none;
+	background-color: transparent;
+	border: none;
+}
+
+.move-booking-container table td {
+	padding: 0px 10px !important;
+}
+
+.move-booking-container table label.timeslot {
+	margin-top: 7px;
+}
+
+.move-booking-container table label.booked {
+	background-color: #93FF93;
+}
+
+.move-booking-container table label.unavailable {
+	background-color: #FFE2A6;
+}
+
+.move-booking-container textarea {
+	width: 95%;
+}

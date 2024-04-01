@@ -1248,5 +1248,63 @@
 		}
 		return $result;
 	}
-	
+
+	// Added by Hennadii (2024-04-01)
+	function getBookingPeriodsByWeekday($weekday, $_system_id = 0) {
+		$db = getDBConnection();
+
+		$arr_bookingperiod_list = array();
+		$arr_systems = array($_system_id);
+
+		if (!empty($_system_id))
+			$arr_systems[] = 0;
+
+		foreach ($arr_systems as $system_id) {
+			$stmt = $db->prepare("SELECT id, FromInMinutes, ToInMinutes, isRegular, isAvailable FROM setting_bookingperiods WHERE SystemId = ? AND weekday = ? ORDER BY FromInMinutes ASC");
+			$stmt->bind_param('ii', $system_id, $weekday);
+			$stmt->execute();
+			$stmt->bind_result($id, $from_in_mins, $to_in_mins, $isRegular, $isAvailable);
+			$stmt->store_result();
+
+			while ($stmt->fetch()) {
+				// keep adding to the list
+				$arr_bookingperiod_list[] = [
+					'id' => $id,
+					'FromInMinutes' => $from_in_mins,
+					'ToInMinutes' => $to_in_mins,
+					'DisplayText' => get_display_text_from_minutes($from_in_mins, $to_in_mins),
+					'isRegular' => $isRegular,
+					'isAvailable' => $isAvailable,
+				];
+			}
+
+			if (!empty($arr_bookingperiod_list))
+				break;
+		}
+
+		$stmt->close();
+
+		return $arr_bookingperiod_list;
+	}
+
+	// Added by Hennadii (2024-04-01)
+	function getBookingPeriodsSpecialByDate($system_id, $date) {
+		$db = getDBConnection();
+
+		$result = array();
+
+		$stmt = $db->prepare("SELECT FromInMinutes, ToInMinutes, isAvailable FROM setting_bookingperiods_special WHERE SystemId = ? AND SetDate = ? ORDER BY FromInMinutes ASC");
+		$stmt->bind_param('is', $system_id, $date);
+		$stmt->execute();
+		$stmt->bind_result( $from_in_mins, $to_in_mins, $isAvailable);
+		$stmt->store_result();
+
+		while ($stmt->fetch()) {
+			$result[$from_in_mins . '-' . $to_in_mins] = $isAvailable;
+		}
+
+		$stmt->close();
+
+		return $result;
+	}
 ?>

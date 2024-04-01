@@ -11,32 +11,7 @@
     $db = getDBConnection();
 	// Added by Hennadii (2024-03-26)
 	if ( $_POST['action'] == 'get_bookingperiods_by_weekday') {
-		$arr_bookingperiod_list = array();
-		$weekday = $_POST['weekday'];
-
-		$stmt = $db->prepare("SELECT id, FromInMinutes, ToInMinutes, isRegular, isAvailable FROM setting_bookingperiods WHERE SystemId = 0 AND weekday = ? ORDER BY FromInMinutes ASC");
-		$stmt->bind_param('i', $weekday);
-		$stmt->execute();
-		$stmt->bind_result($id, $from_in_mins, $to_in_mins, $isRegular, $isAvailable);
-		$stmt->store_result();
-
-		while ($stmt->fetch()) {
-			if (empty($arr_bookingperiod_list)) {
-				$arr_bookingperiod_list = array();
-			}
-			
-			// keep adding to the list
-			$arr_bookingperiod_list[] = [
-				'id' => $id,
-				'FromInMinutes' => $from_in_mins,
-				'ToInMinutes' => $to_in_mins,
-				'DisplayText' => get_display_text_from_minutes($from_in_mins, $to_in_mins),
-				'isRegular' => $isRegular,
-				'isAvailable' => $isAvailable,
-			];
-		}
-
-		$stmt->close();
+		$arr_bookingperiod_list = getBookingPeriodsByWeekday($_POST['weekday']);
 
 		$res["status"] = "success";
 		$res["data"] = $arr_bookingperiod_list;
