@@ -318,3 +318,8 @@ pre.prettyprint.prettyprinted {
 #timeSlotsTable img {
 	float: none;
 }
+
+#options_comments_table a:hover {
+	color: red;
+	text-decoration: underline !important;
+}
