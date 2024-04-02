@@ -327,3 +327,13 @@ pre.prettyprint.prettyprinted {
 .comment-update {
 	display: none;
 }
+
+@media print {
+	.noPrint {
+		display: none;
+	}
+
+	.onlyPrint {
+		display: block;
+	}
+}

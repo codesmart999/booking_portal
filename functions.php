@@ -1372,4 +1372,46 @@
 		$updateStmt->execute();
 	}
 	
+	function getBookedInfoForPrintingByBookingcode($bookingCode){
+		$db = getDBConnection();
+        $stmt = $db->prepare('SELECT services.FullName as serviceName, systems.FullName, systems.Street, systems.City, systems.State, systems.PostCode, BookingDate, BookingFrom, BookingTo, Comments,LocationName, customers.FullName as BusinessName  FROM (SELECT * FROM bookings where BookingCode = ?) AS T1 JOIN systems ON T1.SystemId = systems.SystemId JOIN locations on systems.LocationId = locations.LocationId JOIN customers on T1.CustomerId = customers.CustomerId JOIN services ON T1.ServiceId = services.ServiceId');
+        $stmt->bind_param('s', $bookingCode);
+        $stmt->execute();
+        $stmt->bind_result($serviceName,
+					$systemFullName, 
+					$systemStreet, 
+					$systemCity, 
+					$systemState, 
+					$systemPostcode, 
+					$bookingDate, 
+					$fromInMinutes, 
+					$toInMinutes, 
+					$comments, 
+					$systemLocation, 
+					$businessName);
+        $bookingInfo = [];
+
+
+		$bookingTimeStart = 100000; // SET MAX VALUE
+		$bookingTimeEnd = 0;
+		while ($stmt->fetch()) {
+			if ($bookingTimeStart > $fromInMinutes)
+				$bookingTimeStart= $fromInMinutes;
+			if ($bookingTimeEnd < $toInMinutes)
+				$bookingTimeEnd = $toInMinutes;
+			$bookingInfo["serviceName"] = $serviceName;
+			$bookingInfo["systemFullName"] = $systemFullName;
+			$bookingInfo["systemStreet"] = $systemStreet;
+			$bookingInfo["systemCity"] = $systemCity;
+			$bookingInfo["systemState"] = $systemState;
+			$bookingInfo["systemPostcode"] = $systemPostcode;
+			$bookingInfo["bookingDate"] = $bookingDate;
+			$bookingInfo["comments"] = $comments;
+			$bookingInfo["businessName"] = $businessName;
+		}
+		$bookingInfo["startTime"] = $bookingTimeStart;
+		$bookingInfo["endTime"] = $bookingTimeEnd;
+
+		return $bookingInfo;
+	}
 ?>

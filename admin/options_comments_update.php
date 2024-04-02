@@ -21,7 +21,6 @@
         
         header('Location: '. SECURE_URL . "/admin/options_comments.php?booking_code=".$booking_code, true, 301);
 
-        // Display the submitted content
     }
 
     //get User id and full name from users DB
