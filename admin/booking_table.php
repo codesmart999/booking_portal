@@ -246,7 +246,15 @@ while ($startDateTime <= $endDateTime) {
                         $booking_id = $bookingInfo[$dateYMD][$timeSlot]["booking_id"];
                         $customer_id = $bookingInfo[$dateYMD][$timeSlot]["customer_id"];
                         $available = 2; //booked
-                        $hasComment = empty($bookingInfo[$dateYMD][$timeSlot]["booking_comments"]) ? 0 : 1;
+                        $hasComment = 0;
+
+                        $comments_array = json_decode($bookingInfo[$dateYMD][$timeSlot]["booking_comments"], true);
+
+                        $$hasComment = false;
+                        if (is_array($comments_array) && count($comments_array) > 0) {
+                            $hasComment = true;
+                        }
+                        
                         if ($isGroupBooking){
                             if ($bookingInfo[$dateYMD][$bookingCode][1] == $toMinutes){
                                

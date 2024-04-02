@@ -116,13 +116,18 @@
                                                     Chromis staff making the booking : Loren<br>
                                                     <br>
                                                     <b>Customer Message</b> : <br>
-                                                    <?php foreach ($comments_array as $comment): 
-                                                         $converted_date_time = date('l, F j, Y g:i:s A', strtotime($comment["datetime"]));
-                                                echo "* $converted_date_time"; 
-                                                echo " : ";
-                                                echo $comment["content"];?>
-                                                        <br>
-                                                    <?php endforeach; ?>
+                                                    <?php 
+                                                    if ($comments_array !== null) {
+                                                        foreach ($comments_array as $comment): 
+                                                            $converted_date_time = date('l, F j, Y g:i:s A', strtotime($comment["datetime"]));
+                                                            echo "* $converted_date_time"; 
+                                                            echo " : ";
+                                                            echo $comment["content"];
+                                                            ?>
+                                                            <br>
+                                                        <?php endforeach; 
+                                                    }
+                                                    ?>
                                                     
                                                 </font>
                                             </td>
