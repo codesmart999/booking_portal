@@ -82,6 +82,8 @@ if ( $arrAppData['location'] == ""){
 					<div class="row">
 					<?php
 						foreach ($arrBookingPeriodsByDaysDiff as $days_diff => $arrBookingPeriods) {
+							if (empty($arrBookingPeriods)) continue;
+
 							$date = date('d/m/Y', strtotime('+' . $days_diff . ' day', strtotime(str_replace('/', '-', $arrAppData['date_appointment']))));
 					?>
 						<div class="col-md-2">

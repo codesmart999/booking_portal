@@ -5,6 +5,8 @@ require_once('header.php');
 
 $db = getDBConnection();
 
+$objCurUser = $_SESSION['User'];
+
 if ( isset($_POST['Submit'])){
 	
 	$business_name = $arrAppData['business_name'];
@@ -18,7 +20,17 @@ if ( isset($_POST['Submit'])){
 	));
 
 	$phone_number = $arrAppData['phone_number'];
-	$comment = $arrAppData['comment'];
+	$comments = '';
+	if (!empty($arrAppData['comment'])) {
+		$arr_existing_comments = array();
+		$arr_existing_comments[] = [
+			'id' => str_pad(rand(1000, 9999), 4, '0', STR_PAD_LEFT),
+			'user_id' => $objCurUser['UserId'],
+			'datetime' => date('Y-m-d H:i:s'),
+			'content' => $arrAppData['comment']
+		];
+		$comments = json_encode($arr_existing_comments);;
+	}
 
 	// Check Email
 	$customerId = 0;
@@ -45,11 +57,11 @@ if ( isset($_POST['Submit'])){
 
 	$booking_code = generateRandomCode($customerId . $system_id . $arrAppData['date_appointment'] . $booking_from . $booking_to);
 	
-	$stmt = $db->prepare("INSERT INTO `bookings` (ServiceId, SystemId, CustomerId, BookingDate, BookingFrom, BookingTo, BookingCode) VALUES (?, ?, ?, ?, ?, ?, ?)");
+	$stmt = $db->prepare("INSERT INTO `bookings` (ServiceId, SystemId, CustomerId, BookingDate, BookingFrom, BookingTo, BookingCode, Comments) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
 	foreach ($arrAppData['booking_time'] as $time) {
 		list($booking_from, $booking_to) = explode('-', $time);
 
-		$stmt->bind_param('iiissss', $service_id, $system_id, $customerId, $booking_date, $booking_from, $booking_to, $booking_code);
+		$stmt->bind_param('iiisssss', $service_id, $system_id, $customerId, $booking_date, $booking_from, $booking_to, $booking_code, $comments);
 		$stmt->execute() or die($stmt->error);
 	}
 	$stmt->close();
