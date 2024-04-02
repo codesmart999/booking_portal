@@ -1307,4 +1307,173 @@
 
 		return $result;
 	}
+
+	// Added by Devmax (2024-04-02)
+	function getCutomerInfoById($customer_id){
+		$db = getDBConnection();
+		$stmt = $db->prepare('SELECT FullName, Email, PostalAddr, Phone, Comment, RegDate FROM customers WHERE CustomerId =?');
+		$stmt->bind_param('i', $customer_id);
+		$stmt->execute();
+		$stmt->bind_result($fullName, $email, $postalAddr, $phone, $comment, $regDate);
+		$result = [];
+		while ($stmt->fetch()) {
+			$result["businessName"] = $fullName;
+            $result["email"] = $email;
+            $result["postalAddr"] = $postalAddr;
+            $result["phone"] = $phone;
+            $result["comments"] = $comment;
+			$result["regDate"] = $regDate;
+		}
+		$stmt->close();
+		return $result;
+	}
+	 
+	// Added by Devmax (2024-04-02)
+	function addCustomerComment($customerId, $new_comment){
+		$db = getDBConnection();
+		$stmt = $db->prepare("SELECT Comment FROM customers WHERE CustomerId = ?");
+		$stmt->bind_param("s", $customerId);
+		$stmt->execute();
+		$stmt->bind_result($comments);
+
+		if ($stmt->fetch()) {
+			$existing_comments = json_decode($comments, true);
+		} else {
+			$existing_comments = [];
+		}
+
+		if ($existing_comments === null) {
+			$existing_comments = [];
+		}
+
+		$stmt->close();
+		// Append new comment to existing comments
+		$all_comments = array_merge($existing_comments, [$new_comment]);
+		
+		// Encode all comments as JSON
+		$json_comments = json_encode($all_comments);
+
+		$updateStmt = $db->prepare("UPDATE customers SET Comment = ? WHERE CustomerId = ?");
+		$updateStmt->bind_param("ss", $json_comments, $customerId);
+		$updateStmt->execute();
+	}
+
+	// Added by Devmax (2024-04-02)
+	function updateCustomerComment($customerId, $comment_id, $commentDate, $content){
+		$db = getDBConnection();
+		$stmt = $db->prepare("SELECT Comment FROM customers WHERE CustomerId = ?");
+		$stmt->bind_param("s", $customerId);
+		$stmt->execute();
+		$stmt->bind_result($comments);
+
+		if ($stmt->fetch()) {
+			$existing_comments = json_decode($comments, true);
+		} else {
+			$existing_comments = [];
+		}
+
+		if ($existing_comments === null) {
+			$existing_comments = [];
+		}
+
+		$stmt->close();
+		// Append new comment to existing comments
+		$index_to_update = null;
+		foreach ($existing_comments as $index => $comment) {
+			if ($comment['id'] == $comment_id) {
+				$index_to_update = $index;
+				break;
+			}
+		}
+
+		if ($index_to_update !== null) {
+			// Update the comment at the found index
+			$existing_comments[$index_to_update]["content"] = $content;
+			$existing_comments[$index_to_update]["datetime"] = $commentDate;
+		}
+		
+		$json_comments = json_encode($existing_comments);
+
+		$updateStmt = $db->prepare("UPDATE customers SET Comment = ? WHERE CustomerId = ?");
+		$updateStmt->bind_param("ss", $json_comments, $customerId);
+		$updateStmt->execute();
+	}
+
+	// Added by Devmax (2024-04-02)
+	function deleteCustomerComment($customerId, $comment_id){
+		$db = getDBConnection();
+		$stmt = $db->prepare("SELECT Comment FROM customers WHERE CustomerId = ?");
+		$stmt->bind_param("s", $customerId);
+		$stmt->execute();
+		$stmt->bind_result($comments);
+
+		if ($stmt->fetch()) {
+			$existing_comments = json_decode($comments, true);
+		} else {
+			$existing_comments = [];
+		}
+
+		if ($existing_comments === null) {
+			$existing_comments = [];
+		}
+
+		$stmt->close();
+
+		foreach ($existing_comments as $index => $comment) {
+			if ($comment['id'] == $comment_id) {
+				unset($existing_comments[$index]);
+				break;
+			}
+		}
+
+		$json_comments = json_encode($existing_comments);
+
+		$updateStmt = $db->prepare("UPDATE customers SET Comment = ? WHERE CustomerId = ?");
+		$updateStmt->bind_param("ss", $json_comments, $customerId);
+		$updateStmt->execute();
+	}
+	
+	// Added by Devmax (2024-04-02)
+	function getBookedInfoForPrintingByBookingcode($bookingCode){
+		$db = getDBConnection();
+        $stmt = $db->prepare('SELECT services.FullName as serviceName, systems.FullName, systems.Street, systems.City, systems.State, systems.PostCode, BookingDate, BookingFrom, BookingTo, Comments,LocationName, customers.FullName as BusinessName  FROM (SELECT * FROM bookings where BookingCode = ?) AS T1 JOIN systems ON T1.SystemId = systems.SystemId JOIN locations on systems.LocationId = locations.LocationId JOIN customers on T1.CustomerId = customers.CustomerId JOIN services ON T1.ServiceId = services.ServiceId');
+        $stmt->bind_param('s', $bookingCode);
+        $stmt->execute();
+        $stmt->bind_result($serviceName,
+					$systemFullName, 
+					$systemStreet, 
+					$systemCity, 
+					$systemState, 
+					$systemPostcode, 
+					$bookingDate, 
+					$fromInMinutes, 
+					$toInMinutes, 
+					$comments, 
+					$systemLocation, 
+					$businessName);
+        $bookingInfo = [];
+
+
+		$bookingTimeStart = 100000; // SET MAX VALUE
+		$bookingTimeEnd = 0;
+		while ($stmt->fetch()) {
+			if ($bookingTimeStart > $fromInMinutes)
+				$bookingTimeStart= $fromInMinutes;
+			if ($bookingTimeEnd < $toInMinutes)
+				$bookingTimeEnd = $toInMinutes;
+			$bookingInfo["serviceName"] = $serviceName;
+			$bookingInfo["systemFullName"] = $systemFullName;
+			$bookingInfo["systemStreet"] = $systemStreet;
+			$bookingInfo["systemCity"] = $systemCity;
+			$bookingInfo["systemState"] = $systemState;
+			$bookingInfo["systemPostcode"] = $systemPostcode;
+			$bookingInfo["bookingDate"] = $bookingDate;
+			$bookingInfo["comments"] = $comments;
+			$bookingInfo["businessName"] = $businessName;
+		}
+		$bookingInfo["startTime"] = $bookingTimeStart;
+		$bookingInfo["endTime"] = $bookingTimeEnd;
+
+		return $bookingInfo;
+	}
 ?>
