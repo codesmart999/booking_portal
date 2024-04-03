@@ -21,7 +21,7 @@
 	// manage date format for all places
 	function format_date( $date ) {
 		$date = str_replace('/', '-', $date);
-		return date("D, d F Y", strtotime($date));
+		return date("d F Y (l)", strtotime($date));
 		// return date("l, d F Y", strtotime($date));
 	}
 

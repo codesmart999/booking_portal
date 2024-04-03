@@ -8,9 +8,12 @@ if ( empty($arrAppData['business_name']) ) {
 	exit(0);
 }
 
-$format_date = format_date( $arrAppData['date_appointment'] );
+$objUser = $_SESSION['User'];
+
+$format_date = format_date( $arrAppData['date_appointment_final'] );
 $booking_code = $arrAppData['booking_code'];
 $arrSystems = $_SESSION['arrAvailableSystems'];
+list($from_in_mins, $to_in_mins) = extractStartAndEndTime($arrAppData['booking_time']);
 // TODO: uncomment after testing
 unset($_SESSION['appointment_data']);
 ?>
@@ -23,18 +26,12 @@ unset($_SESSION['appointment_data']);
 	<table class="appForm table">
 		<tr>
 			<td colspan = "2" class="text-center app_desc fst-italic">
-				<p><?php echo $format_date; ?></p>
+				<p><?php echo get_display_text_from_minutes($from_in_mins, $to_in_mins) . ', ' . $format_date; ?></p>
+				<p>by <?php echo $objUser['Username']; ?></p>
 				<p><?php echo $arrServices[$arrAppData['service']]['fullname']; ?></p>
 				<p><b><?php echo getLocationNameById($arrAppData['location']); ?></b> - <?php echo getLocationAddressById($arrAppData['location']); ?></p>
 				<p><?php echo $arrSystems[$arrAppData['system']]['fullname']; ?></p>
 				<p>Reference: <?php echo $booking_code; ?></p>
-				<?php
-					foreach ( $arrAppData['booking_time'] as $time ) {
-						list($from_in_mins, $to_in_mins) = explode('-', $time);
-
-						echo '<p>' . get_display_text_from_minutes($from_in_mins, $to_in_mins) . '</p>';
-					}
-				?>
 				<p>Business Name: <?php echo $arrAppData['business_name']; ?></p>
 				<p>Patient Name: <?php echo $arrAppData['patient_name']; ?></p>
 			</td>
@@ -42,11 +39,55 @@ unset($_SESSION['appointment_data']);
 		<tr>
 			<td colspan="2" class="text-center">
 				<a class="btn btn-primary btn-sm m-2" href="<?php echo SECURE_URL . START_PAGE;?>">Make Another Booking</a>
+				<button class="btn btn-secondary btn-sm m-2" id="btnPrint">Print</button>
 			</td>
 		</tr>
 	</table>
 </div>
 
+<div class="print-container d-none">
+    <h2>Booking Confirmation</h2>
+    <p>Thank you for your booking. Your booking details are as follows:</p>
+    
+    <div class="print-details">
+        <table>
+            <tr>
+                <th>Booking Date:</th>
+                <td><?php echo get_display_text_from_minutes($from_in_mins, $to_in_mins) . ', ' . $format_date; ?></td>
+            </tr>
+            <tr>
+                <th>Booked By:</th>
+                <td><?php echo $objUser['Username']; ?></td>
+            </tr>
+            <tr>
+                <th>Service Name:</th>
+                <td><?php echo $arrServices[$arrAppData['service']]['fullname']; ?></td>
+            </tr>
+            <tr>
+                <th>Location:</th>
+                <td><b><?php echo getLocationNameById($arrAppData['location']); ?></b> - <?php echo getLocationAddressById($arrAppData['location']); ?></td>
+            </tr>
+            <tr>
+                <th>Individual System:</th>
+                <td><?php echo $arrSystems[$arrAppData['system']]['fullname']; ?></td>
+            </tr>
+            <tr>
+                <th>Reference Code:</th>
+                <td><?php echo $booking_code; ?></td>
+            </tr>
+			<tr>
+                <th>Business Name:</th>
+                <td><?php echo $arrAppData['business_name']; ?></td>
+            </tr>
+			<tr>
+                <th>Patient Name:</th>
+                <td><?php echo $arrAppData['patient_name']; ?></td>
+            </tr>
+        </table>
+    </div>
+</div>
+
 <?php
 require_once('footer.php');
 ?>
+

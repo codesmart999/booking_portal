@@ -82,6 +82,7 @@ if ( empty($arrAppData['booking_time']) ){
 }
 
 $format_date = format_date( $arrAppData['date_appointment_final'] );
+list($from_in_mins, $to_in_mins) = extractStartAndEndTime($arrAppData['booking_time']);
 ?>
 
 <h4 class="page-name">Profile ></h4>
@@ -94,16 +95,9 @@ $format_date = format_date( $arrAppData['date_appointment_final'] );
 		<table class="appForm table">
 			<tr>
 				<td colspan = "2" class="text-center app_desc fst-italic">
-					<p><?php echo $format_date; ?></p>
+					<p><?php echo get_display_text_from_minutes($from_in_mins, $to_in_mins) . ', ' . $format_date; ?></p>
 					<p><?php echo getLocationNameById($arrAppData['location']) . ' - ' . getLocationAddressById($arrAppData['location']); ?></p>
 					<p><?php echo $arrServices[$arrAppData['service']]['fullname']; ?></p>
-					<?php
-						foreach( $arrAppData['booking_time'] as $time ){
-							list($from_in_mins, $to_in_mins) = explode('-', $time);
-
-							echo '<p>' . get_display_text_from_minutes($from_in_mins, $to_in_mins) . '</p>';
-						}
-					?>
 				</td>
 			</tr>
 			<tr>
