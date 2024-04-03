@@ -45,6 +45,8 @@
             $stmt->bind_result($ServiceId, $CustomerId, $IsCancelled, $Attended, $Comments, $Messages);
             $stmt->store_result();
 
+            $bookingInfo = getBookedInfoByBookingCode($booking_code);
+
             $objCurUser = $_SESSION['User'];
             $randomID = str_pad(rand(1000, 9999), 4, '0', STR_PAD_LEFT);
             $currentDateTime = date('Y-m-d H:i:s');
@@ -59,10 +61,39 @@
                 $to_system_id = $_POST['to_system'];
                 $BookingDate = $date = date('Y-m-d', strtotime(str_replace('/', '-', $_POST['to_date'])));
 
+                $arr_target_bookingperiods = explode(',', $_POST['target_bookingperiods']);
+
+                // *Added by Advik (2024-04-03)*
+                $newBookingTimeStart = 100000; // SET MAX VALUE
+                $newBookingTimeEnd = 0;
+                foreach ($arr_target_bookingperiods as $bookingperiods) {
+                    list($BookingFrom, $BookingTo) = explode('-', $bookingperiods);
+                    if ($newBookingTimeStart > $BookingFrom)
+                        $newBookingTimeStart= $BookingFrom;
+                    if ($newBookingTimeEnd < $BookingTo)
+                        $newBookingTimeEnd = $BookingTo;
+                }//end 
+
+
                 // Update Comment
                 $arr_existing_comments = array();
-                if (!empty($Comments))
+                if (!empty($Comments)){
                     $arr_existing_comments = json_decode($Comments, true);
+
+                    $arr_existing_comments[] = [
+                        'id' => str_pad(rand(1000, 9999), 4, '0', STR_PAD_LEFT),
+                        'user_id' => $objCurUser['UserId'],
+                        'datetime' => date('Y-m-d H:i:s'),
+                        'content' => "",
+                        'type' => "MoveBooking",
+                        'prevFrom' => $bookingInfo["startTime"],
+                        'prevTo' => $bookingInfo["endTime"],
+                        'prevDate' => $bookingInfo["bookingDate"],
+                        'newFrom' => $newBookingTimeStart,
+                        'newTo' => $newBookingTimeEnd,
+                        'newDate' => $BookingDate
+                    ];
+                }
 
                 if (!empty($_POST['comment'])) {
                     $arr_existing_comments[] = [
@@ -71,6 +102,7 @@
                         'datetime' => date('Y-m-d H:i:s'),
                         'content' => $_POST['comment']
                     ];
+
                 }
 
                 $Comments = json_encode($arr_existing_comments);
@@ -91,7 +123,7 @@
 
                 $Messages = json_encode($arr_existing_messages);
                 
-                $arr_target_bookingperiods = explode(',', $_POST['target_bookingperiods']);
+                
 
                 list($from_in_mins, $to_in_mins) = extractStartAndEndTime($arr_target_bookingperiods);
                 $BookingCode = generateRandomCode($CustomerId . $to_system_id . $BookingDate . $from_in_mins . $to_in_mins);;

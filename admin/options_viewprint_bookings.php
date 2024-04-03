@@ -31,12 +31,25 @@
     $newEndTime = date('g:i A', strtotime("today +{$booking_info['endTime']} minutes"));
 
     $comments_array = json_decode($booking_info["comments"], true);
+    $messages_array = json_decode($booking_info["messages"], true);
 
     $bookingTime = "$newStartTime - $newEndTime";
 
-    $commnetsShow = false;
+    
+    $customerCommnetsShow = false;
+    $systemCommnetsShow = false;
     if (is_array($comments_array) && count($comments_array) > 0) {
-        $commnetsShow = true;
+        foreach ($comments_array as $comment){
+            if (isset($comment["type"]))
+                $systemCommnetsShow = true;
+            else
+                $customerCommnetsShow = true;
+        }
+    }
+    
+    $messagesShow = false;
+    if (is_array($messages_array) && count($messages_array) > 0) {
+        $messagesShow = true;
     }
 ?>
 <style>
@@ -114,21 +127,43 @@
                                                     <br>
                                                     Patient Name : TBA17<br>
                                                     Chromis staff making the booking : Loren<br>
-                                                    <br>
-                                                    <b>Customer Message</b> : <br>
                                                     <?php 
-                                                    if ($comments_array !== null) {
+                                          
+                                                    if ($customerCommnetsShow) {
+                                                        echo "<br><b>Comments</b> : <br>";
                                                         foreach ($comments_array as $comment): 
+                                                            if(isset($comment["type"]))
+                                                                continue;
                                                             $converted_date_time = date('l, F j, Y g:i:s A', strtotime($comment["datetime"]));
                                                             echo "* $converted_date_time"; 
                                                             echo " : ";
-                                                            echo $comment["content"];
-                                                            ?>
-                                                            <br>
-                                                        <?php endforeach; 
+                                                            echo $comment["content"].'<br>';
+                                                        endforeach;
+                                                    }
+
+                                                    if ($messagesShow) {
+                                                        echo "<br><b>Customer Message</b> : <br>";
+                                                        foreach ($messages_array as $message): 
+                                                            $converted_date_time = date('l, F j, Y g:i:s A', strtotime($message["datetime"]));
+                                                            echo "* $converted_date_time"; 
+                                                            echo " : ";
+                                                            echo $message["content"].'<br>';
+                                                        endforeach;
+                                                    }
+
+                                                    if ($systemCommnetsShow) {
+                                                        echo "<br><b>System Comments</b> : <br>";
+                                                        foreach ($comments_array as $comment): 
+                                                            if(!isset($comment["type"]))
+                                                                continue;
+                                                            $converted_date_time = date('l, F j, Y g:i:s A', strtotime($comment["datetime"]));
+                                                            echo "* $converted_date_time"; 
+                                                            echo " : ";
+                                                            echo getSystemCommentStringFromComment($comment);
+                                                            echo ' by '.$userInfo[$comment["user_id"]].'<br>';
+                                                        endforeach;
                                                     }
                                                     ?>
-                                                    
                                                 </font>
                                             </td>
                                         </tr>

@@ -262,7 +262,7 @@ pre.prettyprint.prettyprinted {
 }
 
 .image-links {
-	display: inline-block;
+	/* display: inline-block; */
 	/* Display the links horizontally */
 	margin-right: 10px;
 	/* Add some space between the links */
