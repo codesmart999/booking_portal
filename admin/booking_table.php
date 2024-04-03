@@ -11,6 +11,13 @@ if (!isset($systemId) || !isset($startDate)){ //exception
 
 $showFlag = WEEKLY_SHOWING_MODE;
 
+$filterFlag = 0x0; //Show Whole Day.
+if (isset($_GET['filter'])){
+    $filterFlag = $_GET['filter'];
+}
+$filter_array = getFilterArray($filterFlag);
+
+
 if (!isset($_GET['endDate'])) {
     $showFlag = MONTHLY_SHOWING_MODE;
 
@@ -44,7 +51,7 @@ $bookCount = getNumberOfBookings($bookingInfo);
 
 //Get available/unavailable timesolt by week
 $availableSlots =  ($showFlag == MONTHLY_SHOWING_MODE) ? getAvailabilityDataWithCounts($systemId, $startDate, $endDate) : getAvailableInfoInOneWeekRange($systemId, $startDate, $endDate);
-
+//__debug($availableSlots);
 // Iterate over each date in the date range
 $currentDateTime = strtotime(date('Y-m-d'));
 $startDateTime = strtotime($startDate);
@@ -114,12 +121,12 @@ if ($showFlag == MONTHLY_SHOWING_MODE){
             </td>
             <td style="width:50%; border-left: 0 solid black;" bgcolor="#C5D4F0" valign="top" align="center">
                 <span style="float: left;" >
-                    <a class="image-links" href="#"><img title="Show Whole Day" border="0" src="/images/day_blue_tick2.jpg"></a>
-                    <a class="image-links" href="#"><img title="Show/Hide Past Times" border="0" src="/images/day_yellow.jpg"></a>
-                    <a class="image-links" href="#"><img title="Show/Hide Unavailable Times" border="0" src="/images/day_orange.jpg"></a>
-                    <a class="image-links" href="#"><img title="Show/Hide Default Unavailable Times" border="0" src="/images/day_pink.jpg"></a>
-                    <a class="image-links" href="#"><img title="Show/Hide Bookings" border="0" src="/images/day_green.jpg"></a>
-                    <a class="image-links" href="#"><img title="Show/Hide Available Times" border="0" src="/images/day_white.jpg"></a>
+                    <a class="image-links" href="javascript:onClickFilter(0)" target="_self"><img title="Show Whole Day" border="0" src="/images/day_blue<?php if (in_array(0, $filter_array)) echo "_tick2";?>.jpg"></a>
+                    <a class="image-links" href="javascript:onClickFilter(1)" target="_self"><img title="Show/Hide Past Times" border="0" src="/images/day_yellow<?php if (in_array(1, $filter_array)) echo "_tick1";?>.jpg"></a>
+                    <a class="image-links" href="javascript:onClickFilter(2)" target="_self"><img title="Show/Hide Unavailable Times" border="0" src="/images/day_orange<?php if (in_array(2, $filter_array)) echo "_tick1";?>.jpg"></a>
+                    <a class="image-links" href="javascript:onClickFilter(4)" target="_self"><img title="Show/Hide Default Unavailable Times" border="0" src="/images/day_pink<?php if (in_array(4, $filter_array)) echo "_tick1";?>.jpg"></a>
+                    <a class="image-links" href="javascript:onClickFilter(8)" target="_self"><img title="Show/Hide Bookings" border="0" src="/images/day_green<?php if (in_array(8, $filter_array)) echo "_tick1";?>.jpg"</a>
+                    <a class="image-links" href="javascript:onClickFilter(16)" target="_self"><img title="Show/Hide Available Times" border="0" src="/images/day_white<?php if (in_array(16, $filter_array)) echo "_tick1";?>.jpg"></a>
                 </span>
                 <span style="float: right;" >
                     &nbsp;&nbsp;<font size="2" face="Arial" color="#0000FF">&nbsp; •
@@ -169,7 +176,7 @@ while ($startDateTime <= $endDateTime) {
         echo '<tr id ="monthly_show_body_tr">' . $dateTdStr . $bookTdStr . $availableTdStr . $unavailableTdStr . '</tr>';
 
     } else { //if you click on Weeks calendary / Month calendar
-        
+       
         $weekday = date('N', $startDateTime) % 7; // Get the weekday (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
         if ($showFlag == WEEKLY_SHOWING_MODE){
             if ($i == 0)
@@ -239,6 +246,17 @@ while ($startDateTime <= $endDateTime) {
                     $available = 1; //available
                     // Check if the time slot is booked
                     if (isset($bookingInfo[$dateYMD][$timeSlot])) { //booked case
+
+                        if (in_array(8, $filter_array)) //if hide bookings filter case 
+                            continue;
+
+                        if (in_array(1, $filter_array)){ //if hide past time filter case 
+                            $currentTime = time();
+                            if ($startDateTime < $currentTime) 
+                            continue;
+                        }
+
+
                         $bookingCode = $bookingInfo[$dateYMD][$timeSlot]["booking_code"];
                          $background_color = "CCFFCC"; //booked color
                         // Time slot is booked
@@ -254,7 +272,7 @@ while ($startDateTime <= $endDateTime) {
                         if (is_array($comments_array) && count($comments_array) > 0) {
                             $hasComment = true;
                         }
-                        
+
                         if ($isGroupBooking){
                             if ($bookingInfo[$dateYMD][$bookingCode][1] == $toMinutes){
                                
@@ -295,11 +313,38 @@ while ($startDateTime <= $endDateTime) {
                             <br>';
                         
                     }else {
+
                         if (isset($availableSlots[$weekday][$timeSlot]) && $availableSlots[$weekday][$timeSlot] == 0) { //unavailable case
+                            if (in_array(2, $filter_array)) //if hide unavailable time filter case 
+                                continue;
+                            if (in_array(1, $filter_array)){ //if hide past time filter case 
+                                $currentTime = time();
+                                if ($startDateTime < $currentTime) 
+                                continue;
+                            }
+                            if (in_array(4, $filter_array)){ //if hide regular unavaialable time filter case 
+                                if ($slot["isAvailable"] == 0) {
+                                    if (!isset($slot["isSpecailAvailable"]))
+                                        continue;
+                                }
+                                    
+                            }
                             $background_color = "FFE2A6"; //unavailable
                             $available = 0; //unavailable
+                            echo '&nbsp;<input type="checkbox" name="timeslot" date = "'.$startDateTime.'" status = "'.$available.'" style="margin-top: 5px" value="'.$fromMinutes.'-'.$toMinutes.'">&nbsp;<span style="background-color: #'.$background_color.'">'.$timeRender.'</span>&nbsp;&nbsp;<br/>';
                         }
-                        echo '&nbsp;<input type="checkbox" name="timeslot" date = "'.$startDateTime.'" status = "'.$available.'" style="margin-top: 5px" value="'.$fromMinutes.'-'.$toMinutes.'">&nbsp;<span style="background-color: #'.$background_color.'">'.$timeRender.'</span>&nbsp;&nbsp;<br/>';
+                        else {
+                            if (in_array(16, $filter_array)) //if hide available time filter case 
+                                continue;
+                            if (in_array(1, $filter_array)){ //if hide past time filter case 
+                                $currentTime = time();
+                                if ($startDateTime < $currentTime) 
+                                continue;
+                            }
+                            echo '&nbsp;<input type="checkbox" name="timeslot" date = "'.$startDateTime.'" status = "'.$available.'" style="margin-top: 5px" value="'.$fromMinutes.'-'.$toMinutes.'">&nbsp;<span style="background-color: #'.$background_color.'">'.$timeRender.'</span>&nbsp;&nbsp;<br/>';
+                        }
+                        
+                        
                     }
 
                     
@@ -483,6 +528,52 @@ while ($startDateTime <= $endDateTime) {
     function onGroupBooking(){
         const newUrl = `${window.location.origin}${window.location.pathname}?SystemId=${<?php echo $systemId; ?>}&startDate=<?php echo $startDate;?>&endDate=<?php echo $endDate;?>&groupBooking=<?php echo !$isGroupBooking;?>`;
         window.location.href = newUrl;
+    }
+
+
+    function getFilter(inputValue) {
+        if (inputValue === 0) {
+            return [0];
+        }
+
+        const consts = [1, 2, 4, 8, 16];
+        const result = [];
+
+        for (let i = consts.length - 1; i >= 0; i--) {
+            if (inputValue & consts[i]) {
+                result.push(consts[i]);
+                inputValue -= consts[i];
+            }
+        }
+
+        return result;
+    }
+
+
+    function getNextFilterValue(current, input) {
+         if (input == 0)
+            return 0;
+        // Calculate the sum of current and input
+        var filter = getFilter(current);
+
+         if (filter.includes(input)) {
+            // If 0 is already in the list, exclude it
+            const index = filter.indexOf(input);
+            filter.splice(index, 1);
+        } else {
+            // If 0 is not in the list, include it
+            filter.push(input);
+        }
+        console.log( filter.reduce((acc, val) => acc + val, 0));
+        return filter.reduce((acc, val) => acc + val, 0);
+    }
+
+    function onClickFilter(type) {
+        var filter = <?php echo $filterFlag?>;
+        const nextFilter = getNextFilterValue(filter, type);
+        const newUrl = `${window.location.origin}${window.location.pathname}?SystemId=${<?php echo $systemId; ?>}&startDate=<?php echo $startDate;?>&endDate=<?php echo $endDate;?>&groupBooking=<?php echo $isGroupBooking;?>&filterFlag=?>` + '&filter=' + nextFilter;
+        window.location.href = newUrl;
+      
     }
 
    // Get all checkbox elements

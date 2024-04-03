@@ -143,7 +143,7 @@ $prevDay = $date->format('Y-m-d')
                             <span title="<?php echo $systemName; ?>" style="font-size: 14px;"><?php echo $systemName; ?></span>
                             &nbsp;&nbsp;&nbsp;
                             <a target="_self" href="#" onclick="redirectToToday()" style="color: blue;" onmouseover="this.style.color='red';" onmouseout="this.style.color='blue';" onmouseover="window.status='Calendar View for Today';return true" onmouseout="window.status='';return true">Today</a>
-                            <a href="javascript:popUp('options/options_services_display.asp');" style="color: blue;" onmouseover="this.style.color='red';" onmouseout="this.style.color='blue';">Services</a>&nbsp; <!-- Updated link -->
+                            <!-- <a href="javascript:showService(<?php echo $systemId;?>)" target="_self" style="color: blue;" onmouseover="this.style.color='red';" onmouseout="this.style.color='blue';">Services</a>&nbsp; Updated link -->
                             <a target="_self" href="options/options.asp" style="color: blue;" onmouseover="this.style.color='red';" onmouseout="this.style.color='blue';" onmouseover="window.status='Access Options Menu';return true" onmouseout="window.status='';return true">Options</a>&nbsp; 
                         </font>
                     </td>
@@ -379,6 +379,21 @@ $prevDay = $date->format('Y-m-d')
             locationText.style.display = "none"; // Hide the location text
             calendarWidget.style.display = "block"; // Show the calendar widget
         }
+    }
+    function showService(systemId){
+        var width = 800;
+        var height = 600;
+        // Calculate the left and top position to center the window
+        var left = (window.innerWidth - width) / 2;
+        var top = (window.innerHeight - height) / 2;
+        // Open the small window with specified parameters
+        window.open(
+            window.location.origin +
+            "/admin/options_services_display.php?systemId=" +
+            systemId,
+            "_blank",
+            "width=" + width + ",height=" + height + ",left=" + left + ",top=" + top
+        );
     }
 
 </script>

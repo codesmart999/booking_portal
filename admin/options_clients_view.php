@@ -3,7 +3,7 @@
     require_once('../lib.php');
 
     $customer_id = -1;
-
+    
     if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         $user = $_SESSION['User'];
@@ -11,7 +11,7 @@
 	    	header('Location: '. SECURE_URL . LOGIN_PAGE, true, 301);
 		   	exit(0);
 	    }
-        __debug($_POST);
+        //__debug($_POST);
         $customer_id = $_POST["customer_id"];
         // Retrieve the content of the textarea
         if ($_POST["profile-comment-type"] == 'Add'){
@@ -19,6 +19,7 @@
             
             $currentDateTime = date('Y-m-d H:i:s');
             $randomID = str_pad(rand(1000, 9999), 4, '0', STR_PAD_LEFT);
+
             $userid = $user['UserId'];
             if (strlen($textareaContent) > 0)
             {

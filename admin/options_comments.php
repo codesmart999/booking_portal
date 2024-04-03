@@ -27,7 +27,8 @@
                 'content' => $textareaContent
             ]);
         }
-       
+
+        header('Location: '. SECURE_URL . "/admin/options_comments.php?booking_code=".$booking_code, true, 301);
         // Display the submitted content
     }
 
@@ -61,9 +62,15 @@
 
     $bookingTime = "$newStartTime - $newEndTime";
 
-    $commnetsShow = false;
+    $customerCommnetsShow = false;
+    $systemCommnetsShow = false;
     if (is_array($comments_array) && count($comments_array) > 0) {
-        $commnetsShow = true;
+        foreach ($comments_array as $comment){
+            if (isset($comment["type"]))
+                $systemCommnetsShow = true;
+            else
+                $customerCommnetsShow = true;
+        }
     }
 ?>
 <form name="form1" method="POST" action="options_comments.php" onsubmit="return validate()">
@@ -141,9 +148,10 @@
                 </td>
 
             </tr>
+            <?php if ($customerCommnetsShow): ?>
             <tr>
                 <td width="100%" bgcolor="#FFFFFF" valign="top" align="left">
-                <?php if ($commnetsShow): ?>
+                
                     <table border="0" cellpadding="3" width="100%" cellspacing="1" bgcolor="silver">
                         <tbody>
                             <tr>
@@ -162,7 +170,10 @@
                                     <font face="Arial" size="2" color="#000000">Action</font>
                                 </td>
                             </tr>
-                            <?php foreach ($comments_array as $comment): ?>
+                            <?php foreach ($comments_array as $comment): 
+                                            if(isset($comment["type"]))
+                                                continue;
+                                ?>
                                 <tr>
                                     <td width="25%" bgcolor="#FFFFFF" align="left" valign="top">
                                         <font face="Arial" size="2" color="#000000">
@@ -190,9 +201,60 @@
                             <?php endforeach; ?>
                         </tbody>
                     </table>
-                <?php endif; ?>
-                            </td>
+               
+                </td>
             </tr>
+            <?php endif; ?>
+
+            <?php if ($systemCommnetsShow): ?>
+            <tr>
+                <td width="100%" bgcolor="#FFFFFF" valign="top" align="left">
+                
+                    <table border="0" cellpadding="3" width="100%" cellspacing="1" bgcolor="silver">
+                        <tbody>
+                            <tr>
+                                <td width="100%" bgcolor="#E8EEF7" align="left" valign="middle" colspan="3">
+                                    <font face="Arial" size="2" color="#000000"><b>System Comments Attached to Booking of <?php echo $bookingDate;?>  <?php echo $bookingTime;?> for <?php echo $booking_info["businessName"];?></b></font>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td width="25%" bgcolor="#E8EEF7" align="left" valign="middle">
+                                    <font face="Arial" size="2" color="#000000">Booking Date &amp; Time</font>
+                                </td>
+                                <td width="65%" bgcolor="#E8EEF7" align="left" valign="middle">
+                                    <font face="Arial" size="2" color="#000000">Comment</font>
+                                </td>
+                            </tr>
+                            <?php foreach ($comments_array as $comment): 
+                                    if(!isset($comment["type"]))
+                                                continue;
+                                ?>
+                                <tr>
+                                    <td width="25%" bgcolor="#FFFFFF" align="left" valign="top">
+                                        <font face="Arial" size="2" color="#000000">
+                                            <?php echo $bookingDate;?><br><?php echo $bookingTime;?>
+                                        </font>
+                                    </td>
+                                    <td width="65%" bgcolor="#FFFFFF" align="left" valign="top">
+                                        <font face="Arial" size="2" color="#000000">
+                                            <?php 
+                                                $converted_date_time = date('D j M Y g:i A', strtotime($comment["datetime"]));
+                                                echo $converted_date_time;?><br>
+                                            <?php echo getSystemCommentStringFromComment($comment);?>
+                                             by <?php
+                                                echo $userInfo[$comment["user_id"]];
+                                            ?>    
+                                           
+                                        </font>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+               
+                </td>
+            </tr>
+             <?php endif; ?>
 
 
 

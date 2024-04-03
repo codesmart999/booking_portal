@@ -870,7 +870,8 @@
 				Week_TB.weekday, 
 				Week_TB.FromInMinutes, 
 				Week_TB.ToInMinutes, 
-				COALESCE(SP_TB.isAvailable, Week_TB.isAvailable) AS isAvailable
+				COALESCE(SP_TB.isAvailable, Week_TB.isAvailable) AS isAvailable,
+				SP_TB.isAvailable as specialAvailable
 			FROM
 				(
 					SELECT
@@ -908,7 +909,7 @@
 		$stmt = $db->prepare($sql);
 		$stmt->bind_param("iiss", $systemId, $systemId, $startDate, $endDate);
 		$stmt->execute();
-		$stmt->bind_result($weekday, $fromMinutes, $toMinutes, $isAvailable);
+		$stmt->bind_result($weekday, $fromMinutes, $toMinutes, $isAvailable, $specialAvailable);
 
 
 		// Initialize an array to store the available time slots
@@ -931,7 +932,8 @@
 			$result[$weekday]["timeslot"][] = [
 				'FromInMinutes' => $fromMinutes,
 				'ToInMinutes' => $toMinutes,
-				'isAvailable' => $isAvailable
+				'isAvailable' => $isAvailable,
+				'isSpecailAvailable' => $specialAvailable
 			];
 			$result[$weekday][$time_slot] = $isAvailable;
 			$result[$weekday][$isAvailable]+=1;
@@ -1126,7 +1128,7 @@
 		$db = getDBConnection();
 		
 		$sql = "INSERT INTO setting_bookingperiods_special (SystemId, SetDate, FromInMinutes, ToInMinutes, isAvailable) VALUES $values";
-		__debug($sql);
+		
 		$stmt = $db->prepare($sql);
 		if (!$stmt->execute()) {
 			die('Error executing insert SQL statement: ' . $insertStmt->error);
@@ -1478,7 +1480,7 @@
 	// Added by Devmax (2024-04-02)
 	function getBookedInfoForPrintingByBookingcode($bookingCode){
 		$db = getDBConnection();
-        $stmt = $db->prepare('SELECT services.FullName as serviceName, systems.FullName, systems.Street, systems.City, systems.State, systems.PostCode, BookingDate, BookingFrom, BookingTo, Comments,LocationName, customers.FullName as BusinessName  FROM (SELECT * FROM bookings where BookingCode = ?) AS T1 JOIN systems ON T1.SystemId = systems.SystemId JOIN locations on systems.LocationId = locations.LocationId JOIN customers on T1.CustomerId = customers.CustomerId JOIN services ON T1.ServiceId = services.ServiceId');
+        $stmt = $db->prepare('SELECT services.FullName as serviceName, systems.FullName, systems.Street, systems.City, systems.State, systems.PostCode, BookingDate, BookingFrom, BookingTo, Comments, Messages, LocationName, customers.FullName as BusinessName  FROM (SELECT * FROM bookings where BookingCode = ?) AS T1 JOIN systems ON T1.SystemId = systems.SystemId JOIN locations on systems.LocationId = locations.LocationId JOIN customers on T1.CustomerId = customers.CustomerId JOIN services ON T1.ServiceId = services.ServiceId');
         $stmt->bind_param('s', $bookingCode);
         $stmt->execute();
         $stmt->bind_result($serviceName,
@@ -1491,6 +1493,7 @@
 					$fromInMinutes, 
 					$toInMinutes, 
 					$comments, 
+					$messages,
 					$systemLocation, 
 					$businessName);
         $bookingInfo = [];
@@ -1511,11 +1514,82 @@
 			$bookingInfo["systemPostcode"] = $systemPostcode;
 			$bookingInfo["bookingDate"] = $bookingDate;
 			$bookingInfo["comments"] = $comments;
+			$bookingInfo["messages"] = $messages;
 			$bookingInfo["businessName"] = $businessName;
 		}
 		$bookingInfo["startTime"] = $bookingTimeStart;
 		$bookingInfo["endTime"] = $bookingTimeEnd;
 
 		return $bookingInfo;
+	}
+
+	//get Filter array from input
+	//0-show whole day
+	//1-show/hide past times
+	//2-show/hide unavailable times
+	//4-show/hide default unavailable times
+	//8-show/hide bookings
+	//16-show/hide available times
+	function getFilterArray($inputValue) {
+		if ($inputValue == 0) {
+        	return [0];
+    	}	
+		$consts = [1, 2, 4, 8, 16];
+		$result = [];
+
+		for ($i = count($consts) - 1; $i >= 0; $i--) {
+			if ($inputValue & $consts[$i]) {
+				$result[] = $consts[$i];
+				$inputValue -= $consts[$i];
+			}
+		}
+
+		return $result;
+	}
+
+	function getServiceBySystemId($systemId){
+		$db = getDBConnection();
+        $stmt = $db->prepare('SELECT * FROM services WHERE SystemId =?');
+        $stmt->bind_param('s', $systemId);
+        $stmt->execute();
+        $stmt->bind_result($serviceId,
+					$serviceName, 
+					$serviceFullname, 
+					$description, 
+					$price, 
+					$duration, 
+					$isCharge, 
+					$permission, 
+					$active);
+        $result = [];
+
+
+		while ($stmt->fetch()) {
+			
+			$result["serviceId"] = $serviceId;
+			$result["serviceName"] = $serviceName;
+			$result["serviceFullname"] = $serviceFullname;
+			$result["description"] = $description;
+			$result["price"] = $price;
+			$result["duration"] = $duration;
+			$result["isCharge"] = $isCharge;
+			$result["permission"] = $permission;
+			$result["active"] = $active;
+		}
+		
+		return $result;
+	}
+
+	function getSystemCommentStringFromComment($comment){
+		if(isset($comment['type'])){
+			if ($comment['type'] == "MoveBooking"){
+				$oldBookingDate = date('l, F jS, Y', strtotime($comment["prevDate"]));
+				$newBookingDate = date('l, F jS, Y', strtotime($comment["prevDate"]));
+
+				$oldStartTime = date('g:i A', strtotime("today +{$comment['prevFrom']} minutes"));
+				$newStartTime = date('g:i A', strtotime("today +{$comment['newFrom']} minutes"));
+				return "Rescheduled from " . $oldBookingDate .' '. $oldStartTime .' to '. $newBookingDate .' '. $newStartTime;
+			}
+		}
 	}
 ?>
