@@ -10,6 +10,7 @@
 		"service" => "",
 		"system" => "",
 		"date_appointment" => "",
+		"date_appointment_final" => "",
 		"five_days" => "",
 		"booking_time" => "",
 		"profile_name" => "",
