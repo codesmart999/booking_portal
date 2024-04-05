@@ -22,14 +22,14 @@ if ( isset($_POST['Submit'])){
 	$phone_number = $arrAppData['phone_number'];
 	$comments = '';
 	if (!empty($arrAppData['comment'])) {
-		$arr_existing_comments = array();
-		$arr_existing_comments[] = [
+		$arr_comments = array();
+		$arr_comments[] = [
 			'id' => str_pad(rand(1000, 9999), 4, '0', STR_PAD_LEFT),
 			'user_id' => $objCurUser['UserId'],
 			'datetime' => date('Y-m-d H:i:s'),
 			'content' => $arrAppData['comment']
 		];
-		$comments = json_encode($arr_existing_comments);;
+		$comments = json_encode($arr_comments);;
 	}
 
 	// Check Email
@@ -42,14 +42,20 @@ if ( isset($_POST['Submit'])){
 	
 	// If the user does not exist, insert the new record
 	if (!$stmt->fetch() || empty($customerId)) {
-		$stmt = $db->prepare("INSERT INTO `customers` (FullName, Email, PostalAddr, Phone, Comment) VALUES (?, ?, ?, ?, ?)");
-		$stmt->bind_param('sssss', $business_name, $email_addr, $postAddress, $phone_number, $comment);
+		$stmt = $db->prepare("INSERT INTO `customers` (FullName, Email, PostalAddr, Phone) VALUES (?, ?, ?, ?)");
+		$stmt->bind_param('ssss', $business_name, $email_addr, $postAddress, $phone_number);
 		$stmt->execute() or die($stmt->error);
 		$customerId = $db->insert_id;
+	} else {
+		$stmt = $db->prepare("UPDATE `customers` SET FullName = ?, PostalAddr = ?, Phone = ? WHERE Email = ?");
+		$stmt->bind_param('ssss', $business_name, $postAddress, $phone_number, $email_addr);
+		$stmt->execute() or die($stmt->error);
 	}
 	
 	$service_id = $arrAppData['service'];
 	$system_id = $arrAppData['system'];
+	$patient_name = $arrAppData['patient_name'];
+	$staff_name = $arrAppData['chromis_staff'];
 	$date_appointment = DateTime::createFromFormat('d/m/Y', $arrAppData['date_appointment_final']);
 	$booking_date = $date_appointment->format('Y-m-d');
 	
@@ -57,11 +63,11 @@ if ( isset($_POST['Submit'])){
 
 	$booking_code = generateRandomCode($customerId . $system_id . $arrAppData['date_appointment'] . $booking_from . $booking_to);
 	
-	$stmt = $db->prepare("INSERT INTO `bookings` (ServiceId, SystemId, CustomerId, BookingDate, BookingFrom, BookingTo, BookingCode, Comments) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+	$stmt = $db->prepare("INSERT INTO `bookings` (ServiceId, SystemId, CustomerId, PatientName, StaffName, BookingDate, BookingFrom, BookingTo, BookingCode, Comments) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 	foreach ($arrAppData['booking_time'] as $time) {
 		list($booking_from, $booking_to) = explode('-', $time);
 
-		$stmt->bind_param('iiisssss', $service_id, $system_id, $customerId, $booking_date, $booking_from, $booking_to, $booking_code, $comments);
+		$stmt->bind_param('iiisssssss', $service_id, $system_id, $customerId, $patient_name, $staff_name, $booking_date, $booking_from, $booking_to, $booking_code, $comments);
 		$stmt->execute() or die($stmt->error);
 	}
 	$stmt->close();
