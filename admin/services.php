@@ -243,7 +243,7 @@
 
 			$.post(apiUri, formData, function (data) {
 				var res = JSON.parse(data);
-				if(res.status == "error"){
+				if (res.status == "error") {
 					$(".Message").removeClass("text-success");
 					$(".Message").addClass("text-danger");
 				} else {
@@ -265,17 +265,17 @@
 				$('input[name="serviceId"]').val( data.ServiceId );
 				$('input[name="servicename"]').val( data.ServiceName );
 				$('input[name="fullname"]').val( data.FullName );
-				$('input[name="description"]').val( data.Description );
+				$('#description').val( data.Description );
 				$('input[name="price"]').val( data.Price );
 				$('select[name="duration_hours"]').val( data.Duration_Hours );
 				$('select[name="duration_minutes"]').val( data.Duration_Minutes );
 
-				if( data.IsCharge == "Y" ){
+				if ( data.IsCharge == "Y" ) {
 					$('input[name="charge"]').prop( "checked", true );
 				} else {
 					$('input[name="charge"]').prop( "checked", false );
 				}
-				if( data.Active == "Y" ){
+				if ( data.Active) {
 					$('input[name="active"]').prop( "checked", true );
 				} else {
 					$('input[name="active"]').prop( "checked", false );

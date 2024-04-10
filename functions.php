@@ -31,10 +31,10 @@
 
 	// display yes/no 
 	function displayYN( $val ) {
-		if( $val > 0 || $val == "Y" )
-			return "Yes";
-		else
+		if ( empty($val) || $val == 'N' )
 			return "No";
+		else
+			return "Yes";
 	}
 
 	// get location name from location Id

@@ -77,7 +77,7 @@
 		$duration_minutes = isset($_POST['duration_minutes']) ? $_POST['duration_minutes'] : 0;
 		$duration = $duration_hours . ":" . sprintf("%02d", $duration_minutes);
 		$charge = isset($_POST['charge']) ? "Y" : "N";
-		$active = isset($_POST['active']) ? "Y" : "N";
+		$active = isset($_POST['active']) ? 1 : 0;
 
 		// check ServiceName
 	    $stmt = $db->prepare("SELECT ServiceId FROM services WHERE `ServiceName`=? AND `ServiceID`!=$serviceId");
@@ -153,8 +153,8 @@
 		$stmt->fetch();
 
 		$arrDurationInfo = explode(":", $duration);
-		$duration_hours = count($arrDurationInfo) > 2 ? $arrDurationInfo[0] : 0;
-		$duration_minutes = count($arrDurationInfo) > 2 ? $arrDurationInfo[1] : 0;
+		$duration_hours = count($arrDurationInfo) >= 2 ? $arrDurationInfo[0] : 0;
+		$duration_minutes = count($arrDurationInfo) >= 2 ? $arrDurationInfo[1] : 0;
 
 		$res["status"] = "success";
 		$res['data'] = [
