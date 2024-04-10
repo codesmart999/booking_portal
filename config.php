@@ -57,7 +57,7 @@ $arrAdminMenu = [
 	"index" 			=> "Access an Individual System",
 	"systems"			=> "Individual System Controls",
 	"services" 			=> "Manage Services",
-	"directory" 		=> "Directory Settings",
+	// "directory" 		=> "Directory Settings",
 	"settings" 			=> [ 	"title" => "System Default Settings",
 								"sub" => [
 									"settings_booking" 	=> "Booking Settings",
