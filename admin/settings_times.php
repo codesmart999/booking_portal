@@ -284,28 +284,31 @@ require_once('footer.php');
 								</td>
 								<td width="33%">
 									<?php $optionKey = "weekday_duration_hours[" . $day . "]"; ?>
-									<select name="<?php echo $optionKey; ?>">
+									<select class="d-none" name="<?php echo $optionKey; ?>">
+										<option value="0" selected>0</option>
 										<?php
-										for ( $i = 0; $i < 24; $i++) {
-											$selected = "";
-											if ( $regular_weekday_duration_hours[$day] == $i )
-												$selected = "selected";
-											echo '<option value="' . $i . '" ' . $selected . '>' . $i . '</option>';
-										}
+										// for ( $i = 0; $i < 24; $i++) {
+										// 	$selected = "";
+										// 	if ( $regular_weekday_duration_hours[$day] == $i )
+										// 		$selected = "selected";
+										// 	echo '<option value="' . $i . '" ' . $selected . '>' . $i . '</option>';
+										// }
 										?>
 									</select>
 									<?php $optionKey = "weekday_duration_minutes[" . $day . "]"; ?>
 									<select name="<?php echo $optionKey; ?>">
-										<option value="00">00</option>
+										<!-- <option value="00">00</option> -->
+										<option value="15" selected>15</option>
 										<?php
-										for ( $i = 5; $i < 60; $i += 1) {
-											$selected = "";
-											if ( $regular_weekday_duration_minutes[$day] == $i )
-												$selected = "selected";
-											echo '<option value="' . $i . '" ' . $selected . '>' . sprintf("%02d", $i) . '</option>';
-										}
+										// for ( $i = 5; $i < 60; $i += 1) {
+										// 	$selected = "";
+										// 	if ( $regular_weekday_duration_minutes[$day] == $i )
+										// 		$selected = "selected";
+										// 	echo '<option value="' . $i . '" ' . $selected . '>' . sprintf("%02d", $i) . '</option>';
+										// }
 										?>
 									</select>
+									&nbsp;minutes
 								</td>
 							</tr>
 						</table>
