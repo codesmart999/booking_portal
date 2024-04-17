@@ -106,15 +106,14 @@
 		$bLookInFiveDays = !empty($arrAppData['five_days']);
 
 		// 1) Get System list by LocationId && ServiceId
-		$stmt = $link->prepare('SELECT sys.SystemId, sys.UserId, sys.Access, sys.FullName FROM systems sys'
+		$stmt = $link->prepare('SELECT sys.SystemId, sys.FullName, sys.Access FROM systems sys'
 			. ' JOIN system_services serv ON sys.SystemId = serv.SystemId'
 			. "	WHERE sys.LocationId = $locationId AND serv.ServiceId = $serviceId");
 	    $stmt->execute();
-	    $stmt->bind_result($systemId, $userId, $access, $fullname);
+	    $stmt->bind_result($systemId, $fullname, $access);
 	    while ($stmt->fetch()) {
 	        $arrSystems[$systemId] = array(
 	        	"fullname" 	=> $fullname,
-	        	"userId"	=> $userId,
 	        	"access"	=> $access
 	        );
 	    }
@@ -181,12 +180,7 @@
 				$arrBookingPeriodsByDaysDiff[$SystemId][$days_diff] = array();
 			}
 
-			// Check Already-Booked Timeslots (in bookings table)
 			$calculated_date = date('Y-m-d', strtotime($date . ' +' . $days_diff . ' days'));
-			if (isset($arrBookings[$SystemId]) && isset($arrBookings[$SystemId][$calculated_date])
-				 && isset($arrBookings[$SystemId][$calculated_date][$FromInMinutes . '-' . $ToInMinutes])) {
-				continue;
-			}
 
 			// Check Explicitly-Set Unavailable Timeslots (in setting_bookingperiods_special)
 			if (isset($arrSpecialBookingPeriods[$SystemId]) && isset($arrSpecialBookingPeriods[$SystemId][$calculated_date])
@@ -212,6 +206,28 @@
         $stmt->close();
 
 	    $link->close();
+
+		foreach ($arrSystemIds as $system_id) {
+			if (empty($system_id) || isset($arrBookingPeriodsByDaysDiff[$system_id]))
+				continue;
+
+			// Copy default booking periods
+			$arrBookingPeriodsByDaysDiff[$system_id] = unserialize(serialize($arrBookingPeriodsByDaysDiff[0]));
+
+			// Remove Already-Booked Timeslots (in bookings table)
+			foreach ($arrBookingPeriodsByDaysDiff[$system_id] as $days_diff => &$arr_bookingperiods) {
+				$calculated_date = date('Y-m-d', strtotime($date . ' +' . $days_diff . ' days'));
+				
+				foreach ($arr_bookingperiods as $index => $values) {
+					if (isset($arrBookings[$system_id]) && isset($arrBookings[$system_id][$calculated_date])
+						&& isset($arrBookings[$system_id][$calculated_date][$values['FromInMinutes'] . '-' . $values['ToInMinutes']])) {
+						unset($arr_bookingperiods[$index]);
+					}
+				}
+			}
+		}
+
+		unset($arrBookingPeriodsByDaysDiff[0]);
 
 		foreach ($arrBookingPeriodsByDaysDiff as $SystemId => $values) {
 			ksort($values); //Sorty by key (i.e. days_diff)
