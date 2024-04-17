@@ -20,7 +20,7 @@
     $number_of_page = ceil( $total_records / $limit );
 ?>
 
-<h4 class="page-title">Individual Systems <a href="#" data-toggle="modal" data-target="#saveModal" id="addUser" class="add_link">Add New</a></h4>
+<h4 class="page-title">Individual Systems <a href="#" data-toggle="modal" data-target="#saveModal" id="addNew" class="add_link">Add New</a></h4>
 <div class="table-responsive">
     <table border="0" cellspacing="0" cellpadding="5" width="100%" class="table">
     	<thead>
@@ -37,25 +37,26 @@
 	    <tbody>
 		<?php
 			$page_start = ($page - 1) * $limit;
-		    $stmt = $db->prepare("SELECT SystemId, FullName, LocationId, ReferenceId, Phone, RegDate, U.Userid, U.Email FROM systems LEFT JOIN users as U on U.UserId = systems.UserId LIMIT ?,?");
+		    $stmt = $db->prepare("SELECT SystemId, FullName, LocationId, ReferenceId, Phone, RegDate, FirstEmail FROM systems LIMIT ?,?");
 	        $stmt->bind_param( 'ii', $page_start, $limit );
 		    $stmt->execute();
-		    $stmt->bind_result($systemId, $fullname, $locationId, $referenceId, $phone_number, $regdate, $userId, $email);
+		    $stmt->bind_result($systemId, $fullname, $locationId, $referenceId, $phone_number, $regdate, $email_addr);
 		    $stmt->store_result();
 		    if ($stmt->num_rows > 0) {
 			    while ($stmt->fetch()) {
 		?>
         <tr>
-            <td><a href="#" class="userEdit" data-user_id=<?php echo $userId ?>><?php echo $fullname ?></a></td>
+            <td>
+				<a href="#" class="editSystem" data-system_id=<?php echo $systemId ?>><?php echo $fullname ?></a>
+			</td>
             <td><?php echo getLocationNameById( $locationId ); ?></td>
             <td><?php echo $referenceId ?></td>
-            <td><?php echo $email ?></td>
+            <td><?php echo $email_addr ?></td>
             <td><?php echo $phone_number ?></td>
             <td><?php echo format_date($regdate) ?></td>
             <td>
             	<a href="#" title="Services" data-toggle="modal" data-target="#serviceModal" class="viewService" data-system_id=<?php echo $systemId ?>><i class="fa fa-wrench fa-lg"></i></a> 
-            	<a href="#" title="Change Password" data-toggle="modal" data-target="#passModal" class="updatePass" data-user_id=<?php echo $userId ?>><i class="fa fa-key fa-lg"></i></a> 
-            	<a href="#" title="Delete User" data-toggle="modal" data-target="#deleteModal" class="userDelete" data-user_id=<?php echo $userId ?>><i class="fa fa-trash fa-lg"></i></a>
+            	<a href="#" title="Delete System" data-toggle="modal" data-target="#deleteModal" class="deleteSystem" data-system_id=<?php echo $systemId ?>><i class="fa fa-trash fa-lg"></i></a>
             </td>
         </tr>
         <?php
@@ -125,11 +126,11 @@
 ?>
 <div class="modal fade" id="saveModal" tabindex="-1" role="dialog" aria-labelledby="saveModalLabel" aria-hidden="true">
     <form method="post" class="form-horizontal" id="APP_FORM">
-    	<input type="hidden" name="userId" id="userId" value="" />
+    	<input type="hidden" name="systemId" id="systemId" value="" />
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="saveModalLabel">Add Profile</h5>
+                    <h5 class="modal-title" id="saveModalLabel">Add New</h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
@@ -137,39 +138,30 @@
                 <div class="modal-body">
 					<p class="Message fst-italic fw-bold p-0"></p>
                     <div class="form-group">
-                        <label for="Username">Username *</label>
-                        <input type="input" class="form-control required" required="required" id="Username" placeholder="Username" name="username"/>
-                    </div>
-                    <div class="form-group">
-                        <label for="FirstName">First Name *</label>
-                        <input type="input" class="form-control required" required="required" id="FirstName" placeholder="First Name" name="first_name"/>
-                    </div>
-                    <div class="form-group">
-                        <label for="LastName">Last Name *</label>
-                        <input type="input" class="form-control required" required="required" id="LastName" placeholder="Last Name" name="last_name"/>
-                    </div>
-                    <div class="form-group">
-                        <label for="fullname">Full Name *</label>
+                        <label for="fullname">Individual System Name *</label>
                         <input type="input" class="form-control required" required="required" id="fullname" placeholder="Full Name" name="fullname"/>
                     </div>
                     <div class="form-group">
-                        <label for="businessname">Business Name</label>
+                        <label for="FirstName">First Name (Optional)</label>
+                        <input type="input" class="form-control" id="FirstName" placeholder="First Name" name="first_name"/>
+                    </div>
+                    <div class="form-group">
+                        <label for="LastName">Last Name (Optional)</label>
+                        <input type="input" class="form-control" id="LastName" placeholder="Last Name" name="last_name"/>
+                    </div>
+                    <div class="form-group">
+                        <label for="businessname">Business Name (Optional)</label>
                         <input type="input" class="form-control" id="businessname" placeholder="Business Name" name="businessname"/>
                     </div>
 					<div class="form-group">
                         <label for="Location">Location</label>
-                        <?php 
-							foreach( $arrLocations as $key => $desc){
-								$checked = "";
-								if( $key == $arrAppData['location'] )
-									$checked = "checked";
-
-								echo '<div class="form-check">
-										<label class="form-check-label" for="'.$key.'">'.$key.'</label>
-										<input type="radio" required class="form-check-input" name="location" id="'.$key.'" value="'.$desc['id'].'" '.$checked.'/>
-									</div>';
+                        <select name="location" id="location" class="form-select form-select-sm">
+						<?php
+							foreach( $arrLocations as $key => $values){
+								echo '<option value="' . $key . '">' . $values['name'] . '</option>';
 							}
 						?>
+                        </select>
                     </div>
                     <div class="form-group">
                         <label for="LocationAddress">Location Address</label>
@@ -255,17 +247,6 @@
                         <label for="fax">Fax</label>
                         <input type="input" class="form-control" id="fax" placeholder="Fax" name="fax"/>
                     </div>
-                    <div class="form-group">
-                        <label for="UserType">User Type</label>
-                        <select name="user_type" id="UserType" class="form-select form-select-sm">
-                            <option value="U">User</option>
-                            <option value="A" selected>Administrator</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="IsActive">Active</label>
-                        <input class="" type="checkbox" id="IsActive" name="active"/>
-                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>
@@ -300,41 +281,11 @@
         </div>
     </form>
 </div>
-<div class="modal fade" id="passModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <form method="post" class="form-horizontal" id="PASSWORD_FORM">
-    	<input type="hidden" name="passId" id="passId" value="" />
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Change Password</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-					<p class="Message fst-italic fw-bold p-0"></p>
-                    <div class="form-group">
-                        <label for="password">Password *</label>
-                        <input type="password" class="form-control required" required="required" id="password" placeholder="Password" name="password"/>
-                    </div>
-                    <div class="form-group">
-                        <label for="password_confirm">Confirm Password *</label>
-                        <input type="password" class="form-control required" required="required" id="password_confirm" placeholder="Confirm Password" name="password_confirm"/>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-primary btn-sm" name="Save" value="Save" id="btnPass" disabled>Update</button>
-                </div>
-            </div>
-        </div>
-    </form>
-</div>
 <div class="modal fade" id="serviceModal" tabindex="-1" role="dialog" aria-labelledby="serviceModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Services</h5>
+                <h5 class="modal-title">Services provided by the Individual System</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
@@ -366,16 +317,16 @@
 </div>
 <script>
 	$(document).ready(function() { 
-		var apiUri = "/api/services.php";
-    var SystemId = '';
+		var apiUri = "/api/systems.php";
+    	var SystemId = '';
+
 		function clearForm() {
-			$('input[name="userId"]').val( "" );
-			$('input[name="username"]').val( "" );
+			$('input[name="systemId"]').val( "" );
+			$('input[name="fullname"]').val( "" );
 			$('input[name="first_name"]').val( "" );
 			$('input[name="last_name"]').val( "" );
-			$('input[name="fullname"]').val( "" );
 			$('input[name="businessname"]').val( "" );
-			$('input[name="location"]').prop( "checked", false );
+			$('select[name="location"]').prop( "" );
 			$('input[name="lstreet"]').val( "" );
 			$('input[name="lcity"]').val( "" );
 			$('input[name="lstate"]').val( "" );
@@ -392,34 +343,30 @@
 			$('input[name="phone_number"]').val( "" );
 			$('input[name="mobile"]').val( "" );
 			$('input[name="fax"]').val( "" );
-			$('select[name="user_type"]').val( "" );
-			$('input[name="active"]').prop( "checked", false );
-      
 		}
     
-    $('#btnServiceSave').click(function(e) { 
-      var formData = $("#SERVICE_FORM").serializeArray();
-      formData.push({ name: "action", value: "update_service_items" });
-      $.post('/api/systems.php', formData, function (data) {
+    	$('#btnServiceSave').click(function(e) { 
+			var formData = $("#SERVICE_FORM").serializeArray();
+			formData.push({ name: "action", value: "update_service_items" });
+			$.post(apiUri, formData, function (data) {
 				// var res = JSON.parse(data);
-        
-	    });
-    });
+			});
+    	});
 
 		$('#btnSave').click(function(e) {
 			e.preventDefault();
 
 			var formData = $("#APP_FORM").serializeArray();
 
-			if( $("#userId").val() )
-				formData.push({ name: "action", value: "edit_user" });
+			if( $("#systemId").val() )
+				formData.push({ name: "action", value: "edit_system" });
 			else
-				formData.push({ name: "action", value: "new_user" });
+				formData.push({ name: "action", value: "new_system" });
 
 			$.post(apiUri, formData, function (data) {
 				var res = JSON.parse(data);
 
-				if(res.status == "error"){
+				if (res.status == "error") {
 					$(".Message").removeClass("text-success");
 					$(".Message").addClass("text-danger");
 				} else {
@@ -431,23 +378,21 @@
 	        });
 		});
 
-		$('.userEdit').click( function(e){
+		$('.editSystem').click( function(e){
 			var formData = [];
-			formData.push({ name: "action", value: "get_user" });
-			formData.push({ name: "userId", value: $(this).data("user_id") });
+			formData.push({ name: "action", value: "get_system" });
+			formData.push({ name: "systemId", value: $(this).data("system_id") });
 
 			$.post(apiUri, formData, function (data) {
 				var res = JSON.parse(data);
 				data = res.data;
 
-				$('input[name="userId"]').val( data.UserId );
-				$('input[name="username"]').val( data.Username );
+				$('input[name="systemId"]').val( data.SystemId );
 				$('input[name="first_name"]').val( data.Firstname );
 				$('input[name="last_name"]').val( data.Lastname );
-				$('input[name="email_addr"]').val( data.Email );
 				$('input[name="fullname"]').val( data.FullName );
 				$('input[name="businessname"]').val( data.BusinessName );
-				$("input[name=location][value=" + data.LocationId + "]").attr('checked', 'checked');
+				$("select[name=location]").val(data.LocationId);
 				$('input[name="lstreet"]').val( data.Street );
 				$('input[name="lcity"]').val( data.City );
 				$('input[name="lstate"]').val( data.State );
@@ -458,33 +403,28 @@
 				$('input[name="pzipcode"]').val( data.PPostCode );
 				$('input[name="latitude"]').val( data.Latitude );
 				$('input[name="longitude"]').val( data.Longitude );
+				$('input[name="email_addr"]').val( data.FirstEmail );
 				$('input[name="email_addr1"]').val( data.SecondEmail );
 				$('input[name="email_addr2"]').val( data.ThirdEmail );
 
 				$('input[name="phone_number"]').val( data.Phone );
 				$('input[name="mobile"]').val( data.Mobile );
 				$('input[name="fax"]').val( data.Fax );
-				$('select[name="user_type"]').val( data.UserType );
-
-				if( data.Active == "Y" ){
-					$('input[name="active"]').prop( "checked", true );
-				} else {
-					$('input[name="active"]').prop( "checked", false );
-				}
-				$("#saveModalLabel").html("Edit Profile");
+				
+				$("#saveModalLabel").html("Edit");
 				$("#saveModal").modal("show");
 	        });
 		});
 
-		$('#addUser').on("click", function(e) {
-			$("#saveModalLabel").html("Add Profile");
+		$('#addNew').on("click", function(e) {
+			$("#saveModalLabel").html("Add New");
 			$(".Message").html();
 			clearForm();
 		})
 
-		$('.userDelete').click( function(e){
+		$('.deleteSystem').click( function(e){
 			$(".Message").html();
-			$('input[name="deleteId"]').val( $(this).data("user_id") );
+			$('input[name="deleteId"]').val( $(this).data("system_id") );
 		});
 
 		$('#btnDelete').click(function(e){
@@ -492,7 +432,7 @@
 
 			var formData = $("#DELETE_FORM").serializeArray();
 
-			formData.push({ name: "action", value: "delete_user" });
+			formData.push({ name: "action", value: "delete_system" });
 
 			$.post(apiUri, formData, function (data) {
 				var res = JSON.parse(data);
@@ -509,87 +449,63 @@
 	        });
 		});
 
-		$('.updatePass').click( function(e){
-			$('input[name="passId"]').val( $(this).data("user_id") );
-		});
-
-		$('#btnPass').click(function(e){
-			e.preventDefault();
-
-			var formData = $("#PASSWORD_FORM").serializeArray();
-
-			formData.push({ name: "action", value: "change_pass" });
-
-			$.post(apiUri, formData, function (data) {
-				var res = JSON.parse(data);
-				if(res.status == "error"){
-					$(".Message").removeClass("text-success");
-					$(".Message").addClass("text-danger");
-				} else {
-					$(".Message").removeClass("text-danger");
-					$(".Message").addClass("text-success");
-					$("#passModal").modal("hide");
-				}
-
-				$(".Message").html( res.message );
-	        });
-		});
-
 		$('#records-limit').change(function () {
             $('.pagination-form').submit();
         })
 
-    $('.viewService').click( function(e){
+    	$('.viewService').click( function(e){
 			var formData = [];
 			formData.push({ name: "action", value: "get_all_services" });
-      formData.push({ name: 'SystemId', value: $(this).attr('data-system_id')});
-      var SystemId = $(this).attr('data-system_id');
+			formData.push({ name: 'SystemId', value: $(this).attr('data-system_id')});
+			var SystemId = $(this).attr('data-system_id');
 		
-      $.post(apiUri, formData, function (data) {
-        var res = JSON.parse(data);
+			$.post(apiUri, formData, function (data) {
+				var res = JSON.parse(data);
 				data = res.data;
 
-        $("#system_services").empty();
+        		$("#system_services").empty();
+				
 				for( i = 0; i < data.length; i++ ) {
 					var service = data[i];
 					var html = `<tr>
-              <td>${service.ServiceName}</td>
+							<td>${service.ServiceName}</td>
 							<td>${service.Price}</td>
 							<td>${service.Duration}</td>
 							<td>${service.IsCharge}</td>
-              <td>
-                  <div class="form-group">
-                      <label class="toggle-switch">
-                          <input name="Services[]" value="${service.ServiceId}" type="checkbox" ${service.isSystemService ? 'checked' : ''}>
-                          <span class="toggle-slider"></span>
-                      </label>
-                  </div>
-              </td>
+							<td>
+								<div class="form-group">
+									<label class="toggle-switch">
+										<input name="Services[]" value="${service.ServiceId}" type="checkbox" ${service.isSystemService ? 'checked' : ''}>
+										<span class="toggle-slider"></span>
+									</label>
+								</div>
+							</td>
 						</tr>`;
 					$("#system_services").append(html)
 				}
-        $("#system_services").append('<input type="hidden" name="SystemId" value="' + SystemId + '"/>');
-	    });
+        		
+				$("#system_services").append('<input type="hidden" name="SystemId" value="' + SystemId + '"/>');
+	    	});
 		});
 
-    $('#myToggle').change(function() {
-        // Get the new value of the toggle switch (checked or unchecked)
-        var newValue = $(this).is(':checked') ? 1 : 0;
+    	$('#myToggle').change(function() {
+			// Get the new value of the toggle switch (checked or unchecked)
+			var newValue = $(this).is(':checked') ? 1 : 0;
 
-        // Make an AJAX request to save the updated value
-        $.ajax({
-            url: '/api/systems.php', // URL to your PHP script that handles saving the value
-            method: 'POST',
-            data: { value: newValue }, // Send the new value to the server
-            success: function(response) {
-                // Handle the server response if needed
-                console.log('Toggle value saved successfully.');
-            },
-            error: function(xhr, status, error) {
-                // Handle errors if the AJAX request fails
-                console.error('Error saving toggle value:', error);
-            }
-        });
-    });
+			// Make an AJAX request to save the updated value
+			$.ajax({
+				url: '/api/systems.php', // URL to your PHP script that handles saving the value
+				method: 'POST',
+				data: { value: newValue }, // Send the new value to the server
+				success: function(response) {
+					// Handle the server response if needed
+					console.log('Toggle value saved successfully.');
+				},
+				error: function(xhr, status, error) {
+					// Handle errors if the AJAX request fails
+					console.error('Error saving toggle value:', error);
+				}
+			});
+		});
 	});
 </script>

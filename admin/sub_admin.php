@@ -20,7 +20,7 @@
     $number_of_page = ceil( $total_records / $limit );
 ?>
 
-<h4 class="page-title">Sub-Administrators<a href="#" data-toggle="modal" data-target="#saveModal" id="addUser" class="add_link">Add Profile</a></h4>
+<h4 class="page-title">Sub-Administrators<a href="#" data-toggle="modal" data-target="#saveModal" id="addUser" class="add_link">Add New</a></h4>
 
 <div class="table-responsive">
     <table border="0" cellspacing="0" cellpadding="5" width="100%" class="table">
@@ -130,7 +130,7 @@
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="saveModalLabel">Add Profile</h5>
+                    <h5 class="modal-title" id="saveModalLabel">Add New</h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
@@ -338,13 +338,13 @@
 				} else {
 					$('input[name="active"]').prop( "checked", false );
 				}
-				$("#saveModalLabel").html("Edit Profile");
+				$("#saveModalLabel").html("Edit");
 				$("#saveModal").modal("show");
 	        });
 		});
 
 		$('#addUser').on("click", function(e) {
-			$("#saveModalLabel").html("Add Profile");
+			$("#saveModalLabel").html("Add New");
 			$(".Message").html();
 			clearForm();
 		})

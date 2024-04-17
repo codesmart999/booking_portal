@@ -75,12 +75,10 @@
 	}
 
 	// Added by Awesome (2024-03-26)
-	if( $_POST['action'] == "get_all_systems" ) {
-		$stmt = $db->prepare("SELECT * FROM systems");
+	if ( $_POST['action'] == "get_all_systems" ) {
+		$stmt = $db->prepare("SELECT SystemId, FullName, Country, LocationId FROM systems");
 	    $stmt->execute();
-		$stmt->bind_result($SystemId, $UserId, $LocationId, $FullName, $ReferenceId, $Access, $InternalId, $BusinessName, $Steet, $City, $State,
-			$PostCode, $Country, $PStreet, $PCity, $PState, $PPostCode, $Timezone, $Latitue, $Longitude, $SecondEmail, $ThirdEmail, $Phone, $Mobile, $Fax, $Website,
-			$LastAccess, $RegDate);
+		$stmt->bind_result($SystemId, $FullName, $Country, $LocationId);
 		$stmt->store_result();
 
 	    $arrSystems = array();
@@ -88,14 +86,12 @@
 			while ($stmt->fetch()) {
 				$arrSystems[] = [
 					"SystemId"		=> $SystemId,
-					"UserId"		=> $UserId,
 					"FullName"	    => $FullName,
 					"Country"	    => $Country,
 					"LocationId"	=> $LocationId
 				];
 			}
 		}
-		
 
 		$res["status"] = "success";
 		$res['data'] = $arrSystems;
