@@ -318,6 +318,7 @@
 <script>
 	$(document).ready(function() { 
 		var apiUri = "/api/systems.php";
+		var apiUri2 = "/api/services.php";
     	var SystemId = '';
 
 		function clearForm() {
@@ -455,11 +456,12 @@
 
     	$('.viewService').click( function(e){
 			var formData = [];
+			var SystemId = $(this).data("system_id");
+
 			formData.push({ name: "action", value: "get_all_services" });
-			formData.push({ name: 'SystemId', value: $(this).attr('data-system_id')});
-			var SystemId = $(this).attr('data-system_id');
+			formData.push({ name: 'SystemId', value: SystemId});
 		
-			$.post(apiUri, formData, function (data) {
+			$.post(apiUri2, formData, function (data) {
 				var res = JSON.parse(data);
 				data = res.data;
 
