@@ -472,7 +472,7 @@
 					var html = `<tr>
 							<td>${service.ServiceName}</td>
 							<td>${service.Price}</td>
-							<td>${service.Duration}</td>
+							<td>${service.Formatted_Duration}</td>
 							<td>${service.IsCharge}</td>
 							<td>
 								<div class="form-group">

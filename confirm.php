@@ -30,7 +30,7 @@ unset($_SESSION['appointment_data']);
 				<p>by <?php echo $objUser['Username']; ?></p>
 				<p><?php echo $arrServices[$arrAppData['service']]['fullname']; ?></p>
 				<p><b><?php echo getLocationNameById($arrAppData['location']); ?></b> - <?php echo getLocationAddressById($arrAppData['location']); ?></p>
-				<p><?php echo $arrSystems[$arrAppData['system']]['fullname']; ?></p>
+				<p><?php echo getSystemNames($arrSystems, $arrAppData['booked_systems']); ?></p>
 				<p>Reference: <?php echo $booking_code; ?></p>
 				<p>Business Name: <?php echo $arrAppData['business_name']; ?></p>
 				<p>Patient Name: <?php echo $arrAppData['patient_name']; ?></p>
@@ -69,7 +69,7 @@ unset($_SESSION['appointment_data']);
             </tr>
             <tr>
                 <th>Individual System:</th>
-                <td><?php echo $arrSystems[$arrAppData['system']]['fullname']; ?></td>
+                <td><?php echo getSystemNames($arrSystems, $arrAppData['booked_systems']); ?></td>
             </tr>
             <tr>
                 <th>Reference Code:</th>

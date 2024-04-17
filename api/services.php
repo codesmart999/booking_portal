@@ -18,9 +18,9 @@
 		$price = isset($_POST['price']) ? $_POST['price'] : 0;
 		$duration_hours = isset($_POST['duration_hours']) ? $_POST['duration_hours'] : 0;
 		$duration_minutes = isset($_POST['duration_minutes']) ? $_POST['duration_minutes'] : 0;
-		$duration = sprintf("%01d", $duration_hours) . ":" . sprintf("%02d", $duration_minutes);
+		$duration_in_mins = $duration_hours * 60 + $duration_minutes;
 		$charge = isset($_POST['charge']) ? "Y" : "N";
-		$active = isset($_POST['active']) ? "Y" : "N";
+		$active = isset($_POST['active']) ? 1 : 0;
 
 		// check servicename
 	    $stmt = $db->prepare("SELECT ServiceId FROM services WHERE `ServiceName`=? ");
@@ -44,16 +44,16 @@
                 FullName,
                 Description,
                 Price,
-                Duration,
+                DurationInMins,
                 IsCharge,
                 active
             ) VALUES (?,?,?,?,?,?,?)');
-        $stmt->bind_param( 'sssdsss',
+        $stmt->bind_param( 'sssdiss',
             $servicename,
 			$fullname,
 			$description,
 			$price, 
-			$duration,
+			$duration_in_mins,
 			$charge,
 			$active );
         $stmt->execute() or die($stmt->error);
@@ -75,7 +75,7 @@
 		$price = isset($_POST['price']) ? $_POST['price'] : 0;
 		$duration_hours = isset($_POST['duration_hours']) ? $_POST['duration_hours'] : 0;
 		$duration_minutes = isset($_POST['duration_minutes']) ? $_POST['duration_minutes'] : 0;
-		$duration = $duration_hours . ":" . sprintf("%02d", $duration_minutes);
+		$duration_in_mins = $duration_hours * 60 + $duration_minutes;
 		$charge = isset($_POST['charge']) ? "Y" : "N";
 		$active = isset($_POST['active']) ? 1 : 0;
 
@@ -101,17 +101,17 @@
                     FullName = ?,
                     Description = ?,
                     Price = ?,
-                    Duration = ?,
+                    DurationInMins = ?,
                     IsCharge = ?,
                     active = ?
                 WHERE ServiceId=?' );
 
-        $stmt->bind_param( 'sssdsssi',
+        $stmt->bind_param( 'sssdissi',
 			$servicename,
 			$fullname,
 			$description,
 			$price,
-			$duration,
+			$duration_in_mins,
 			$charge,
 			$active,
 			$serviceId
@@ -143,18 +143,16 @@
 	// Get a Service Info by Id
 	if( $_POST['action'] == "get_service" ) {
 		$serviceId = isset($_POST['serviceId']) ? $_POST['serviceId'] : "";
-		$stmt = $db->prepare("SELECT ServiceId, ServiceName, FullName, Description, Price, Duration, IsCharge, active
+		$stmt = $db->prepare("SELECT ServiceId, ServiceName, FullName, Description, Price, DurationInMins, IsCharge, active
 			FROM services
 			WHERE ServiceId=?");
         $stmt->bind_param( 'i', $serviceId);
 		$stmt->execute();
-		$stmt->bind_result($serviceId, $servicename, $fullname, $description, $price, $duration, $charge, $active);
+		$stmt->bind_result($serviceId, $servicename, $fullname, $description, $price, $duration_in_mins, $charge, $active);
 		$stmt->store_result();
 		$stmt->fetch();
 
-		$arrDurationInfo = explode(":", $duration);
-		$duration_hours = count($arrDurationInfo) >= 2 ? $arrDurationInfo[0] : 0;
-		$duration_minutes = count($arrDurationInfo) >= 2 ? $arrDurationInfo[1] : 0;
+		$arrDurationInfo = convertDurationToHoursMinutes($duration_in_mins);
 
 		$res["status"] = "success";
 		$res['data'] = [
@@ -163,8 +161,8 @@
 			"FullName" 			=> $fullname,
 			"Description" 		=> $description,
 			"Price" 			=> $price,
-			"Duration_Hours" 	=> $duration_hours,
-			"Duration_Minutes"	=> $duration_minutes,
+			"Duration_Hours" 	=> $arrDurationInfo['hours'],
+			"Duration_Minutes"	=> $arrDurationInfo['minutes'],
 			"IsCharge"			=> $charge,
 			"Active"			=> $active
 		];
@@ -184,7 +182,7 @@
 			s.ServiceId,
 			s.ServiceName,
 			s.FullName,
-			s.Duration,
+			s.DurationInMins,
 			s.IsCharge,
 			s.Price,
 			m.SystemId
@@ -197,15 +195,18 @@
 		$stmt->bind_param('i', $input_system_id);
 		
 		$stmt->execute();
-		$stmt->bind_result($ServiceId, $ServiceName, $FullName, $Duration, $IsCharge, $Price, $SystemId);
+		$stmt->bind_result($ServiceId, $ServiceName, $FullName, $DurationInMins, $IsCharge, $Price, $SystemId);
 		$stmt->store_result();
 
-         while($stmt->fetch()) {
+		while($stmt->fetch()) {
+			$arrDurationInfo = convertDurationToHoursMinutes($DurationInMins);
+
 			$arrResult[] = array(
 				"ServiceId" 		=> $ServiceId,
 				"ServiceName" 		=> $ServiceName,
 				"FullName" 			=> $FullName,
-				"Duration"       	=> $Duration,
+				"DurationInMins"	=> $DurationInMins,
+				"Formatted_Duration" 	=> $arrDurationInfo['formatted_text'],
 				"IsCharge"			=> $IsCharge,
 				"Price" 			=> $Price,
 				"isSystemService"   => $SystemId == $input_system_id

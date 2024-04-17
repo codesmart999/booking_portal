@@ -53,7 +53,6 @@ if ( isset($_POST['Submit'])){
 	}
 	
 	$service_id = $arrAppData['service'];
-	$system_id = $arrAppData['system'];
 	$patient_name = $arrAppData['patient_name'];
 	$staff_name = $arrAppData['chromis_staff'];
 	$date_appointment = DateTime::createFromFormat('d/m/Y', $arrAppData['date_appointment_final']);
@@ -61,11 +60,11 @@ if ( isset($_POST['Submit'])){
 	
 	list($booking_from, $booking_to) = extractStartAndEndTime($arrAppData['booking_time']);
 
-	$booking_code = generateRandomCode($customerId . $system_id . $arrAppData['date_appointment'] . $booking_from . $booking_to);
+	$booking_code = generateRandomCode($customerId . $booking_date . $booking_from . $booking_to);
 	
 	$stmt = $db->prepare("INSERT INTO `bookings` (ServiceId, SystemId, CustomerId, PatientName, StaffName, BookingDate, BookingFrom, BookingTo, BookingCode, Comments) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 	foreach ($arrAppData['booking_time'] as $time) {
-		list($booking_from, $booking_to) = explode('-', $time);
+		list($booking_from, $booking_to, $system_id) = explode('-', $time);
 
 		$stmt->bind_param('iiisssssss', $service_id, $system_id, $customerId, $patient_name, $staff_name, $booking_date, $booking_from, $booking_to, $booking_code, $comments);
 		$stmt->execute() or die($stmt->error);

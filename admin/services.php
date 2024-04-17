@@ -37,18 +37,19 @@
 	    <tbody>
 		<?php
 			$page_start = ($page - 1) * $limit;
-		    $stmt = $db->prepare("SELECT ServiceId, ServiceName, FullName, Price, Duration, IsCharge, active FROM services LIMIT ?,?");
+		    $stmt = $db->prepare("SELECT ServiceId, ServiceName, FullName, Price, DurationInMins, IsCharge, active FROM services LIMIT ?,?");
 	        $stmt->bind_param( 'ii', $page_start, $limit );
 		    $stmt->execute();
-		    $stmt->bind_result($serviceId, $servicename, $fullname,  $price, $duration, $charge, $active);
+		    $stmt->bind_result($serviceId, $servicename, $fullname,  $price, $duration_in_mins, $charge, $active);
 		    $stmt->store_result();
 		    if ($stmt->num_rows > 0) {
 			    while ($stmt->fetch()) {
+					$arrDurationInfo = convertDurationToHoursMinutes($duration_in_mins);
 		?>
         <tr>
             <td><a href="#" class="serviceEdit" data-service_id=<?php echo $serviceId ?>><?php echo $fullname ?></a></td>
             <td><?php echo displayPrice($price) ?></td>
-            <td><?php echo $duration ?></td>
+            <td><?php echo $arrDurationInfo['formatted_text']; ?></td>
             <td><?php echo displayYN($charge) ?></td>
             <td><?php echo displayYN($active) ?></td>
             <td>

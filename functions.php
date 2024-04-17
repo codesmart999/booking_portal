@@ -1591,4 +1591,30 @@
 			}
 		}
 	}
+
+	// Added by Hennadii (2024-04-17)
+	function convertDurationToHoursMinutes($durationInMinutes) {
+		// Calculate hours
+		$hours = floor($durationInMinutes / 60);
+	
+		// Calculate minutes
+		$minutes = $durationInMinutes % 60;
+
+		// Format hours and minutes
+		$formattedDuration = '-';
+		if (!empty($hours) || !empty($minutes))
+			$formattedDuration = sprintf('%02d:%02d', $hours, $minutes);
+	
+		// Return an array containing hours and minutes
+		return array('hours' => $hours, 'minutes' => $minutes, 'formatted_text' => $formattedDuration);
+	}
+
+	// Added by Hennadii (2024-04-17)
+	function getSystemNames($arrSystems, $arrBookedSystemIds) {
+		$arr_system_fullnames = array();
+		foreach ($arrBookedSystemIds as $system_id)
+			$arr_system_fullnames[] = $arrSystems[$system_id]['fullname'];
+
+		return implode(',', $arr_system_fullnames);
+	}
 ?>

@@ -55,12 +55,20 @@ if( !isset( $_SESSION['appointment_data'] ))
 					<?php 
 						foreach( $arrServices as $key => $objService){
 							$checked = "";
-							if( $key == $arrAppData['service'] )
+							
+							if ( $key == $arrAppData['service'] )
 								$checked = "checked";
+
+							$disabled = "";
+							if (empty($objService['duration_in_mins'])) {
+								$disabled = "disabled";
+
+								$objService['fullname'] .= ' (Duration 00:00)';
+							}
 
 							echo '<div class="form-check">
 									<label class="form-check-label" for="service_'.$key.'">' . $objService['fullname'] . '</label>
-									<input type="radio" required class="form-check-input" name="service" id="service_' . $key . '" value="' . $objService['id'].'" ' . $checked . '/>
+									<input type="radio" required class="form-check-input" name="service" id="service_' . $key . '" value="' . $objService['id'].'" ' . $checked . ' ' . $disabled . '/>
 								</div>';
 						}
 					?>

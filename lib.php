@@ -8,11 +8,11 @@
 	$arrAppData = [
 		"location" => "",
 		"service" => "",
-		"system" => "",
-		"date_appointment" => "",
-		"date_appointment_final" => "",
-		"five_days" => "",
-		"booking_time" => "",
+		"booked_systems" => array(),
+		"date_appointment" => "", // Starting from which date, do we search for availability?
+		"date_appointment_final" => "", // Final Date on which the booking is made
+		"five_days" => "", // Do we search for availability in the next 5 days?
+		"booking_time" => "", // Array of time slots ['FromInMins-ToInMins-SystemId']
 		"profile_name" => "",
 		"business_name" => "",
 		"street" => "",
@@ -95,14 +95,32 @@
 
     // Store Service and Service Data
     if( empty( $arrServices ) ) {
-	    $stmt = $link->prepare("SELECT ServiceId, ServiceName, FullName, active FROM `services` WHERE `active`=1");
+	    $stmt = $link->prepare("SELECT ServiceId, ServiceName, FullName, DurationInMins, active FROM services WHERE active = 1 AND DurationInMins > 0");
 	    $stmt->execute();
-	    $stmt->bind_result($id, $name, $fullname, $active);
-	    while($stmt->fetch()) {
+	    $stmt->bind_result($id, $name, $fullname, $duration_in_mins, $active);
+	    
+		while ($stmt->fetch()) {
 	        $arrServices[$id] = array(
 	        	"id" 	=> $id,
 	        	"name"	=> $name,
-	        	"fullname"	=> $fullname
+	        	"fullname"	=> $fullname,
+				"duration_in_mins" => $duration_in_mins
+	        );
+	    }
+
+		$stmt = $link->prepare("SELECT ServiceId, ServiceName, FullName, DurationInMins, active FROM services WHERE active = 1");
+	    $stmt->execute();
+	    $stmt->bind_result($id, $name, $fullname, $duration_in_mins, $active);
+	    
+		while ($stmt->fetch()) {
+			$arrDurationInfo = convertDurationToHoursMinutes($duration_in_mins);
+
+	        $arrServices[$id] = array(
+	        	"id" 	=> $id,
+	        	"name"	=> $name,
+	        	"fullname"	=> $fullname,
+				"duration_in_mins" => $duration_in_mins,
+				"formatted_duration" => $arrDurationInfo['formatted_text']
 	        );
 	    }
 
