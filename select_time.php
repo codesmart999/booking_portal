@@ -36,12 +36,14 @@ if ( isset($_POST['Submit']) && isset($_POST['booking_time']) ) {
 	}
 	
 	// Are time slots inconsecutive?
+	$arrAppData['date_appointment_final'] = date('d/m/Y', strtotime($booking_date));;
+
 	if ($prev_ending == -1) {
 		$message = '<span class="ErrorMessage fst-italic fw-bold show">'._lang('err_consecutive_time').'</span>';
 	} else if ($arrServices[$arrAppData['service']]['duration_in_mins'] != $total_duration) {
 		$message = '<span class="ErrorMessage fst-italic fw-bold show">'._lang('err_duration_match').'</span>';
 	} else {
-		$_SESSION['appointment_data']['date_appointment_final'] = date('d/m/Y', strtotime($booking_date));
+		$_SESSION['appointment_data']['date_appointment_final'] = $arrAppData['date_appointment_final'];
 		$_SESSION['appointment_data']['booking_time'] = $arr_booking_times;
 		$_SESSION['appointment_data']['booked_systems'] = $arr_system_ids;
 
@@ -103,7 +105,7 @@ if ( $arrAppData['location'] == ""){
 										$val = get_display_text_from_minutes($objBookingPeriod['FromInMinutes'], $objBookingPeriod['ToInMinutes']);
 										
 										$selected = "";
-										if ($arrAppData['date_appointment'] == $date) {
+										if ($arrAppData['date_appointment_final'] == $date) {
 											foreach( $arrAppData['booking_time'] as $book_time ){
 												if ( $key == $book_time )
 													$selected = "selected";
