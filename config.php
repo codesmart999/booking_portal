@@ -68,6 +68,7 @@ $arrAdminMenu = [
 	"bookings" 			=> [ 	"title" => "Manage Bookings",
 							"sub" => [
 								"move_bookings" 	=> "Move Bookings",
+								"make_bookings" 	=> "Book Appointment",
 								// "search_bookings" 	=> "Search Bookings",
 								// "view_history"		=> "View History"
 							]
