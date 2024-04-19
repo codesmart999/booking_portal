@@ -69,9 +69,17 @@ h6.day-title {
 	width: 60px;
 	height: 34px;
 }
+
+.toggle-switch-sm {
+	position: relative;
+	display: inline-block;
+	width: 60px;
+	height: 24px;
+}
   
 /* Actual toggle switch */
-.toggle-switch input[type="checkbox"] {
+.toggle-switch input[type="checkbox"],
+.toggle-switch-sm input[type="checkbox"] {
 	opacity: 0;
 	width: 0;
 	height: 0;
@@ -103,6 +111,11 @@ h6.day-title {
 	-webkit-transition: .4s;
 	transition: .4s;
 	border-radius: 50%;
+}
+
+.toggle-switch-sm .toggle-slider:before {
+	height: 18px;
+	width: 18px;
 }
   
 /* When checked, translate the slider */

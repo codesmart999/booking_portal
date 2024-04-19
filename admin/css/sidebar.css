@@ -1345,6 +1345,9 @@ pre {
   .table tbody + tbody {
     border-top: 2px solid #dee2e6; }
 
+.table-sm {
+  margin-bottom: 0px;
+}
 .table-sm th,
 .table-sm td {
   padding: 0.3rem; }

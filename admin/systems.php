@@ -292,7 +292,7 @@
             </div>
             <div class="modal-body table-responsive">
               <form method="post" class="form-horizontal" id="SERVICE_FORM">
-                <table border="0" cellspacing="0" cellpadding="5" width="100%" class="table">
+                <table border="0" cellspacing="0" cellpadding="5" width="100%" class="table-sm">
                     <thead>
                         <tr>
                             <td width="150" nowrap>Name</td>
@@ -475,12 +475,10 @@
 							<td>${service.Formatted_Duration}</td>
 							<td>${service.IsCharge}</td>
 							<td>
-								<div class="form-group">
-									<label class="toggle-switch">
-										<input name="Services[]" value="${service.ServiceId}" type="checkbox" ${service.isSystemService ? 'checked' : ''}>
-										<span class="toggle-slider"></span>
-									</label>
-								</div>
+								<label class="toggle-switch-sm">
+									<input name="Services[]" value="${service.ServiceId}" type="checkbox" ${service.isSystemService ? 'checked' : ''}>
+									<span class="toggle-slider"></span>
+								</label>
 							</td>
 						</tr>`;
 					$("#system_services").append(html)
