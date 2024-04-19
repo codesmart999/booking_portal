@@ -1618,11 +1618,15 @@
 
 		// Format hours and minutes
 		$formattedDuration = '-';
-		if (!empty($hours) || !empty($minutes))
+		$timeFormatted = "";
+		if (!empty($hours) || !empty($minutes)) {
 			$formattedDuration = sprintf('%02d:%02d', $hours, $minutes);
+			//added by codemax
+			$timeFormatted = sprintf('%02d:%02d %s', ($hours % 12 == 0 ? 12 : $hours % 12), $minutes, ($hours < 12 ? 'AM' : 'PM'));
+		}
 	
 		// Return an array containing hours and minutes
-		return array('hours' => $hours, 'minutes' => $minutes, 'formatted_text' => $formattedDuration);
+		return array('hours' => $hours, 'minutes' => $minutes, 'formatted_text' => $formattedDuration, 'formatted_text_type1' => $timeFormatted);
 	}
 
 	// Added by Hennadii (2024-04-17)
@@ -1632,5 +1636,47 @@
 			$arr_system_fullnames[] = $arrSystems[$system_id]['fullname'];
 
 		return implode(',', $arr_system_fullnames);
+	}
+
+	function getCustomerBookings($customerId, $fromDate, $toDate){
+		$db = getDBConnection();
+		$sql = "SELECT b.BookingDate, b.BookingCode, b.BookingFrom, b.BookingTo, b.Attended, b.Comments, b.Messages
+            FROM bookings b
+            JOIN customers c ON b.CustomerId = c.CustomerId
+            WHERE b.CustomerId = ? AND b.BookingDate BETWEEN ? AND ?";
+
+		// Prepare the statement
+		$stmt = $db->prepare($sql);
+
+		// Bind parameters
+		$stmt->bind_param('iss', $customerId, $fromDate, $toDate);
+
+		// Execute the statement
+		$stmt->execute();
+
+		// Bind result variables
+		$stmt->bind_result($bookingDate, $bookingCode, $bookingFrom, $bookingTo, $attended, $comments, $messages);
+
+		// Initialize an array to store the booking data
+		$bookings = array();
+
+		// Fetch the data and store it in the array
+		while ($stmt->fetch()) {
+			$bookings[] = array(
+				'BookingDate' => $bookingDate,
+				'BookingFrom' => $bookingFrom,
+				'BookingTo' => $bookingTo,
+				'BookingCode' => $bookingCode,
+				'Attended' => $attended,
+				'Comments' => $comments,
+				'Messages' => $messages
+			);
+		}
+
+		// Close the statement
+		$stmt->close();
+
+		// Return the array of booking data
+		return $bookings;
 	}
 ?>

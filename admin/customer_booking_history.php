@@ -12,6 +12,18 @@
 	$prev = $page - 1;
 	$next = $page + 1;
 
+	$_customerId = isset($_GET['customerId']) ? intval($_GET['customerId']) : null;
+
+	if (!isset($_customerId)) {
+		// Redirect the user to the desired location
+		header('Location: '. SECURE_URL . ADMIN_INDEX . "customers", true, 301);
+		exit; // Make sure to exit after redirection to prevent further script execution
+	}
+	
+	$startDate = isset($_GET['startDate']) ? $_GET['startDate'] : date('Y-m-d');
+	$endDate = isset($_GET['endDate']) ? $_GET['endDate'] : date('Y-m-d');
+	
+
     $stmt = $db->prepare("SELECT * FROM customers WHERE `active`=1");
 	$stmt->execute();
     $stmt->store_result();
@@ -20,56 +32,72 @@
     $number_of_page = ceil( $total_records / $limit );
 ?>
 
-<h4 class="page-title">Manage Customers<a href="#" data-toggle="modal" data-target="#saveModal" id="addcustomer" class="add_link">Add New</a></h4>
-
+<h4 class="page-title">Customer Booking History</h4>
+<div>
+	<div class="row">
+		<div class="col-lg-3 col-sm-4">
+			<label for="customer">Customer:</label>
+			<select id="customer" name="customer">
+				<?php
+					$stmt = $db->prepare("SELECT CustomerId, FullName FROM customers WHERE `active`=1");
+					$stmt->execute();
+					$stmt->store_result();
+					$stmt->bind_result($customerId, $businessName); // Assuming $customerId and $customerName are the columns you want to fetch
+					
+					while ($stmt->fetch()) {
+						// Check if the current customer is the selected one
+						$selected = ($customerId == $_customerId) ? 'selected' : '';
+						// Output the option
+						echo "<option value='$customerId' $selected>$businessName</option>";
+					}
+				?>
+			</select>
+		</div>
+		<div class="col-lg-3 col-sm-4">
+			<label for="startDate">Start</label>
+			<input id="startDate" type="date" value="<?php echo $startDate; ?>" />
+			<span id="startDateSelected"></span>
+		</div>
+		<div class="col-lg-3 col-sm-4">
+			<label for="endDate">End</label>
+			<input id="endDate" type="date" value="<?php echo $endDate; ?>" />
+			<span id="endDateSelected"></span>
+		</div>
+	</div>
+</div>
 <div class="table-responsive">
     <table border="0" cellspacing="0" cellpadding="5" width="100%" class="table">
     	<thead>
 	        <tr>
-	            <td width="150" nowrap>FullName</td>
-	            <td width="100" nowrap>Email</td>
-	            <td width="100" nowrap>Address</td>
-	            <td width="100" nowrap>Phone</td>
-				<td width="100" nowrap>Active</td>
-	            <td width="10" nowrap></td>
+	            <td width="150" nowrap>Date</td>
+	            <td width="100" nowrap>From</td>
+				<td width="100" nowrap>To</td>
+	            <td width="100" nowrap>Booking Code</td>
+	            <td width="100" nowrap>Minutes</td>
+				<td width="100" nowrap>Attended</td>
+				<td width="100" nowrap>Comments</td>
+				<td width="100" nowrap>Message</td>
 	        </tr>
 	    </thead>
 	    <tbody>
 		<?php
-			$page_start = ($page - 1) * $limit;
-		    $stmt = $db->prepare("SELECT CustomerId, FullName, Email, PostalAddr, Phone, active FROM customers LIMIT ?,?");
-	        $stmt->bind_param( 'ii', $page_start, $limit );
-		    $stmt->execute();
-		    $stmt->bind_result($customerId, $businessName, $email, $address, $phone, $active);
-		    $stmt->store_result();
-		    if ($stmt->num_rows > 0) {
-			    while ($stmt->fetch()) {
-					$addressArray = json_decode($address, true);
-					if ($addressArray === null) {
-						$street = "";
-						$city = "";
-						$state = "";
-						$postcode = "";
-					}
-					$street = $addressArray['street'];
-					$city = $addressArray['city'];
-					$state = $addressArray['state'];
-					$postcode = $addressArray['postcode'];
-		?>
-        <tr>
-            <td><a href="#" class="customerEdit" data-customer_id=<?php echo $customerId ?>><?php echo $businessName ?></a></td>
-            <td><?php echo $email ?></td>
-            <td><?php echo $street; ?> <?php echo $city; ?> <?php echo $state; ?> <?php echo $postcode; ?></td>
-            <td><?php echo $phone ?></td>
-			<td><?php echo displayYN($active) ?></td>
-            <td>
-            	<a href="/admin/customer_booking_history?customerId=<?php echo $customerId ?>" title="View Booking History"><i class="fa fa-eye fa-lg"></i></a>
-				<a href="#" title="Delete Customer" data-toggle="modal" data-target="#deleteModal" class="customerDelete" data-customer_id=<?php echo $customerId ?>><i class="fa fa-trash fa-lg"></i></a>
-            </td>
-        </tr>
-		<?php
-	    	}
-   	    } else {
+			
+			$bookings = getCustomerBookings($_customerId, $startDate, $endDate);
+			if (!empty($bookings)) {
+				foreach ($bookings as $booking) {
+					echo '<tr>
+					<td>' . $booking['BookingDate'] . '</td>
+					<td>' . convertDurationToHoursMinutes($booking['BookingFrom'])["formatted_text_type1"] . '</td>
+					<td>' . convertDurationToHoursMinutes($booking['BookingTo'])["formatted_text_type1"] . '</td>
+					<td>' . $booking['BookingCode'] . '</td>
+					<td>' . $booking['BookingTo'] - $booking['BookingFrom'] . '</td>
+					<td>' . $booking['Attended'] . '</td>
+					<td>' . $booking['Comments'] . '</td>
+					<td>' . $booking['Messages'] . '</td>
+				</tr>';
+				}
+			}
+   	     else {
    	    ?>
    	    <tr>
 	        <td align="right" colspan="5" class="text-center">No Result.</td>
@@ -213,121 +241,23 @@
 </div>
 <script>
 	$(document).ready(function() { 
+
+
 		var apiUri = "/api/customers.php";
-		function clearForm() {
-			$('input[name="customerId"]').val( "" );
-			$('input[name="customername"]').val( "" );
-			$('input[name="fullname"]').val( "" );
-			$('input[name="description"]').val( "" );
-			$('input[name="price"]').val( "" );
-			$('select[name="duration_hours"]').val( "" );
-			$('select[name="duration_minutes"]').val( "" );
-			$('input[name="charge"]').prop( "checked", false );
-			$('input[name="active"]').prop( "checked", false );
-		}
+		$('#startDate, #endDate').on('change', function() {
+            var startDate = $('#startDate').val();
+            var endDate = $('#endDate').val();
+			var customerId = '<?php echo $customerId; ?>';
+            // Check if startDate is after endDate
+            if (startDate > endDate) {
+                alert("Start date cannot be after end date.");
+                $('#startDate').val('');
+                return;
+            }
 
-		$('#btnSave').click(function(e){
-			e.preventDefault();
-
-			var formData = $("#APP_FORM").serializeArray();
-
-			if( $("#customerId").val() )
-				formData.push({ name: "action", value: "edit_customer" });
-			else
-				formData.push({ name: "action", value: "new_customer" });
-
-			$.post(apiUri, formData, function (data) {
-				var res = JSON.parse(data);
-				if (res.status == "error") {
-					$(".Message").removeClass("text-success");
-					$(".Message").addClass("text-danger");
-				} else {
-					location.reload();
-				}
-				$(".Message").html( res.message );
-	        });
-		});
-
-		$('.customerEdit').click( function(e){
-			var formData = [];
-			formData.push({ name: "action", value: "get_customer" });
-			formData.push({ name: "customerId", value: $(this).data("customer_id") });
-
-			$.post(apiUri, formData, function (data) {
-				var res = JSON.parse(data);
-				data = res.data;
-
-				$('input[name="customerId"]').val( data.customerId );
-				$('input[name="businessName"]').val( data.businessName );
-				$('input[name="email"]').val( data.email );
-				$('input[name="phone"]').val( data.phone );
-
-				var addressArray = JSON.parse(data.address);
-
-				// Initialize variables
-				var street = "";
-				var city = "";
-				var state = "";
-				var postcode = "";
-
-				// Check if JSON parsing was successful
-				if (addressArray !== null) {
-					// Access properties from the parsed object
-					street = addressArray.street;
-					city = addressArray.city;
-					state = addressArray.state;
-					postcode = addressArray.postcode;
-				}
-				$('input[name="street"]').val( street );
-				$('input[name="city"]').val( city );
-				$('input[name="state"]').val( state );
-				$('input[name="postcode"]').val( postcode );
-				
-				if ( data.active) {
-					$('input[name="active"]').prop( "checked", true );
-				} else {
-					$('input[name="active"]').prop( "checked", false );
-				}
-				$("#saveModalLabel").html("Edit Customer");
-				$("#saveModal").modal("show");
-	        });
-		});
-
-		$('#addcustomer').on("click", function(e) {
-			$("#saveModalLabel").html("Add Customer");
-			$(".Message").html();
-			clearForm();
-		})
-
-		$('.customerDelete').click( function(e){
-			$(".Message").html();
-			$('input[name="deleteId"]').val( $(this).data("customer_id") );
-		});
-
-		$('#btnDelete').click(function(e){
-			e.preventDefault();
-
-			var formData = $("#DELETE_FORM").serializeArray();
-
-			formData.push({ name: "action", value: "delete_customer" });
-
-			$.post(apiUri, formData, function (data) {
-				var res = JSON.parse(data);
-				if(res.status == "error"){
-					$(".Message").removeClass("text-success");
-					$(".Message").addClass("text-danger");
-				} else {
-					$(".Message").removeClass("text-danger");
-					$(".Message").addClass("text-success");
-					location.reload();
-				}
-
-				$(".Message").html( res.message );
-	        });
-		});
-
-		$('#records-limit').change(function () {
-            $('.pagination-form').submit();
-        })
+            // Redirect with updated startDate and endDate
+            var url = window.location.pathname + '?customerId=' + customerId + '&startDate=' + startDate + '&endDate=' + endDate;
+            window.location.href = url;
+        });
 	});
 </script>
