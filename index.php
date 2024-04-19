@@ -8,9 +8,12 @@ if(isset($_GET['logout'])) {
 }
 
 if( isset( $_SESSION['User'] ) ){
-	if($_SESSION['User']['UserId']){
-		header('Location: '. SECURE_URL . START_PAGE, true, 301);
-		exit(0);
+	if( $_SESSION['UserType'] == 'A' ){
+    	header('Location: '. SECURE_URL . ADMIN_INDEX, true, 301);
+	   	exit(0);
+   	} else {
+	   	header('Location: '. SECURE_URL . START_PAGE, true, 301);
+	   	exit(0);
 	}
 }
 
