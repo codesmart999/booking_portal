@@ -194,7 +194,7 @@
 		                    	<select name="duration_minutes_nurse" id="duration_minutes_nurse" class="form-select form-select-sm">
 									<option value="">Select</option>
 		                    		<?php
-		                    		for( $i = 0; $i < 60; $i += 5)
+		                    		for( $i = 0; $i < 60; $i += 15)
 		                    			echo '<option value="'.$i.'">'.sprintf("%02d", $i).'</option>';
 		                    		?>
 		                    	</select>
