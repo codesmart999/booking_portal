@@ -12,6 +12,8 @@
 	$prev = $page - 1;
 	$next = $page + 1;
 
+	$page_start = ($page - 1) * $limit;
+
 	$_customerId = isset($_GET['customerId']) ? intval($_GET['customerId']) : null;
 
 	if (!isset($_customerId)) {
@@ -28,6 +30,8 @@
 	$stmt->execute();
     $stmt->store_result();
 
+	$pagenationLink = '?customerId='.$_customerId.'&startDate='.$startDate.'&endDate'.$endDate;
+
     $total_records = $stmt->num_rows;
     $number_of_page = ceil( $total_records / $limit );
 ?>
@@ -39,7 +43,7 @@
 			<label for="customer">Customer:</label>
 			<select id="customer" name="customer">
 				<?php
-					$stmt = $db->prepare("SELECT CustomerId, FullName FROM customers WHERE `active`=1");
+					$stmt = $db->prepare("SELECT CustomerId, FullName FROM customers");
 					$stmt->execute();
 					$stmt->store_result();
 					$stmt->bind_result($customerId, $businessName); // Assuming $customerId and $customerName are the columns you want to fetch
@@ -54,12 +58,12 @@
 			</select>
 		</div>
 		<div class="col-lg-3 col-sm-4">
-			<label for="startDate">Start</label>
+			<label for="startDate">Start Date:</label>
 			<input id="startDate" type="date" value="<?php echo $startDate; ?>" />
 			<span id="startDateSelected"></span>
 		</div>
 		<div class="col-lg-3 col-sm-4">
-			<label for="endDate">End</label>
+			<label for="endDate">End Date:</label>
 			<input id="endDate" type="date" value="<?php echo $endDate; ?>" />
 			<span id="endDateSelected"></span>
 		</div>
@@ -82,19 +86,19 @@
 	    <tbody>
 		<?php
 			
-			$bookings = getCustomerBookings($_customerId, $startDate, $endDate);
+			$bookings = getCustomerBookings($_customerId, $startDate, $endDate, $page_start, $limit);
 			if (!empty($bookings)) {
 				foreach ($bookings as $booking) {
 					echo '<tr>
-					<td>' . $booking['BookingDate'] . '</td>
-					<td>' . convertDurationToHoursMinutes($booking['BookingFrom'])["formatted_text_type1"] . '</td>
-					<td>' . convertDurationToHoursMinutes($booking['BookingTo'])["formatted_text_type1"] . '</td>
-					<td>' . $booking['BookingCode'] . '</td>
-					<td>' . $booking['BookingTo'] - $booking['BookingFrom'] . '</td>
-					<td>' . $booking['Attended'] . '</td>
-					<td>' . $booking['Comments'] . '</td>
-					<td>' . $booking['Messages'] . '</td>
-				</tr>';
+						<td>' . $booking['BookingDate'] . '</td>
+						<td>' . convertDurationToHoursMinutes($booking['BookingFrom'])["formatted_text_type1"] . '</td>
+						<td>' . convertDurationToHoursMinutes($booking['BookingTo'])["formatted_text_type1"] . '</td>
+						<td>' . $booking['BookingCode'] . '</td>
+						<td>' . ($booking['BookingTo'] - $booking['BookingFrom']) . '</td>
+						<td>' . displayYN($booking['Attended']) . '</td>
+						<td><a target="_self" href="#" onclick="viewBookings(&quot;' . $booking['BookingCode'] . '&quot;);">' . $booking['Comments'] . '</a></td>
+						<td>' . displayYN($booking['Messages']) . '</td>
+					</tr>';
 				}
 			}
    	     else {
@@ -126,7 +130,7 @@
 					    <ul class="pagination justify-content-center">
 					        <li class="page-item <?php if($page <= 1){ echo 'disabled'; } ?>">
 					            <a class="page-link"
-					                href="<?php if($page <= 1){ echo '#'; } else { echo "?page=" . $prev; } ?>">Previous</a>
+					                href="<?php if($page <= 1){ echo '#'; } else { echo $pagenationLink."&page=" . $prev; } ?>">Previous</a>
 					        </li>
 					        <?php if( $page > 3 ) {?>
 				        	<li class="page-item disabled">
@@ -135,7 +139,7 @@
 					        <?php } ?>
 					        <?php for($i = max($page-2, 1); $i <= min($number_of_page, $page+2); $i++ ): ?>
 					        <li class="page-item <?php if($page == $i) {echo 'active'; } ?>">
-					            <a class="page-link" href="<?php if($page == $i){ echo '#'; } else {echo "?page=". $i; } ?>"> <?= $i; ?> </a>
+					            <a class="page-link" href="<?php if($page == $i){ echo '#'; } else {echo $pagenationLink."&page=". $i; } ?>"> <?= $i; ?> </a>
 					        </li>
 					        <?php endfor; ?>
 					        <?php if( $number_of_page > $page+2 ) {?>
@@ -145,7 +149,7 @@
 					        <?php } ?>
 					        <li class="page-item <?php if($page >= $number_of_page) { echo 'disabled'; } ?>">
 					            <a class="page-link"
-					                href="<?php if($page >= $number_of_page){ echo '#'; } else {echo "?page=". $next; } ?>">Next</a>
+					                href="<?php if($page >= $number_of_page){ echo '#'; } else {echo $pagenationLink."&page=". $next; } ?>">Next</a>
 					        </li>
 					    </ul>
 					</nav>
@@ -160,94 +164,15 @@
     
     require_once('footer.php');
 ?>
-
-<div class="modal fade" id="saveModal" tabindex="-1" role="dialog" aria-labelledby="saveModalLabel" aria-hidden="true">
-    <form method="post" class="form-horizontal" id="APP_FORM">
-    	<input type="hidden" name="customerId" id="customerId" value="" />
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="saveModalLabel">Add Customer</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-					<p class="Message fst-italic fw-bold p-0"></p>
-                    <div class="form-group">
-                        <label for="businessName">Business Name *</label>
-                        <input type="input" class="form-control required" required="required" id="businessName" placeholder="Business Name" name="businessName"/>
-                    </div>
-                    <div class="form-group">
-                        <label for="email">Email *</label>
-                        <input type="input" class="form-control required" id="email" placeholder="Email Address" name="email" required="required"/>
-                    </div>
-                    <div class="form-group">
-                        <label for="address">Address</label>
-						<div class="addr_items">
-							Street:<input type="text" name="street" value="" required="" class="required valid form-control form-control-sm" placeholder="Street" id="street" />
-						</div>
-						<div class="addr_items">
-							City:<input type="text" name="city" value="" required="" class="required valid form-control form-control-sm" placeholder="City" id="city" />
-						</div>
-						<div class="addr_items">
-							State:<input type="text" name="state" value="" required="" class="required valid form-control form-control-sm" placeholder="State" id="state" />
-						</div>
-						<div class="addr_items">
-							PostCode:<input type="text" name="postcode" value="" required="" class="required valid form-control form-control-sm" placeholder="PostCode" id="postcode" />
-						</div>		
-                    </div>
-					<div class="form-group">
-                        <label for="phoneNumber">Phone *</label>
-						<input type="input" class="form-control required form-control-sm" id="phoneNumber" placeholder="PhoneNumber" name="phone" required="required"/>
-                    </div>
-                    <div class="form-group">
-                        <label for="IsActive">Active</label>
-                        <input class="" type="checkbox" id="IsActive" name="active"/>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-primary btn-sm" name="Save" value="Save" id="btnSave" disabled>Save</button>
-                </div>
-            </div>
-        </div>
-    </form>
-</div>
-<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <form method="post" class="form-horizontal" id="DELETE_FORM">
-    	<input type="hidden" name="deleteId" id="deleteId" value="" />
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Delete Customer</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                	<p class="Message fst-italic fw-bold p-0"></p>
-                	<div class="form-group">
-						Are you sure?
-					</div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-primary btn-sm" name="Save" value="Save" id="btnDelete">DELETE</button>
-                </div>
-            </div>
-        </div>
-    </form>
-</div>
 <script>
 	$(document).ready(function() { 
 
 
 		var apiUri = "/api/customers.php";
-		$('#startDate, #endDate').on('change', function() {
+		$('#startDate, #endDate, #customer').on('change', function() {
             var startDate = $('#startDate').val();
             var endDate = $('#endDate').val();
-			var customerId = '<?php echo $customerId; ?>';
+			var customerId = $('#customer').val();
             // Check if startDate is after endDate
             if (startDate > endDate) {
                 alert("Start date cannot be after end date.");
@@ -259,5 +184,28 @@
             var url = window.location.pathname + '?customerId=' + customerId + '&startDate=' + startDate + '&endDate=' + endDate;
             window.location.href = url;
         });
+
+		$('#records-limit').change(function () {
+            $('.pagination-form').submit();
+        })
 	});
+
+	function viewBookings(booingCode) {
+		// Specify the URL you want to open in the small window
+
+		// Define the width and height of the small window
+		var width = 800;
+		var height = 600;
+		// Calculate the left and top position to center the window
+		var left = (window.innerWidth - width) / 2;
+		var top = (window.innerHeight - height) / 2;
+		// Open the small window with specified parameters
+		window.open(
+		window.location.origin +
+			"/admin/options_comments.php?booking_code=" +
+			booingCode,
+		"_blank",
+		"width=" + width + ",height=" + height + ",left=" + left + ",top=" + top
+		);	
+	}
 </script>

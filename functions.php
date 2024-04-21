@@ -1184,7 +1184,7 @@
 	}
 
 
-	function addBookingComments($bookingCode, $new_comment){
+	function addBookingComments($bookingCode, $attended, $new_comment){
 		$db = getDBConnection();
 		$stmt = $db->prepare("SELECT Comments FROM bookings WHERE BookingCode = ? LIMIT 1");
 		$stmt->bind_param("s", $bookingCode);
@@ -1202,14 +1202,15 @@
 		}
 
 		$stmt->close();
-		// Append new comment to existing comments
-		$all_comments = array_merge($existing_comments, [$new_comment]);
-		
-		// Encode all comments as JSON
-		$json_comments = json_encode($all_comments);
 
-		$updateStmt = $db->prepare("UPDATE bookings SET Comments = ? WHERE BookingCode = ?");
-		$updateStmt->bind_param("ss", $json_comments, $bookingCode);
+		$json_comments = null;
+
+		if (!empty($new_comment))
+			$json_comments = json_encode(array_merge($existing_comments, [$new_comment]));
+		else 
+			$json_comments = json_encode($existing_comments);
+		$updateStmt = $db->prepare("UPDATE bookings SET Comments = ?, Attended = ? WHERE BookingCode = ?");
+		$updateStmt->bind_param("sis", $json_comments, $attended, $bookingCode);
 		$updateStmt->execute();
 	}
 
@@ -1638,18 +1639,18 @@
 		return implode(',', $arr_system_fullnames);
 	}
 
-	function getCustomerBookings($customerId, $fromDate, $toDate){
+	function getCustomerBookings($customerId, $fromDate, $toDate, $page_start, $limit){
 		$db = getDBConnection();
 		$sql = "SELECT b.BookingDate, b.BookingCode, b.BookingFrom, b.BookingTo, b.Attended, b.Comments, b.Messages
             FROM bookings b
             JOIN customers c ON b.CustomerId = c.CustomerId
-            WHERE b.CustomerId = ? AND b.BookingDate BETWEEN ? AND ?";
+            WHERE b.CustomerId = ? AND b.BookingDate BETWEEN ? AND ? LIMIT ?,?";
 
 		// Prepare the statement
 		$stmt = $db->prepare($sql);
 
 		// Bind parameters
-		$stmt->bind_param('iss', $customerId, $fromDate, $toDate);
+		$stmt->bind_param('issii', $customerId, $fromDate, $toDate, $page_start, $limit);
 
 		// Execute the statement
 		$stmt->execute();
@@ -1662,13 +1663,15 @@
 
 		// Fetch the data and store it in the array
 		while ($stmt->fetch()) {
+			$commentsArray = json_decode($comments, true);
+			$commentsStatus = !empty($commentsArray) ? 'Yes' : 'No';
 			$bookings[] = array(
 				'BookingDate' => $bookingDate,
 				'BookingFrom' => $bookingFrom,
 				'BookingTo' => $bookingTo,
 				'BookingCode' => $bookingCode,
 				'Attended' => $attended,
-				'Comments' => $comments,
+				'Comments' => $commentsStatus,
 				'Messages' => $messages
 			);
 		}

@@ -152,7 +152,7 @@
                     </div>
                     <div class="form-group">
                         <label for="email">Email *</label>
-                        <input type="input" class="form-control required" id="email" placeholder="Email Address" name="email" required="required"/>
+						<input type="email" class="form-control required" id="email" placeholder="Email Address" name="email" required="required" pattern="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$" title="Enter a valid email address"/>
                     </div>
                     <div class="form-group">
                         <label for="address">Address</label>
