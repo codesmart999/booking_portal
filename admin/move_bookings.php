@@ -26,10 +26,10 @@
 <div class="container-fluid move-booking-container">
     <form method="post" class="form-horizontal" id="FRM_MOVE_BOOKING">
         <div class="row">
-            <div class="col-md-4 no-padding">
+            <div class="col-md-4 panel-container">
                 <div class="row">
-                    <div class="col-md-12">
-                        <h5>1. Select a booking to reschedule.</h5>
+                    <div class="col-md-12 panel-header">
+                        1. Select a booking to reschedule.
                     </div>
                 </div>
                 <div class="row">
@@ -76,10 +76,10 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-4 no-padding">
+            <div class="col-md-4 panel-container">
                 <div class="row">
-                    <div class="col-md-12">
-                        <h5>2. Select an available timeslot.</h5>
+                    <div class="col-md-12 panel-header">
+                        2. Select an available timeslot.
                     </div>
                 </div>
                 <div class="row">
@@ -126,10 +126,10 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-4 no-padding">
+            <div class="col-md-4 panel-container">
                 <div class="row">
-                    <div class="col-md-12">
-                        <h5>3. Confirm.</h5>
+                    <div class="col-md-12 panel-header">
+                        3. Confirm.
                     </div>
                 </div>
                 <div class="row">

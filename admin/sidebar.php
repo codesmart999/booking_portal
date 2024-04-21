@@ -2,11 +2,11 @@
 <link rel="stylesheet" href="./css/style.css">
 
 <div class="wrapper d-flex align-items-stretch">
-	<nav id="sidebar">
+	<nav id="sidebar" class="<?php echo defined('SIDEBAR_CLASS') ? SIDEBAR_CLASS : '';?>">
 		<div class="custom-menu">
-					<button type="button" id="sidebarCollapse" class="btn btn-primary">
-	          <i class="fa fa-bars"></i>
-	          <span class="sr-only">Toggle Menu</span>
+			<button type="button" id="sidebarCollapse" class="btn btn-primary">
+				<i class="fa fa-bars"></i>
+				<span class="sr-only">Toggle Menu</span>
 	        </button>
         </div>
 		<div class="p-4">

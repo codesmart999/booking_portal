@@ -296,7 +296,7 @@ while ($startDateTime <= $endDateTime) {
                                     style="background-color: #'.$background_color.'">'
                                     .$timeRender.'
                                 </span>';
-                            echo '<a target="_self" href="#" onclick="bookedClientView('.$customer_id.');"><span class="CustName">'.$businessName.'<br/></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
+                            echo '<a target="_self" href="#" onclick="bookedClientView('.$customer_id.');"><span class="CustName">'.$businessName.' ('.$bookingCode.')</span><br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
                             echo '<a target="_self" href="#" onclick="bookedAddComments(&quot;'.$bookingCode.'&quot;);">';
                             if ($hasComment) {
                                 echo '<img title="Comment Added" border="0" src="/images/comment.png">

@@ -150,14 +150,32 @@ input[type="checkbox"]:checked + .toggle-slider:before {
 }
 
 .move-booking-container {
-	/* border: 1px solid #888; */
+	margin-bottom: 15px;
 }
 
-.move-booking-container .no-padding {
-	padding: 0px 0px 10px 0px !important;
+.move-booking-container .panel-container {
 	border: 1px solid #888;
 }
 
+.move-booking-container .panel-container i.fa-calendar {
+	margin-top: -10px;
+}
+
+.move-booking-container .panel-container .row:nth-child(n+2) {
+	padding-top: 10px;
+}
+
+.move-booking-container .panel-header {
+	border: 1px solid #888;
+	border-left: 0px;
+	border-right: 0px;
+	background-color: #C5D4F0;
+	font-size: 1.25rem;
+	font-weight: 400;
+    font-family: "Poppins", Arial, sans-serif;
+    line-height: 1.5;
+    color: #000;
+}
 .move-booking-container h5 {
 	border: 1px solid #888;
 	border-left: 0px;

@@ -2,7 +2,7 @@
 	require_once('header.php');
 
     $db = getDBConnection();
-	if(isset($_POST['records-limit'])){
+	if (isset($_POST['records-limit'])){
 		$_SESSION['records-limit'] = $_POST['records-limit'];
 	}
 
@@ -13,7 +13,7 @@
 	$next = $page + 1;
 
     $stmt = $db->prepare("SELECT * FROM systems");
-	  $stmt->execute();
+	$stmt->execute();
     $stmt->store_result();
 
     $total_records = $stmt->num_rows;
