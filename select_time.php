@@ -40,7 +40,7 @@ if ( isset($_POST['Submit']) && isset($_POST['booking_time']) ) {
 
 	if ($prev_ending == -1) {
 		$message = '<span class="ErrorMessage fst-italic fw-bold show">'._lang('err_consecutive_time').'</span>';
-	} else if ($arrServices[$arrAppData['service']]['duration_in_mins'] != $total_duration) {
+	} else if ($arrServices[$arrAppData['service']]['duration_in_mins_doctor'] + $arrServices[$arrAppData['service']]['duration_in_mins_nurse'] != $total_duration) {
 		$message = '<span class="ErrorMessage fst-italic fw-bold show">'._lang('err_duration_match').'</span>';
 	} else {
 		$_SESSION['appointment_data']['date_appointment_final'] = $arrAppData['date_appointment_final'];

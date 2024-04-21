@@ -208,9 +208,6 @@
             var arr_timeslots = arr_from_bookings[chk_from_booking];
             var duration_in_mins = parseInt(arr_timeslots[1]) - parseInt(arr_timeslots[0]);
 
-            console.log(duration_in_mins);
-            console.log(chk_to_booking);
-
             for (var i = 0; i < arr_to_all_bookingperiods.length; i++) {
                 if (!arr_target_bookingperiods.length && arr_to_all_bookingperiods[i].id != chk_to_booking)
                     continue;

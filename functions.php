@@ -108,7 +108,8 @@
 		// 1) Get System list by LocationId && ServiceId
 		$stmt = $link->prepare('SELECT sys.SystemId, sys.FullName, sys.Access, sys.SystemType, sys.MaxMultipleBookings FROM systems sys'
 			. ' JOIN system_services serv ON sys.SystemId = serv.SystemId'
-			. "	WHERE sys.LocationId = $locationId AND serv.ServiceId = $serviceId");
+			. "	WHERE sys.LocationId = $locationId AND serv.ServiceId = $serviceId"
+			. ' ORDER BY sys.SystemType ASC, sys.SystemId ASC');
 	    $stmt->execute();
 	    $stmt->bind_result($systemId, $fullname, $access, $system_type, $max_multiple_bookings);
 	    while ($stmt->fetch()) {

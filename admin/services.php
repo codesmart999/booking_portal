@@ -28,7 +28,8 @@
 	        <tr>
 	            <td width="150" nowrap>Name</td>
 	            <td width="100" nowrap>Price</td>
-	            <td width="100" nowrap>Duration</td>
+	            <td width="100" nowrap>Duration (Doctor)</td>
+				<td width="100" nowrap>Duration (Nurse)</td>
 	            <td width="100" nowrap>Charge</td>
 	            <td width="10" nowrap>Active</td>
 	            <td width="10" nowrap></td>
@@ -37,19 +38,22 @@
 	    <tbody>
 		<?php
 			$page_start = ($page - 1) * $limit;
-		    $stmt = $db->prepare("SELECT ServiceId, ServiceName, FullName, Price, DurationInMins, IsCharge, active FROM services LIMIT ?,?");
+		    $stmt = $db->prepare("SELECT ServiceId, ServiceName, FullName, Price, DurationInMins_Doctor, DurationInMins_Nurse, IsCharge, active FROM services LIMIT ?,?");
 	        $stmt->bind_param( 'ii', $page_start, $limit );
 		    $stmt->execute();
-		    $stmt->bind_result($serviceId, $servicename, $fullname,  $price, $duration_in_mins, $charge, $active);
+		    $stmt->bind_result($serviceId, $servicename, $fullname, $price, $duration_in_mins1, $duration_in_mins2, $charge, $active);
 		    $stmt->store_result();
+
 		    if ($stmt->num_rows > 0) {
 			    while ($stmt->fetch()) {
-					$arrDurationInfo = convertDurationToHoursMinutes($duration_in_mins);
+					$arrDurationInfo1 = convertDurationToHoursMinutes($duration_in_mins1); // Doctor
+					$arrDurationInfo2 = convertDurationToHoursMinutes($duration_in_mins2); // Nurse
 		?>
         <tr>
             <td><a href="#" class="serviceEdit" data-service_id=<?php echo $serviceId ?>><?php echo $fullname ?></a></td>
             <td><?php echo displayPrice($price) ?></td>
-            <td><?php echo $arrDurationInfo['formatted_text']; ?></td>
+            <td><?php echo $arrDurationInfo1['formatted_text']; ?></td>
+			<td><?php echo $arrDurationInfo2['formatted_text']; ?></td>
             <td><?php echo displayYN($charge) ?></td>
             <td><?php echo displayYN($active) ?></td>
             <td>
@@ -152,10 +156,10 @@
                         <input type="number" class="form-control" id="price" placeholder="Price" name="price"/>
                     </div>
                     <div class="form-group">
-                        <label for="LocationAddress">Duration ( Hours, Minutes )</label>
-                        <div class="row mb-2" id="LocationAddress">
+                        <label for="duration_minutes_doctor">Duration ( Hours, Minutes ) - Doctor</label>
+                        <div class="row mb-2">
                         	<div class="col-md-6">
-		                    	<select name="duration_hours" id="duration_hours" class="form-select form-select-sm">
+		                    	<select name="duration_hours_doctor" id="duration_hours_doctor" class="form-select form-select-sm">
 		                    		<option value="">Select</option>
 		                    		<?php
 		                    		for( $i = 0; $i < 24; $i++)
@@ -164,7 +168,30 @@
 		                    	</select>
 	                    	</div>
 	                    	<div class="col-md-6">
-		                    	<select name="duration_minutes" id="duration_minutes" class="form-select form-select-sm">
+		                    	<select name="duration_minutes_doctor" id="duration_minutes_doctor" class="form-select form-select-sm">
+									<option value="">Select</option>
+		                    		<?php
+		                    		for( $i = 0; $i < 60; $i += 5)
+		                    			echo '<option value="'.$i.'">'.sprintf("%02d", $i).'</option>';
+		                    		?>
+		                    	</select>
+		                    </div>
+		                </div>
+		            </div>
+					<div class="form-group">
+                        <label for="duration_minutes_nurse">Duration ( Hours, Minutes ) - Nurse</label>
+                        <div class="row mb-2">
+                        	<div class="col-md-6">
+		                    	<select name="duration_hours_nurse" id="duration_hours_nurse" class="form-select form-select-sm">
+		                    		<option value="">Select</option>
+		                    		<?php
+		                    		for( $i = 0; $i < 24; $i++)
+		                    			echo '<option value="'.$i.'">'.$i.'</option>';
+		                    		?>
+		                    	</select>
+	                    	</div>
+	                    	<div class="col-md-6">
+		                    	<select name="duration_minutes_nurse" id="duration_minutes_nurse" class="form-select form-select-sm">
 									<option value="">Select</option>
 		                    		<?php
 		                    		for( $i = 0; $i < 60; $i += 5)
@@ -268,8 +295,10 @@
 				$('input[name="fullname"]').val( data.FullName );
 				$('#description').val( data.Description );
 				$('input[name="price"]').val( data.Price );
-				$('select[name="duration_hours"]').val( data.Duration_Hours );
-				$('select[name="duration_minutes"]').val( data.Duration_Minutes );
+				$('select[name="duration_hours_doctor"]').val( data.Duration_Hours_Doctor );
+				$('select[name="duration_minutes_doctor"]').val( data.Duration_Minutes_Doctor );
+				$('select[name="duration_hours_nurse"]').val( data.Duration_Hours_Nurse );
+				$('select[name="duration_minutes_nurse"]').val( data.Duration_Minutes_Nurse );
 
 				if ( data.IsCharge == "Y" ) {
 					$('input[name="charge"]').prop( "checked", true );

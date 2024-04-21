@@ -325,7 +325,8 @@
                         <tr>
                             <td width="150" nowrap>Name</td>
                             <td width="100" nowrap>Price</td>
-                            <td width="100" nowrap>Duration</td>
+                            <td width="100" nowrap>Doctor</td>
+							<td width="100" nowrap>Nurse</td>
                             <td width="100" nowrap>Charge</td>
                             <td width="100" nowrap>Serve</td>
                         </tr>
@@ -540,7 +541,8 @@
 					var html = `<tr>
 							<td>${service.ServiceName}</td>
 							<td>${service.Price}</td>
-							<td>${service.Formatted_Duration}</td>
+							<td>${service.Formatted_Duration_Doctor}</td>
+							<td>${service.Formatted_Duration_Nurse}</td>
 							<td>${service.IsCharge}</td>
 							<td>
 								<label class="toggle-switch-sm">

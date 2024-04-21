@@ -60,7 +60,7 @@ if( !isset( $_SESSION['appointment_data'] ))
 								$checked = "checked";
 
 							$disabled = "";
-							if (empty($objService['duration_in_mins'])) {
+							if (empty($objService['duration_in_mins_doctor']) && empty($objService['duration_in_mins_nurse'])) {
 								$disabled = "disabled";
 
 								$objService['fullname'] .= ' (Duration 00:00)';

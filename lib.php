@@ -95,32 +95,34 @@
 
     // Store Service and Service Data
     if( empty( $arrServices ) ) {
-	    $stmt = $link->prepare("SELECT ServiceId, ServiceName, FullName, DurationInMins, active FROM services WHERE active = 1 AND DurationInMins > 0");
+	    $stmt = $link->prepare("SELECT ServiceId, ServiceName, FullName, DurationInMins_Doctor, DurationInMins_Nurse, active FROM services WHERE active = 1 AND DurationInMins_Doctor + DurationInMins_Nurse > 0");
 	    $stmt->execute();
-	    $stmt->bind_result($id, $name, $fullname, $duration_in_mins, $active);
+	    $stmt->bind_result($id, $name, $fullname, $duration_in_mins1, $duration_in_mins2, $active);
 	    
 		while ($stmt->fetch()) {
 	        $arrServices[$id] = array(
 	        	"id" 	=> $id,
 	        	"name"	=> $name,
 	        	"fullname"	=> $fullname,
-				"duration_in_mins" => $duration_in_mins
+				"duration_in_mins1" => $duration_in_mins1, // doctor
+				"duration_in_mins2" => $duration_in_mins2 // nurse
 	        );
 	    }
 
-		$stmt = $link->prepare("SELECT ServiceId, ServiceName, FullName, DurationInMins, active FROM services WHERE active = 1");
+		$stmt = $link->prepare("SELECT ServiceId, ServiceName, FullName, DurationInMins_Doctor, DurationInMins_Nurse, active FROM services WHERE active = 1");
 	    $stmt->execute();
-	    $stmt->bind_result($id, $name, $fullname, $duration_in_mins, $active);
+	    $stmt->bind_result($id, $name, $fullname, $duration_in_mins1, $duration_in_mins2, $active);
 	    
 		while ($stmt->fetch()) {
-			$arrDurationInfo = convertDurationToHoursMinutes($duration_in_mins);
+			$arrDurationInfo = convertDurationToHoursMinutes($duration_in_mins1 + $duration_in_mins2); // doctor + nurse
 
 	        $arrServices[$id] = array(
 	        	"id" 	=> $id,
 	        	"name"	=> $name,
 	        	"fullname"	=> $fullname,
-				"duration_in_mins" => $duration_in_mins,
-				"formatted_duration" => $arrDurationInfo['formatted_text']
+				"duration_in_mins_doctor" => $duration_in_mins1,
+				"duration_in_mins_nurse" => $duration_in_mins2,
+				"formatted_duration" => $arrDurationInfo['formatted_text'],
 	        );
 	    }
 
