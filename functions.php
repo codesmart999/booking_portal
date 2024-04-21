@@ -499,7 +499,7 @@
 	//ramdom code generator for booking_code
 	function generateRandomCode($seed) {
 		// Set the seed for the random number generator
-		mt_srand(crc32($seed));
+		mt_srand(crc32($seed . strtotime('now')));
 
 		// Define characters to be used in the code
 		$characters = 'ABCDEFGHIJKLMNPQRSTUVWXYZ0123456789';
