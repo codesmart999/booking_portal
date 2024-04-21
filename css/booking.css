@@ -5,10 +5,6 @@ a.disabled{
 	font-family: Arial, Helvetica, sans-serif;
     font-size: small;
     color: red;
-    display: none;
-}
-.ErrorMessage.show{
-	display: block;
 }
 #content a.btn{
 	padding: 5px 13px;
