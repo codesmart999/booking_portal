@@ -1789,4 +1789,51 @@
 		return $total_rows;
 	
 	}
+
+	function getReportByDate($startDate, $page_start, $limit){
+		$db = getDBConnection();
+    
+		// Base SQL query
+		$sql = "SELECT s.FullName, b.BookingDate, b.BookingFrom, b.BookingTo, c.FullName 
+			FROM bookings b
+			JOIN customers c ON b.CustomerId = c.CustomerId
+			JOIN systems s ON b.SystemId = s.SystemId
+			JOIN services v ON b.ServiceId = v.ServiceId
+			WHERE b.BookingDate BETWEEN ? AND ?";
+		
+		// Additional conditions based on optional parameters
+		if (is_null($page_start) && is_null($limit)) {
+			$stmt = $db->prepare($sql);
+			$stmt->bind_param('ss', $startDate, $startDate);
+		}else {
+			$sql .= " LIMIT ?, ?";
+			$stmt = $db->prepare($sql);
+			$stmt->bind_param('ssii', $startDate, $startDate, $page_start, $limit);
+		}
+		
+		$stmt->execute();
+
+		// Bind result variables
+		$stmt->bind_result($systemName, $bookingForDate, $bookingFrom, $bookingTo, $businessName);
+
+		// Initialize an array to store the booking data
+		$bookings = array();
+
+		// Fetch the data and store it in the array
+		while ($stmt->fetch()) {
+			$bookings[] = array(
+				'systemName' => $systemName,
+				'bookingForDate' => $bookingForDate,
+				'bookingFrom' => $bookingFrom,
+				'bookingTo' => $bookingTo,
+				'businessName' => $businessName,
+			);
+		}
+
+		// Close the statement
+		$stmt->close();
+
+		// Return the array of booking data
+		return $bookings;
+	}
 ?>
