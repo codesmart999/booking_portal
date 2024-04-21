@@ -30,6 +30,8 @@
 	            <td width="150" nowrap>Reference ID</td>
 	            <td width="150" nowrap>Email</td>
 	            <td width="100" nowrap>Phone</td>
+				<td width="100" nowrap>System Type</td>
+				<td width="100" nowrap>Multiple Bookings?</td>
 	            <td width="10" nowrap>Reg Date</td>
 	            <td width="10" nowrap></td>
 	        </tr>
@@ -37,10 +39,10 @@
 	    <tbody>
 		<?php
 			$page_start = ($page - 1) * $limit;
-		    $stmt = $db->prepare("SELECT SystemId, FullName, LocationId, ReferenceId, Phone, RegDate, FirstEmail FROM systems LIMIT ?,?");
+		    $stmt = $db->prepare("SELECT SystemId, FullName, LocationId, ReferenceId, Phone, RegDate, FirstEmail, SystemType, MaxMultipleBookings FROM systems LIMIT ?,?");
 	        $stmt->bind_param( 'ii', $page_start, $limit );
 		    $stmt->execute();
-		    $stmt->bind_result($systemId, $fullname, $locationId, $referenceId, $phone_number, $regdate, $email_addr);
+		    $stmt->bind_result($systemId, $fullname, $locationId, $referenceId, $phone_number, $regdate, $email_addr, $system_type, $max_multiple_bookings);
 		    $stmt->store_result();
 		    if ($stmt->num_rows > 0) {
 			    while ($stmt->fetch()) {
@@ -53,6 +55,8 @@
             <td><?php echo $referenceId ?></td>
             <td><?php echo $email_addr ?></td>
             <td><?php echo $phone_number ?></td>
+			<td><?php echo $arrSystemTypes[$system_type] ?></td>
+			<td><?php echo $max_multiple_bookings == 1 ? '-' : $max_multiple_bookings; ?></td>
             <td><?php echo format_date($regdate) ?></td>
             <td>
             	<a href="#" title="Services" data-toggle="modal" data-target="#serviceModal" class="viewService" data-system_id=<?php echo $systemId ?>><i class="fa fa-wrench fa-lg"></i></a> 
@@ -154,7 +158,7 @@
                         <input type="input" class="form-control" id="businessname" placeholder="Business Name" name="businessname"/>
                     </div>
 					<div class="form-group">
-                        <label for="Location">Location</label>
+                        <label for="location">Location</label>
                         <select name="location" id="location" class="form-select form-select-sm">
 						<?php
 							foreach( $arrLocations as $key => $values){
@@ -246,6 +250,30 @@
                     <div class="form-group">
                         <label for="fax">Fax</label>
                         <input type="input" class="form-control" id="fax" placeholder="Fax" name="fax"/>
+                    </div>
+					<div class="form-group">
+                        <label for="system_type">System Type</label>
+                        <select name="system_type" id="system_type" class="form-select form-select-sm">
+						<?php
+							foreach( $arrSystemTypes as $key => $value){
+								echo '<option value="' . $key . '">' . $value . '</option>';
+							}
+						?>
+                        </select>
+                    </div>
+					<div class="form-group">
+						<label for="multiple_booking">Multiple Booking? (Specify the number of multiple bookings)</label>
+						<div class="display-flex">
+							<div>
+								<label class="toggle-switch">
+									<input id="multiple_booking" name="multiple_booking" type="checkbox" value="">
+									<span class="toggle-slider"></span>
+								</label>
+							</div>
+							<div id="max_multiple_bookings_container" class="d-none">
+								<input type="number" class="form-control"name="max_multiple_bookings" value="1"/>
+							</div>
+						</div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -344,6 +372,8 @@
 			$('input[name="phone_number"]').val( "" );
 			$('input[name="mobile"]').val( "" );
 			$('input[name="fax"]').val( "" );
+			$('select[name="system_type"]').prop( "" );
+			$('input[name="multiple_booking"]').value( "1" );
 		}
     
     	$('#btnServiceSave').click(function(e) { 
@@ -356,6 +386,22 @@
 
 		$('#btnSave').click(function(e) {
 			e.preventDefault();
+
+			// Flag to track if all required fields are filled
+			var allFieldsFilled = true;
+
+			// Loop through each required input field
+			$("#APP_FORM input[required]").each(function(){
+				// Check if field has a value
+				if (!$(this).val()) {
+					allFieldsFilled = false;
+					// Optionally, you can add visual feedback for the user here
+					$(this).css("border-color", "red"); // Example: highlight empty fields in red
+				}
+			});
+
+			if (!allFieldsFilled)
+				return false;
 
 			var formData = $("#APP_FORM").serializeArray();
 
@@ -377,6 +423,17 @@
 				}
 				$(".Message").html( res.message );
 	        });
+		});
+
+		$("#multiple_booking").change(function(){
+			// If checkbox is checked, show the input container
+			if($(this).is(":checked")){
+				$("#max_multiple_bookings_container").removeClass("d-none");
+			} else {
+				// If checkbox is unchecked, hide the input container and reset input value
+				$("#max_multiple_bookings_container").addClass("d-none");
+				$("#max_multiple_bookings").val("1");
+			}
 		});
 
 		$('.editSystem').click( function(e){
@@ -411,6 +468,17 @@
 				$('input[name="phone_number"]').val( data.Phone );
 				$('input[name="mobile"]').val( data.Mobile );
 				$('input[name="fax"]').val( data.Fax );
+
+				$("select[name=system_type]").val(data.SystemType);
+
+				if (data.MaxMultipleBookings > 1) {
+					$('input[name="multiple_booking"]').prop("checked", true);
+					$("#max_multiple_bookings_container").removeClass("d-none");
+				} else {
+					$('input[name="multiple_booking"]').prop("checked", false);
+					$("#max_multiple_bookings_container").addClass("d-none");
+				}
+				$('input[name="max_multiple_bookings"]').val( data.MaxMultipleBookings );
 				
 				$("#saveModalLabel").html("Edit");
 				$("#saveModal").modal("show");

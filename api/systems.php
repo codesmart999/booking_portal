@@ -149,6 +149,9 @@
 		$mobile 		= isset($_POST['mobile']) ? $_POST['mobile'] : "";
 		$fax 			= isset($_POST['fax']) ? $_POST['fax'] : "";
 
+		$system_type	= isset($_POST['system_type']) ? $_POST['system_type'] : 'D';
+		$max_multiple_bookings	= isset($_POST['max_multiple_bookings']) ? $_POST['max_multiple_bookings'] : 1;
+
         // Update System Info
 		$stmt = $db->prepare(
 			'UPDATE systems
@@ -175,10 +178,12 @@
                 Fax = ?,
 				FirstName = ?,
 				LastName = ?,
-				FirstEmail = ?
+				FirstEmail = ?,
+				SystemType = ?,
+				MaxMultipleBookings = ?
 			WHERE SystemId=?' );
 
-        $stmt->bind_param( 'isssssssssssssddssssssssi',
+        $stmt->bind_param( 'isssssssssssssddsssssssssii',
             $locationId,
 			$fullname,
 			$refId,
@@ -203,6 +208,8 @@
 			$first_name,
 			$last_name,
 			$email_addr,
+			$system_type,
+			$max_multiple_bookings,
 			$systemId
         );
 
@@ -255,12 +262,12 @@
 
 	if ( $_POST['action'] == "get_system" ) {
 		$systemId = isset($_POST['systemId']) ? $_POST['systemId'] : "";
-		$stmt = $db->prepare("SELECT S.LocationId, S.FullName, S.ReferenceId, S.BusinessName, S.Street, S.City, S.State, S.PostCode, S.Country, S.Timezone, S.PStreet, S.PCity, S.PState, S.PPostCode, S.Latitude, S.Longitude, S.SecondEmail, S.ThirdEmail, S.Phone, S.Mobile, S.Fax, S.RegDate, S.FirstName, S.LastName, S.FirstEmail
+		$stmt = $db->prepare("SELECT S.LocationId, S.FullName, S.ReferenceId, S.BusinessName, S.Street, S.City, S.State, S.PostCode, S.Country, S.Timezone, S.PStreet, S.PCity, S.PState, S.PPostCode, S.Latitude, S.Longitude, S.SecondEmail, S.ThirdEmail, S.Phone, S.Mobile, S.Fax, S.RegDate, S.FirstName, S.LastName, S.FirstEmail, S.SystemType, S.MaxMultipleBookings
 			FROM systems as S
 			WHERE S.SystemId=?");
         $stmt->bind_param( 'i', $systemId);
 		$stmt->execute();
-		$stmt->bind_result($locationId, $fullname, $referenceId, $businessname, $lstreet, $lcity, $lstate, $lzipcode, $lcountry, $timezone, $pstreet, $pcity, $pstate, $pzipcode, $latitude, $longitude, $email_addr1, $email_addr2, $phone_number, $mobile, $fax, $regdate, $first_name, $last_name, $email_addr );
+		$stmt->bind_result($locationId, $fullname, $referenceId, $businessname, $lstreet, $lcity, $lstate, $lzipcode, $lcountry, $timezone, $pstreet, $pcity, $pstate, $pzipcode, $latitude, $longitude, $email_addr1, $email_addr2, $phone_number, $mobile, $fax, $regdate, $first_name, $last_name, $email_addr, $system_type, $max_multiple_bookings );
 		$stmt->store_result();
 		$stmt->fetch();
 		$res["status"] = "success";
@@ -290,7 +297,9 @@
 			"Phone" => $phone_number,
 			"Mobile" => $mobile,
 			"Fax" => $fax,
-			"RegDate" => $regdate
+			"RegDate" => $regdate,
+			"SystemType" => $system_type,
+			"MaxMultipleBookings" => $max_multiple_bookings
 		];
 		
 		echo json_encode( $res );

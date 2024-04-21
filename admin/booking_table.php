@@ -44,10 +44,10 @@ if (isset($_GET['groupBooking'])) {
 }
 
 //get BookedInfo
-$bookingInfo = getBookedInfo($systemId, $startDate, $endDate);
+$arrBookingsOfSystem = getBookedInfo($systemId, $startDate, $endDate);
 
 //count bookings
-$bookCount = getNumberOfBookings($bookingInfo);
+$bookCount = getNumberOfBookings($arrBookingsOfSystem);
 
 //Get available/unavailable timesolt by week
 $availableSlots =  ($showFlag == MONTHLY_SHOWING_MODE) ? getAvailabilityDataWithCounts($systemId, $startDate, $endDate) : getAvailableInfoInOneWeekRange($systemId, $startDate, $endDate);
@@ -156,12 +156,13 @@ while ($startDateTime <= $endDateTime) {
         $availableSlotCount = 0;
         $unavailableSlotCount = 0;
 
-        $bookedCount = isset($bookingInfo[$dateYMD]) ? count($bookingInfo[$dateYMD]) : 0;
+        $bookedCount = isset($arrBookingsOfSystem[$dateYMD]) ? count($arrBookingsOfSystem[$dateYMD]) : 0;
         
         if (isset($availableSlots[$dateYMD])) {
             $availableSlotCount = $availableSlots[$dateYMD]["nAvailable"];
             $unavailableSlotCount = $availableSlots[$dateYMD]["nUnavailable"];
         }
+
         $availableSlotCount -= $bookedCount;
 
         //some logic to calc because there is special booking periods
@@ -245,7 +246,7 @@ while ($startDateTime <= $endDateTime) {
                     $fullName = "";
                     $available = 1; //available
                     // Check if the time slot is booked
-                    if (isset($bookingInfo[$dateYMD][$timeSlot])) { //booked case
+                    if (isset($arrBookingsOfSystem[$dateYMD][$timeSlot])) { //booked case
 
                         if (in_array(8, $filter_array)) //if hide bookings filter case 
                             continue;
@@ -253,66 +254,66 @@ while ($startDateTime <= $endDateTime) {
                         if (in_array(1, $filter_array)){ //if hide past time filter case 
                             $currentTime = time();
                             if ($startDateTime < $currentTime) 
-                            continue;
-                        }
-
-
-                        $bookingCode = $bookingInfo[$dateYMD][$timeSlot]["booking_code"];
-                         $background_color = "CCFFCC"; //booked color
-                        // Time slot is booked
-                        $businessName = $bookingInfo[$dateYMD][$timeSlot]["business_name"];
-                        $booking_id = $bookingInfo[$dateYMD][$timeSlot]["booking_id"];
-                        $customer_id = $bookingInfo[$dateYMD][$timeSlot]["customer_id"];
-                        $available = 2; //booked
-                        $hasComment = 0;
-
-                        $comments_array = json_decode($bookingInfo[$dateYMD][$timeSlot]["booking_comments"], true);
-
-                        $$hasComment = false;
-                        if (is_array($comments_array) && count($comments_array) > 0) {
-                            $hasComment = true;
-                        }
-
-                        if ($isGroupBooking){
-                            if ($bookingInfo[$dateYMD][$bookingCode][1] == $toMinutes){
-                               
-                                $timeSlot = $bookingInfo[$dateYMD][$bookingCode][0]."-".$bookingInfo[$dateYMD][$bookingCode][1];
-                                $timeRender = formatTimeRange($bookingInfo[$dateYMD][$bookingCode][0], $bookingInfo[$dateYMD][$bookingCode][1]);
-                            }
-                            else{
                                 continue;
+                        }
+
+                        foreach ($arrBookingsOfSystem[$dateYMD][$timeSlot] as $bookings) {
+                            $bookingCode = $bookings["booking_code"];
+                            $background_color = "CCFFCC"; //booked color
+                            // Time slot is booked
+                            $businessName = $bookings["business_name"];
+                            $booking_id = $bookings["booking_id"];
+                            $customer_id = $bookings["customer_id"];
+                            $available = 2; //booked
+                            $hasComment = 0;
+
+                            $comments_array = json_decode($bookings["booking_comments"], true);
+
+                            $$hasComment = false;
+                            if (is_array($comments_array) && count($comments_array) > 0) {
+                                $hasComment = true;
                             }
-                        }
-                       
-                        echo '&nbsp;
-                            <input type="checkbox" 
-                                name="timeslot" 
-                                date = "'.$startDateTime.'" 
-                                status = "'.$available.'" 
-                                style="margin-top: 5px" 
-                                value="'.$timeSlot.'">&nbsp;
-                            <span 
-                                style="background-color: #'.$background_color.'">'
-                                .$timeRender.'
-                            </span>';
-                        echo '<a target="_self" href="#" onclick="bookedClientView('.$customer_id.');"><span class="CustName">'.$businessName.'<br/></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
-                        echo '<a target="_self" href="#" onclick="bookedAddComments(&quot;'.$bookingCode.'&quot;);">';
-                        if ($hasComment){
-                            echo '<img title="Comment Added" border="0" src="/images/comment.png">
-                                </a>';
-                        }else {
-                            echo '<img title="Add Comments" border="0" src="/images/nocomment.png">
-                                </a>';
-                        }
-                        // echo '<a target="_self" href="#" onclick="bookedQA('.$booking_id.');">
-                        //         <img title="Questions and Answers" border="0" src="/images/i1.png">
-                        //      </a>';
-                        echo '<a target="_self" href="#" onclick="bookedViewBookingDetails(&quot;'.$bookingCode.'&quot;);">
-                                    <img title="View Booking Details" border="0" src="/images/bookdetail.png">
-                                </a>
-                            <br>';
+
+                            if ($isGroupBooking){
+                                if ($arrBookingsOfSystem[$dateYMD][$bookingCode][1] == $toMinutes){
+                                
+                                    $timeSlot = $arrBookingsOfSystem[$dateYMD][$bookingCode][0]."-".$arrBookingsOfSystem[$dateYMD][$bookingCode][1];
+                                    $timeRender = formatTimeRange($arrBookingsOfSystem[$dateYMD][$bookingCode][0], $arrBookingsOfSystem[$dateYMD][$bookingCode][1]);
+                                }
+                                else{
+                                    continue;
+                                }
+                            }
                         
-                    }else {
+                            echo '&nbsp;
+                                <input type="checkbox" 
+                                    name="timeslot" 
+                                    date = "'.$startDateTime.'" 
+                                    status = "'.$available.'" 
+                                    style="margin-top: 5px" 
+                                    value="'.$timeSlot.'">&nbsp;
+                                <span 
+                                    style="background-color: #'.$background_color.'">'
+                                    .$timeRender.'
+                                </span>';
+                            echo '<a target="_self" href="#" onclick="bookedClientView('.$customer_id.');"><span class="CustName">'.$businessName.'<br/></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
+                            echo '<a target="_self" href="#" onclick="bookedAddComments(&quot;'.$bookingCode.'&quot;);">';
+                            if ($hasComment) {
+                                echo '<img title="Comment Added" border="0" src="/images/comment.png">
+                                    </a>';
+                            } else {
+                                echo '<img title="Add Comments" border="0" src="/images/nocomment.png">
+                                    </a>';
+                            }
+                            // echo '<a target="_self" href="#" onclick="bookedQA('.$booking_id.');">
+                            //         <img title="Questions and Answers" border="0" src="/images/i1.png">
+                            //      </a>';
+                            echo '<a target="_self" href="#" onclick="bookedViewBookingDetails(&quot;'.$bookingCode.'&quot;);">
+                                        <img title="View Booking Details" border="0" src="/images/bookdetail.png">
+                                    </a>
+                                <br>';
+                        }
+                    } else {
 
                         if (isset($availableSlots[$weekday][$timeSlot]) && $availableSlots[$weekday][$timeSlot] == 0) { //unavailable case
                             if (in_array(2, $filter_array)) //if hide unavailable time filter case 

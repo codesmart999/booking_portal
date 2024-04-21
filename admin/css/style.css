@@ -62,6 +62,10 @@ h6.day-title {
 	display: flex;
 }
 
+.display-flex > div {
+	margin-right: 10px;
+}
+
 /* Toggle switch container */
 .toggle-switch {
 	position: relative;

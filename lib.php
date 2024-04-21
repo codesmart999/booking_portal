@@ -127,5 +127,11 @@
 		$stmt->close();
 	}
 
+	// Added by Hennadii (2024-04-19)
+	$arrSystemTypes = array(
+		'D' => 'Doctor',
+		'N' => 'Nurse'
+	);
+
     $link->close();
 ?>

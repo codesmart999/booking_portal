@@ -106,15 +106,17 @@
 		$bLookInFiveDays = !empty($arrAppData['five_days']);
 
 		// 1) Get System list by LocationId && ServiceId
-		$stmt = $link->prepare('SELECT sys.SystemId, sys.FullName, sys.Access FROM systems sys'
+		$stmt = $link->prepare('SELECT sys.SystemId, sys.FullName, sys.Access, sys.SystemType, sys.MaxMultipleBookings FROM systems sys'
 			. ' JOIN system_services serv ON sys.SystemId = serv.SystemId'
 			. "	WHERE sys.LocationId = $locationId AND serv.ServiceId = $serviceId");
 	    $stmt->execute();
-	    $stmt->bind_result($systemId, $fullname, $access);
+	    $stmt->bind_result($systemId, $fullname, $access, $system_type, $max_multiple_bookings);
 	    while ($stmt->fetch()) {
 	        $arrSystems[$systemId] = array(
 	        	"fullname" 	=> $fullname,
-	        	"access"	=> $access
+	        	"access"	=> $access,
+				"system_type" => $system_type,
+				"max_multiple_bookings" => $max_multiple_bookings
 	        );
 	    }
 
@@ -207,12 +209,11 @@
 
 	    $link->close();
 
-		foreach ($arrSystemIds as $system_id) {
-			if (empty($system_id) || isset($arrBookingPeriodsByDaysDiff[$system_id]))
-				continue;
-
-			// Copy default booking periods
-			$arrBookingPeriodsByDaysDiff[$system_id] = unserialize(serialize($arrBookingPeriodsByDaysDiff[0]));
+		foreach ($arrSystems as $system_id => $objSystem) {
+			if (!isset($arrBookingPeriodsByDaysDiff[$system_id])) {
+				// Copy default booking periods
+				$arrBookingPeriodsByDaysDiff[$system_id] = unserialize(serialize($arrBookingPeriodsByDaysDiff[0]));
+			}
 
 			// Remove Already-Booked Timeslots (in bookings table)
 			foreach ($arrBookingPeriodsByDaysDiff[$system_id] as $days_diff => &$arr_bookingperiods) {
@@ -220,7 +221,8 @@
 				
 				foreach ($arr_bookingperiods as $index => $values) {
 					if (isset($arrBookings[$system_id]) && isset($arrBookings[$system_id][$calculated_date])
-						&& isset($arrBookings[$system_id][$calculated_date][$values['FromInMinutes'] . '-' . $values['ToInMinutes']])) {
+						&& isset($arrBookings[$system_id][$calculated_date][$values['FromInMinutes'] . '-' . $values['ToInMinutes']])
+						&& count($arrBookings[$system_id][$calculated_date][$values['FromInMinutes'] . '-' . $values['ToInMinutes']]) >= $objSystem['max_multiple_bookings']) {
 						unset($arr_bookingperiods[$index]);
 					}
 				}
@@ -451,24 +453,20 @@
 	}
 	
 	//get Number of bookings
-	function getNumberOfBookings($data){
-		// Array to store unique booking nodes
-		$uniqueBookingNodes = [];
+	function getNumberOfBookings($bookingData ) {
+		// Initialize an empty array to store unique booking codes
+		$numUniqueBookings = 0;
 
-		// Iterate over the given array and count unique booking nodes
-		foreach ($data as $date => $slots) {
-			foreach ($slots as $slot => $booking) {
-				// Form a unique identifier for each booking node
-				if (isset($booking['customer_id']) && isset($booking['customer_id'])){
-					$bookingNode = $booking['customer_id'] . '_' . $booking['customer_id'] . '_' . $booking['booking_code'];
-				
-				// Increment count for the unique booking node
-				$uniqueBookingNodes[$bookingNode] = isset($uniqueBookingNodes[$bookingNode]) ? $uniqueBookingNodes[$bookingNode] + 1 : 1;
-				}
+		// Iterate through each date
+		foreach ($bookingData as $date => $timeSlots) {
+			// Iterate through each time slot
+			foreach ($timeSlots as $slot => $bookings) {
+				if (strpos($slot, '-') === false)
+					$numUniqueBookings++;
 			}
 		}
 
-		return count($uniqueBookingNodes);
+		return $numUniqueBookings;
 	}
 
 
@@ -1066,19 +1064,24 @@
 
 		// Fetch the results
 		while ($stmt->fetch()) {
-
 			$bookingTimeSlot = $bookingFrom . '-' . $bookingTo;
+
+			if (!isset($bookingInfo[$bookingDate][$bookingTimeSlot]))
+				$bookingInfo[$bookingDate][$bookingTimeSlot] = array();
 			// Store the booking information for the corresponding date and time slot
-			$bookingInfo[$bookingDate][$bookingTimeSlot]['customer_id'] = $customerId;
-			$bookingInfo[$bookingDate][$bookingTimeSlot]['business_name'] = $customerBusiness;
-			$bookingInfo[$bookingDate][$bookingTimeSlot]['booking_code'] = $bookingCode;
-			$bookingInfo[$bookingDate][$bookingTimeSlot]['booking_comments'] = $bookingComments;
-			$bookingInfo[$bookingDate][$bookingTimeSlot]['booking_id'] = $bookingId;
-			if (isset($bookingInfo[$bookingDate][$bookingCode][0])){
+			$bookingInfo[$bookingDate][$bookingTimeSlot][] = array(
+				'customer_id' => $customerId,
+				'business_name' => $customerBusiness,
+				'booking_code' => $bookingCode,
+				'booking_comments' => $bookingComments,
+				'booking_id' => $bookingId
+			);
+			
+			if (isset($bookingInfo[$bookingDate][$bookingCode][0])) {
 				if ($bookingInfo[$bookingDate][$bookingCode][1] == $bookingFrom){
 					$bookingInfo[$bookingDate][$bookingCode][1] = $bookingTo;
 				}
-			}else{
+			} else {
 				$bookingInfo[$bookingDate][$bookingCode] = [$bookingFrom, $bookingTo];
 			}
 		}
