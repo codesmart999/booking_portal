@@ -1686,4 +1686,107 @@
 		// Return the array of booking data
 		return $bookings;
 	}
+
+	function getReportAllCustomize($startDate, $endDate, $page_start, $limit, $serviceId, $locationId){
+	
+		$db = getDBConnection();
+    
+		// Base SQL query
+		$sql = "SELECT s.FullName, b.BookingDate, b.IsCancelled, b.BookingFrom, b.BookingTo, b.createdAt, b.BookingCode, c.FullName, b.Attended
+			FROM bookings b
+			JOIN customers c ON b.CustomerId = c.CustomerId
+			JOIN systems s ON b.SystemId = s.SystemId
+			JOIN services v ON b.ServiceId = v.ServiceId
+			WHERE b.BookingDate BETWEEN ? AND ?";
+		
+		// Additional conditions based on optional parameters
+		if (is_null($page_start) && is_null($limit)) {
+			$stmt = $db->prepare($sql);
+			$stmt->bind_param('ss', $startDate, $endDate);
+		}
+		else if (!is_null($locationId)) {
+			$sql .= " AND s.LocationId = ? LIMIT ?, ?";
+			$stmt = $db->prepare($sql);
+			$stmt->bind_param('ssiii', $startDate, $endDate, $locationId, $page_start, $limit);
+		}
+		else if (!is_null($serviceId)) {
+			$sql .= " AND b.ServiceId = ? LIMIT ?, ?";
+			$stmt = $db->prepare($sql);
+			$stmt->bind_param('ssiii', $startDate, $endDate, $serviceId, $page_start, $limit);
+		}
+		else if (is_null($serviceId) && is_null($locationId)) {
+			$sql .= " LIMIT ?, ?";
+			$stmt = $db->prepare($sql);
+			$stmt->bind_param('ssii', $startDate, $endDate, $page_start, $limit);
+		}
+		$stmt->execute();
+
+		// Bind result variables
+		$stmt->bind_result($systemName, $bookingForDate, $isCancelled, $bookingFrom, $bookingTo, $bookingDate, $bookingCode, $businessName, $isAttended);
+
+		// Initialize an array to store the booking data
+		$bookings = array();
+
+		// Fetch the data and store it in the array
+		while ($stmt->fetch()) {
+			$bookings[] = array(
+				'systemName' => $systemName,
+				'bookingForDate' => $bookingForDate,
+				'isCancelled' => $isCancelled,
+				'bookingFrom' => $bookingFrom,
+				'bookingTo' => $bookingTo,
+				'bookingDate' => $bookingDate,
+				'bookingCode' => $bookingCode,
+				'businessName' => $businessName,
+				'isAttended' => $isAttended
+			);
+		}
+
+		// Close the statement
+		$stmt->close();
+
+		// Return the array of booking data
+		return $bookings;
+	
+	}
+
+	function getCountReportAllCustomize($startDate, $endDate, $serviceId, $locationId){
+	
+		$db = getDBConnection();
+    
+		// Base SQL query
+		$sql = "SELECT count(*)
+			FROM bookings b
+			JOIN customers c ON b.CustomerId = c.CustomerId
+			JOIN systems s ON b.SystemId = s.SystemId
+			JOIN services v ON b.ServiceId = v.ServiceId
+			WHERE b.BookingDate BETWEEN ? AND ?";
+		
+		// Additional conditions based on optional parameters
+		if (!is_null($locationId)) {
+			$sql .= " AND s.LocationId = ?";
+			$stmt = $db->prepare($sql);
+			$stmt->bind_param('ssi', $startDate, $endDate, $locationId);
+		}
+		if (!is_null($serviceId)) {
+			$sql .= " AND b.ServiceId = ?";
+			$stmt = $db->prepare($sql);
+			$stmt->bind_param('ssi', $startDate, $endDate, $serviceId);
+		}
+		if (is_null($serviceId) && is_null($locationId)) {
+			$stmt = $db->prepare($sql);
+			$stmt->bind_param('ss', $startDate, $endDate);
+		}
+		$stmt->execute();
+
+		// Bind result variables
+		$stmt->bind_result($total_rows);
+		$stmt->fetch();
+		// Close the statement
+		$stmt->close();
+
+		// Return the array of booking data
+		return $total_rows;
+	
+	}
 ?>
