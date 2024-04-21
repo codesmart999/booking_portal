@@ -1188,7 +1188,7 @@
 	}
 
 
-	function addBookingComments($bookingCode, $new_comment){
+	function addBookingComments($bookingCode, $attended, $new_comment){
 		$db = getDBConnection();
 		$stmt = $db->prepare("SELECT Comments FROM bookings WHERE BookingCode = ? LIMIT 1");
 		$stmt->bind_param("s", $bookingCode);
@@ -1206,14 +1206,15 @@
 		}
 
 		$stmt->close();
-		// Append new comment to existing comments
-		$all_comments = array_merge($existing_comments, [$new_comment]);
-		
-		// Encode all comments as JSON
-		$json_comments = json_encode($all_comments);
 
-		$updateStmt = $db->prepare("UPDATE bookings SET Comments = ? WHERE BookingCode = ?");
-		$updateStmt->bind_param("ss", $json_comments, $bookingCode);
+		$json_comments = null;
+
+		if (!empty($new_comment))
+			$json_comments = json_encode(array_merge($existing_comments, [$new_comment]));
+		else 
+			$json_comments = json_encode($existing_comments);
+		$updateStmt = $db->prepare("UPDATE bookings SET Comments = ?, Attended = ? WHERE BookingCode = ?");
+		$updateStmt->bind_param("sis", $json_comments, $attended, $bookingCode);
 		$updateStmt->execute();
 	}
 
@@ -1622,11 +1623,15 @@
 
 		// Format hours and minutes
 		$formattedDuration = '-';
-		if (!empty($hours) || !empty($minutes))
+		$timeFormatted = "";
+		if (!empty($hours) || !empty($minutes)) {
 			$formattedDuration = sprintf('%02d:%02d', $hours, $minutes);
+			//added by codemax
+			$timeFormatted = sprintf('%02d:%02d %s', ($hours % 12 == 0 ? 12 : $hours % 12), $minutes, ($hours < 12 ? 'AM' : 'PM'));
+		}
 	
 		// Return an array containing hours and minutes
-		return array('hours' => $hours, 'minutes' => $minutes, 'formatted_text' => $formattedDuration);
+		return array('hours' => $hours, 'minutes' => $minutes, 'formatted_text' => $formattedDuration, 'formatted_text_type1' => $timeFormatted);
 	}
 
 	// Added by Hennadii (2024-04-17)
@@ -1636,5 +1641,49 @@
 			$arr_system_fullnames[] = $arrSystems[$system_id]['fullname'];
 
 		return implode(',', $arr_system_fullnames);
+	}
+
+	function getCustomerBookings($customerId, $fromDate, $toDate, $page_start, $limit){
+		$db = getDBConnection();
+		$sql = "SELECT b.BookingDate, b.BookingCode, b.BookingFrom, b.BookingTo, b.Attended, b.Comments, b.Messages
+            FROM bookings b
+            JOIN customers c ON b.CustomerId = c.CustomerId
+            WHERE b.CustomerId = ? AND b.BookingDate BETWEEN ? AND ? LIMIT ?,?";
+
+		// Prepare the statement
+		$stmt = $db->prepare($sql);
+
+		// Bind parameters
+		$stmt->bind_param('issii', $customerId, $fromDate, $toDate, $page_start, $limit);
+
+		// Execute the statement
+		$stmt->execute();
+
+		// Bind result variables
+		$stmt->bind_result($bookingDate, $bookingCode, $bookingFrom, $bookingTo, $attended, $comments, $messages);
+
+		// Initialize an array to store the booking data
+		$bookings = array();
+
+		// Fetch the data and store it in the array
+		while ($stmt->fetch()) {
+			$commentsArray = json_decode($comments, true);
+			$commentsStatus = !empty($commentsArray) ? 'Yes' : 'No';
+			$bookings[] = array(
+				'BookingDate' => $bookingDate,
+				'BookingFrom' => $bookingFrom,
+				'BookingTo' => $bookingTo,
+				'BookingCode' => $bookingCode,
+				'Attended' => $attended,
+				'Comments' => $commentsStatus,
+				'Messages' => $messages
+			);
+		}
+
+		// Close the statement
+		$stmt->close();
+
+		// Return the array of booking data
+		return $bookings;
 	}
 ?>

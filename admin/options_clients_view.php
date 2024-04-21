@@ -115,7 +115,7 @@
                                 <font face="Arial" size="2" color="#000000">Email Address : <?php echo $cutomer_info["email"];?></font>
                             </p>
                             <p>
-                                <font face="Arial" size="2" color="#000000">Postal Address : <?php echo $street;?> &nbsp;<?php echo $street;?>&nbsp;<?php echo $state;?> &nbsp;<?php echo $postcode;?>&nbsp;Australia</font>
+                                <font face="Arial" size="2" color="#000000">Postal Address : <?php echo $street;?> &nbsp;<?php echo $city;?>&nbsp;<?php echo $state;?> &nbsp;<?php echo $postcode;?>&nbsp;Australia</font>
                             </p>
                             <p>
                                 <font face="Arial" size="2" color="#000000">Phone : <?php echo $cutomer_info["phone"];?></font>

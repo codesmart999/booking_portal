@@ -11,21 +11,24 @@
 	    	header('Location: '. SECURE_URL . LOGIN_PAGE, true, 301);
 		   	exit(0);
 	    }
-
+        //__debug( $_POST);
         // Retrieve the content of the textarea
         $textareaContent = $_POST["S1"];
         $booking_code = $_POST["bookingCode"];
+        $attended = ($_POST["att"] == 'Y') ? 1 : 0;
         $currentDateTime = date('Y-m-d H:i:s');
         $randomID = str_pad(rand(1000, 9999), 4, '0', STR_PAD_LEFT);
         $userid = $user['UserId'];
         if (strlen($textareaContent) > 0)
         {
-            addBookingComments($booking_code, [
+            addBookingComments($booking_code, $attended, [
                 'id' => $randomID,
                 'user_id' => $userid,
                 'datetime' => $currentDateTime,
-                'content' => $textareaContent
+                'content' => $textareaContent,
             ]);
+        }else {
+            addBookingComments($booking_code, $attended, []);
         }
 
         header('Location: '. SECURE_URL . "/admin/options_comments.php?booking_code=".$booking_code, true, 301);
@@ -99,10 +102,10 @@
                                             </font>
                                             <font face="Arial" size="2" color="#000000">&nbsp;Booking Time : </font>
                                             <font face="Arial" size="2" color="#000000"><?php  echo $bookingTime;?> <br>
-                                                <!-- <font face="Arial" size="2" color="#000000">&nbsp;Attended? </font>
-                                                <font face="Arial" size="2" color="#000000">
-                                                    <input type="radio" name="att" value="Y" checked="checked"> Yes &nbsp;&nbsp;
-                                                    <input type="radio" name="att" value="N"> No </font> -->
+                                            <font face="Arial" size="2" color="#000000">&nbsp;Attended? </font>
+                                            <font face="Arial" size="2" color="#000000">
+                                                <input type="radio" name="att" value="Y" <?php echo ($booking_info["attended"] == 1) ? 'checked="checked"' : ''; ?>> Yes &nbsp;&nbsp;
+                                                <input type="radio" name="att" value="N" <?php echo ($booking_info["attended"] == 0) ? 'checked="checked"' : ''; ?>> No </font>
                                             </font>
                                         </td>
                                         <td valign="bottom">

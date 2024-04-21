@@ -57,6 +57,7 @@ $arrAdminMenu = [
 	"index" 			=> "Access an Individual System",
 	"systems"			=> "Individual System Controls",
 	"services" 			=> "Manage Services",
+	"customers" 		=> "Manage Customers",
 	// "directory" 		=> "Directory Settings",
 	"settings" 			=> [ 	"title" => "System Default Settings",
 								"sub" => [
