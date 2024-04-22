@@ -1304,9 +1304,10 @@
 			if (isset($bookingInfo[$bookingDate][$bookingCode][0])) {
 				if ($bookingInfo[$bookingDate][$bookingCode][1] == $bookingFrom){
 					$bookingInfo[$bookingDate][$bookingCode][1] = $bookingTo;
+					$bookingInfo[$bookingDate][$bookingCode][2] = get_display_text_from_minutes($bookingInfo[$bookingDate][$bookingCode][0], $bookingTo);
 				}
 			} else {
-				$bookingInfo[$bookingDate][$bookingCode] = [$bookingFrom, $bookingTo];
+				$bookingInfo[$bookingDate][$bookingCode] = [$bookingFrom, $bookingTo, get_display_text_from_minutes($bookingFrom, $bookingTo)];
 			}
 		}
 		return $bookingInfo;
@@ -1379,11 +1380,17 @@
 		$stmt->close();
 	}
 
-	function getBookedInfoByBookingCode($booking_code) {
+	function getBookedInfoByBookingCode($booking_code, $system_id = 0) {
 	    $db = getDBConnection();
-        $sql = "SELECT FullName, BookingCode, BookingDate, BookingFrom, BookingTo, Attended, Comments FROM (SELECT * FROM bookings WHERE BookingCode = ? ORDER BY BookingFrom) AS T1 JOIN customers ON T1.CustomerId = customers.CustomerId ORDER BY BookingFrom ASC";
-        $stmt = $db->prepare($sql);
-		$stmt->bind_param("s", $booking_code);
+		if (empty($system_id)) {
+        	$sql = "SELECT FullName, BookingCode, BookingDate, BookingFrom, BookingTo, Attended, Comments FROM (SELECT * FROM bookings WHERE BookingCode = ? ORDER BY BookingFrom) AS T1 JOIN customers ON T1.CustomerId = customers.CustomerId ORDER BY BookingFrom ASC";
+			$stmt = $db->prepare($sql);
+			$stmt->bind_param("s", $booking_code);
+		} else {
+			$sql = "SELECT FullName, BookingCode, BookingDate, BookingFrom, BookingTo, Attended, Comments FROM (SELECT * FROM bookings WHERE BookingCode = ? AND SystemId = ? ORDER BY BookingFrom) AS T1 JOIN customers ON T1.CustomerId = customers.CustomerId ORDER BY BookingFrom ASC";
+			$stmt = $db->prepare($sql);
+			$stmt->bind_param("si", $booking_code, $system_id);
+		}
         $stmt->execute();
 		$stmt->bind_result($businessName, $bookingCode, $bookingDate, $fromInMinutes, $toInMinutes, $attended, $comments);
 		$bookingInfo = [];
@@ -1404,6 +1411,7 @@
 		}
 		$bookingInfo["startTime"] = $bookingTimeStart;
 		$bookingInfo["endTime"] = $bookingTimeEnd;
+		$bookingInfo["DisplayText"] = get_display_text_from_minutes($bookingTimeStart, $bookingTimeEnd);
 
 		$stmt->close();
 		return $bookingInfo;
@@ -1908,5 +1916,42 @@
 
 		// Return the array of booking data
 		return $bookings;
+	}
+
+	// Added by Hennadii(2024-04-21)
+	function generateBackgroundColor($text) {
+		// Convert text into a numeric value
+		$hash = 0;
+		for ($i = 0; $i < strlen($text); $i++) {
+			$hash = ord($text[$i]) + (($hash << 5) - $hash);
+		}
+	
+		// Generate hexadecimal color code with brighter colors
+		$color = "#";
+		for ($i = 0; $i < 3; $i++) {
+			$value = ($hash >> ($i * 8)) & 0xFF;
+			$value = max($value, 120); // Ensure minimum RGB component value (adjust as needed)
+			$color .= str_pad(dechex($value), 2, "0", STR_PAD_LEFT);
+		}
+	
+		return $color;
+	}
+
+	function generateTextColor($text) {
+		// Convert text into a numeric value
+		$hash = 0;
+		for ($i = 0; $i < strlen($text); $i++) {
+			$hash = ord($text[$i]) + (($hash << 5) - $hash);
+		}
+	
+		// Generate hexadecimal color code with darker colors
+		$color = "#";
+		for ($i = 0; $i < 3; $i++) {
+			$value = ($hash >> ($i * 8)) & 0xFF;
+			$value = max($value - 20, 0); // Decrease brightness by subtracting a value (adjust as needed)
+			$color .= str_pad(dechex($value), 2, "0", STR_PAD_LEFT);
+		}
+	
+		return $color;
 	}
 ?>

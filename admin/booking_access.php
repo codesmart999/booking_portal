@@ -2,7 +2,7 @@
 
 $menu = "calendar_page";
 require_once('header.php');
-
+require_once('utils.php');
 
 if(isset($_SESSION['User'])) {
     // Assuming $user contains the user data retrieved from the session

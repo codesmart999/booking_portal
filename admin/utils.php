@@ -98,21 +98,25 @@ function summarize_bookingperiod_details($params) {
     return $arr_bookingperiod_summary_by_weekday;
 }
 
-function get_display_text_from_minutes($from_in_mins, $to_in_mins) {
+function get_display_text_from_minutes($from_in_mins, $to_in_mins = '') {
     $start_hour = floor($from_in_mins / 60);
     $start_minutes = sprintf("%02d", $from_in_mins % 60);
     $start_AP = ($start_hour < 12) ? 'am' : 'pm';
     $start_hour -= ($start_hour <= 12) ? 0 : 12;
     $start_hour = sprintf("%02d", $start_hour);
 
-    $end_hour = floor($to_in_mins / 60);
-    $end_minutes = sprintf("%02d", $to_in_mins % 60);
-    $end_AP = ($end_hour < 12) ? 'am' : 'pm';
-    $end_hour -= ($end_hour <= 12) ? 0 : 12;
-    $end_hour = sprintf("%02d", $end_hour);
+    if (!empty($to_in_mins)) {
+        $end_hour = floor($to_in_mins / 60);
+        $end_minutes = sprintf("%02d", $to_in_mins % 60);
+        $end_AP = ($end_hour < 12) ? 'am' : 'pm';
+        $end_hour -= ($end_hour <= 12) ? 0 : 12;
+        $end_hour = sprintf("%02d", $end_hour);
 
-    return $start_hour . ':' . $start_minutes . '' . $start_AP . ' To ' 
-        . $end_hour . ':' . $end_minutes . '' . $end_AP;
+        return $start_hour . ':' . $start_minutes . '' . $start_AP . ' To ' 
+            . $end_hour . ':' . $end_minutes . '' . $end_AP;
+    }
+
+    return $start_hour . ':' . $start_minutes . '' . $start_AP;
 }
 
 ?>

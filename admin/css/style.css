@@ -66,6 +66,19 @@ h6.day-title {
 	margin-right: 10px;
 }
 
+.display-flex.move-booking-container {
+	flex-wrap: nowrap;
+}
+
+.display-flex.move-booking-container > div {
+	margin-right: 0;
+	flex-grow: 1; /* Distribute space equally among flex items */
+	flex-basis: 0; /* Distribute space equally among flex items */
+	min-width: 0; /* Allow flex items to shrink below their content width */
+	margin: 1px; /* Add margin between flex items */
+	box-sizing: border-box; /* Include padding and border in the width */
+}
+
 /* Toggle switch container */
 .toggle-switch {
 	position: relative;
@@ -153,12 +166,13 @@ input[type="checkbox"]:checked + .toggle-slider:before {
 	margin-bottom: 15px;
 }
 
-.move-booking-container .panel-container {
-	border: 1px solid #888;
+.move-booking-container i.fa-calendar {
+	margin-top: -10px;
 }
 
-.move-booking-container .panel-container i.fa-calendar {
-	margin-top: -10px;
+.move-booking-container .panel-container,
+.modal-body .panel-container {
+	border: 1px solid #888;
 }
 
 .move-booking-container .panel-container .row:nth-child(n+2) {
@@ -175,6 +189,11 @@ input[type="checkbox"]:checked + .toggle-slider:before {
     font-family: "Poppins", Arial, sans-serif;
     line-height: 1.5;
     color: #000;
+}
+.move-booking-container .panel-header-sm {
+	font-size: 1rem;
+	word-wrap: break-word;
+	min-height: 50px;
 }
 .move-booking-container h5 {
 	border: 1px solid #888;
@@ -196,14 +215,44 @@ input[type="checkbox"]:checked + .toggle-slider:before {
 	background: white;
 }
 
+.move-booking-container .timeslots-container {
+	/* padding: 10px; */
+}
+
+.move-booking-container .timeslots-container > div {
+	cursor: pointer;
+	margin: 5px;
+}
+
+.move-booking-container .timeslots-container .booked {
+	background-color: #93FF93;
+}
+
+.move-booking-container .timeslots-container .checked {
+	background-color: yellow;
+}
+
+.move-booking-container .timeslots-container .available.checked {
+	background-color: rgb(132, 193, 223);
+}
+
+.move-booking-container .timeslots-container > div:hover {
+	background-color: rgb(132, 193, 223) !important;
+}
+
 .move-booking-container table {
 	background-image: none;
 	background-color: transparent;
 	border: none;
+	width: 100%;
 }
 
 .move-booking-container table td {
 	padding: 0px 10px !important;
+}
+
+.move-booking-container table td:first-child {
+	width: 30px;
 }
 
 .move-booking-container table label.timeslot {
@@ -220,4 +269,13 @@ input[type="checkbox"]:checked + .toggle-slider:before {
 
 .move-booking-container textarea {
 	width: 95%;
+}
+
+.vertical-labels .form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.vertical-labels .form-group label {
+    margin-bottom: 5px;
 }
