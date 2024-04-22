@@ -63,7 +63,7 @@ if ($searchChoice === 'bsall') {
          }
      }
 } elseif ($searchChoice === 'bs') {
-    $searchByBS = isset($_GET['searchbybs']) ? intval($_GET['searchbybs']) : -1;
+    $searchByBS = isset($_GET['searchbybs']) ? intval($_GET['searchbybs']) : -1; //systemId
 
     if ( $searchByBS == -1) { //exception handling
         // Redirect back to the previous page
@@ -73,9 +73,9 @@ if ($searchChoice === 'bsall') {
     $row_data = getReportAllCustomize($startDate, $endDate, $page_start, $limit, $searchByBS, NULL);
     $total_count = getCountReportAllCustomize($startDate, $endDate, $searchByBS, NULL);
     // Get the name corresponding to the selected service
-    foreach ($arrServices as $key => $objService) {
+    foreach ($arrSystems as $key => $objSystem) {
         if ($key == $searchByBS) {
-            $reportOption = "Report Option 2 - Booking System : " . $objService['fullname'];
+            $reportOption = "Report Option 2 - Booking System : " . $objSystem['fullname'];
             break;
         }
     }
