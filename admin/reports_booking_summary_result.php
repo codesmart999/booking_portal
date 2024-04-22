@@ -101,7 +101,7 @@ if ($_GET['output'] === 'csv' && !$acrosspage) {
             }
         }
 
-        $csvContent .= $objSystem["fullname"] . ",,,,\n";
+        $csvContent .= '"' . $objSystem["fullname"] . '","","","",""' . "\n";
 
         $availableInfo = getAvailabilityDataRange($objSystem["id"], $startDate, $endDate);
         $bookedInfo = getBookedInfoForSummary($objSystem["id"], $startDate, $endDate);
@@ -127,11 +127,12 @@ if ($_GET['output'] === 'csv' && !$acrosspage) {
 
                 $percentage = $bookedDuration * 100 / $totalDuration;
 
-                $csvContent .= $keyFormatted . "," .
-                    number_format($totalDuration / $numberminutes, 1) . "," .
-                    number_format($bookedDuration / $numberminutes, 1) . "," .
-                    number_format($availableDuration / $numberminutes, 1) . "," .
-                    number_format($percentage, 1) . "\n";
+                $csvContent .= '"' . $keyFormatted . '",' .
+                '"' . number_format($totalDuration / $numberminutes, 1) . '",' .
+                '"' . number_format($bookedDuration / $numberminutes, 1) . '",' .
+                '"' . number_format($availableDuration / $numberminutes, 1) . '",' .
+                '"' . number_format($percentage, 1) . '"' . "\n";
+
             }
         }
 
@@ -139,10 +140,15 @@ if ($_GET['output'] === 'csv' && !$acrosspage) {
         $globalBooked += $sumBooked;
         $globalAvailable += $sumAvailable;
 
-        $csvContent .= "," . number_format($sumTotal / $numberminutes, 1) . "," . number_format($sumBooked / $numberminutes, 1) . "," . number_format($sumAvailable / $numberminutes, 1) . "," . number_format($sumBooked * 100 / $sumTotal / $numberminutes, 2) . "\n";
+        $csvContent .= ',"' . number_format($sumTotal / $numberminutes, 1) . '","' . number_format($sumBooked / $numberminutes, 1) . '","' . number_format($sumAvailable / $numberminutes, 1) . '","' . number_format($sumBooked * 100 / $sumTotal / $numberminutes, 2) . '%"' . "\n";
     }
 
-    $csvContent .= "TOTALS," . number_format($globalTotal / $numberminutes, 1) . "," . number_format($globalBooked / $numberminutes, 1) . "," . number_format($globalAvailable / $numberminutes, 1) . "," . number_format($globalBooked * 100 / $globalTotal / $numberminutes, 2) . "\n";
+    $csvContent .= '"TOTALS",' . 
+    '"' . number_format($globalTotal / $numberminutes, 1) . '",' . 
+    '"' . number_format($globalBooked / $numberminutes, 1) . '",' . 
+    '"' . number_format($globalAvailable / $numberminutes, 1) . '",' . 
+    '"' . number_format($globalBooked * 100 / $globalTotal / $numberminutes, 2) . '%"' . "\n";
+
 
     // Set headers for CSV download
     header('Content-Type: text/csv');
@@ -209,7 +215,7 @@ if ($_GET['output'] === 'csv' && $acrosspage) {
             $colspan += 1;
         }
 
-        $csvContent .= ",".number_format($sumAvailable / $numberminutes, 1)."\n";
+        $csvContent .= ',"'.number_format($sumAvailable / $numberminutes, 1). '"' . "\n";
        
         $csvContent .= $objSystem["fullname"].",Booked";
        
