@@ -129,6 +129,24 @@
 		$stmt->close();
 	}
 
+	//Addeby By CodeMax(2024-04-21)
+	if( empty( $arrSystems ) ) {
+		
+	    $stmt = $link->prepare("SELECT SystemId, FullName, LocationId FROM systems");
+	    $stmt->execute();
+	    $stmt->bind_result($systemId, $fullName, $locationId);
+	    
+		while ($stmt->fetch()) {
+	        $arrSystems[$systemId] = array(
+	        	"id" 	=> $systemId,
+	        	'fullname' => $fullName,
+				"locationId" => $locationId
+	        );
+	    }
+		$stmt->close();
+	}
+	
+
 	// Added by Hennadii (2024-04-19)
 	$arrSystemTypes = array(
 		'D' => 'Doctor',

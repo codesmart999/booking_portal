@@ -900,6 +900,103 @@
 		}
 		return $result;
 	}
+
+	// Added by CodeMAX 2024-04-21
+	// return available time only
+	function getAvailabilityDataRange($systemId, $startDate, $endDate) {
+		
+		// SQL query to retrieve availability data
+		$db = getDBConnection();
+
+		$sql = "SELECT 
+					TB2.SetDate, 
+					COALESCE(SP.isAvailable, TB2.isAvailable) AS isAvailable,
+					SUM(CASE WHEN TB2.isAvailable = 1 THEN TB2.ToInMinutes - TB2.FromInMinutes ELSE 0 END) AS availableDuration,
+    				SUM(CASE WHEN TB2.isAvailable = 0 THEN TB2.ToInMinutes - TB2.FromInMinutes ELSE 0 END) AS unavailableDuration
+				FROM 
+					(
+						SELECT 
+							date_column AS SetDate, 
+							D1.weekday, 
+							FromInMinutes, 
+							ToInMinutes, 
+							isRegular, 
+							isAvailable 
+						FROM 
+							(
+								SELECT
+									date_column,
+									MOD(DAYOFWEEK(date_column) + 6, 7) AS weekday
+								FROM
+									(
+										SELECT
+											DATE(?) + INTERVAL (t4*10000 + t3*1000 + t2*100 + t1*10 + t0) DAY AS date_column
+										FROM
+											(SELECT 0 t0 UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) t0,
+											(SELECT 0 t1 UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) t1,
+											(SELECT 0 t2 UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) t2,
+											(SELECT 0 t3 UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) t3,
+											(SELECT 0 t4 UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) t4
+									) dates
+								WHERE
+									date_column BETWEEN ? AND ?
+							) AS D1 
+						LEFT JOIN 
+							(
+								SELECT * FROM setting_bookingperiods 
+								WHERE 
+									SystemId = IFNULL(
+										(
+											SELECT 
+												SystemId 
+											FROM 
+												setting_bookingperiods 
+											WHERE 
+												SystemId = ?
+											LIMIT 1
+										),
+										0
+									)
+							) AS SB
+						ON 
+							D1.weekday = SB.weekday 
+						ORDER BY 
+							D1.date_column
+					) AS TB2 
+				LEFT JOIN 
+					setting_bookingperiods_special AS SP 
+				ON 
+					TB2.SetDate = SP.SetDate 
+					AND TB2.FromInMinutes = SP.FromInMinutes 
+					AND TB2.ToInMinutes = SP.ToInMinutes 
+					GROUP BY 
+						TB2.SetDate, 
+						isAvailable
+				ORDER BY 
+					TB2.SetDate;
+		";
+
+		// Prepare the SQL statement
+		$stmt = $db ->prepare($sql);
+
+		// Bind parameters and execute the query
+		$stmt->bind_param("sssi", $startDate, $startDate, $endDate, $systemId);
+		$stmt->execute();
+		$stmt->bind_result($setDate, $isAvailable, $availableDuration, $unavailableDuration);
+		
+		// Initialize an array to store the available time slots
+		$result = [];
+		// Fetch the booking periods
+		while ($stmt->fetch()) {
+			
+			$result[$setDate] = [
+				'durationAvailable' => $availableDuration,
+				'durationUnAvailable' => $unavailableDuration
+			];
+			
+		}
+		return $result;
+	}
 	
 	//Get Available and Unavailable count in Date Range 
 	//USAGE: To show available/unavailable days on calendar
@@ -1309,6 +1406,41 @@
 			} else {
 				$bookingInfo[$bookingDate][$bookingCode] = [$bookingFrom, $bookingTo, get_display_text_from_minutes($bookingFrom, $bookingTo)];
 			}
+		}
+		return $bookingInfo;
+	}
+
+	
+	// Added By CodeMAX 2024-040-21   
+	// Added for Booking Summary Report
+	function getBookedInfoForSummary($systemId, $startDate, $endDate)
+	{
+		$db = getDBConnection();
+		// Prepare and execute a query to retrieve data from the database for the specified date range and systemId
+		$sql = "SELECT 
+					bookings.BookingDate, 
+					SUM(bookings.BookingTo - bookings.BookingFrom)
+				FROM bookings
+				WHERE bookings.SystemId = ? AND DATE(bookings.BookingDate) BETWEEN ? AND ? GROUP BY bookings.BookingDate";
+
+		// Prepare the statement
+		$stmt = $db->prepare($sql);
+		$stmt->bind_param("iss", $systemId, $startDate, $endDate);
+		$stmt->execute();
+		$stmt->bind_result(
+				$bookingDate, 
+				$duration);
+
+		// Initialize an array to store the booking information
+		$bookingInfo = [];
+
+		// Fetch the results
+		while ($stmt->fetch()) {
+			
+			$bookingInfo[$bookingDate] = array(
+				
+				'duration' => $duration
+			);
 		}
 		return $bookingInfo;
 	}
@@ -1874,6 +2006,7 @@
 		return implode(',', $arr_system_fullnames);
 	}
 
+	// Added by CodeMAX (2024-04-20)
 	function getCustomerBookings($customerId, $fromDate, $toDate, $page_start, $limit){
 		$db = getDBConnection();
 		$sql = "SELECT b.BookingDate, b.BookingCode, b.BookingFrom, b.BookingTo, b.Attended, b.Comments, b.Messages
@@ -1953,5 +2086,216 @@
 		}
 	
 		return $color;
+	}
+
+	// Added by CodeMAX (2024-04-21)
+	function getReportAllCustomize($startDate, $endDate, $page_start, $limit, $systemId, $locationId){
+	
+		$db = getDBConnection();
+    
+		// Base SQL query
+		$sql = "SELECT s.FullName, b.BookingDate, b.IsCancelled, b.BookingFrom, b.BookingTo, b.createdAt, b.BookingCode, c.FullName, b.Attended
+			FROM bookings b
+			JOIN customers c ON b.CustomerId = c.CustomerId
+			JOIN systems s ON b.SystemId = s.SystemId
+			WHERE b.BookingDate BETWEEN ? AND ?";
+		
+		// Additional conditions based on optional parameters
+		if (is_null($page_start) && is_null($limit)) {
+			$stmt = $db->prepare($sql);
+			$stmt->bind_param('ss', $startDate, $endDate);
+		}
+		else if (!is_null($locationId)) {
+			$sql .= " AND s.LocationId = ? LIMIT ?, ?";
+			$stmt = $db->prepare($sql);
+			$stmt->bind_param('ssiii', $startDate, $endDate, $locationId, $page_start, $limit);
+		}
+		else if (!is_null($systemId)) {
+			$sql .= " AND b.SystemId = ? LIMIT ?, ?";
+			$stmt = $db->prepare($sql);
+			$stmt->bind_param('ssiii', $startDate, $endDate, $systemId, $page_start, $limit);
+		}
+		else if (is_null($systemId) && is_null($locationId)) {
+			$sql .= " LIMIT ?, ?";
+			$stmt = $db->prepare($sql);
+			$stmt->bind_param('ssii', $startDate, $endDate, $page_start, $limit);
+		}
+		$stmt->execute();
+
+		// Bind result variables
+		$stmt->bind_result($systemName, $bookingForDate, $isCancelled, $bookingFrom, $bookingTo, $bookingDate, $bookingCode, $businessName, $isAttended);
+
+		// Initialize an array to store the booking data
+		$bookings = array();
+
+		// Fetch the data and store it in the array
+		while ($stmt->fetch()) {
+			$bookings[] = array(
+				'systemName' => $systemName,
+				'bookingForDate' => $bookingForDate,
+				'isCancelled' => $isCancelled,
+				'bookingFrom' => $bookingFrom,
+				'bookingTo' => $bookingTo,
+				'bookingDate' => $bookingDate,
+				'bookingCode' => $bookingCode,
+				'businessName' => $businessName,
+				'isAttended' => $isAttended
+			);
+		}
+
+		// Close the statement
+		$stmt->close();
+
+		// Return the array of booking data
+		return $bookings;
+	}
+
+	// Added by CodeMAX (2024-04-21)
+	function getCountReportAllCustomize($startDate, $endDate, $systemId, $locationId){
+	
+		$db = getDBConnection();
+    
+		// Base SQL query
+		$sql = "SELECT count(*)
+			FROM bookings b
+			JOIN customers c ON b.CustomerId = c.CustomerId
+			JOIN systems s ON b.SystemId = s.SystemId
+			WHERE b.BookingDate BETWEEN ? AND ?";
+		
+		// Additional conditions based on optional parameters
+		if (!is_null($locationId)) {
+			$sql .= " AND s.LocationId = ?";
+			$stmt = $db->prepare($sql);
+			$stmt->bind_param('ssi', $startDate, $endDate, $locationId);
+		}
+		if (!is_null($systemId)) {
+			$sql .= " AND b.SystemId = ?";
+			$stmt = $db->prepare($sql);
+			$stmt->bind_param('ssi', $startDate, $endDate, $systemId);
+		}
+		if (is_null($systemId) && is_null($locationId)) {
+			$stmt = $db->prepare($sql);
+			$stmt->bind_param('ss', $startDate, $endDate);
+		}
+		$stmt->execute();
+
+		// Bind result variables
+		$stmt->bind_result($total_rows);
+		$stmt->fetch();
+		// Close the statement
+		$stmt->close();
+
+		// Return the array of booking data
+		return $total_rows;
+	}
+
+	// Added by CodeMAX (2024-04-21)
+	function getReportByDate($startDate, $page_start, $limit){
+		$db = getDBConnection();
+    
+		// Base SQL query
+		$sql = "SELECT s.FullName, b.BookingDate, b.BookingFrom, b.BookingTo, c.FullName 
+			FROM bookings b
+			JOIN customers c ON b.CustomerId = c.CustomerId
+			JOIN systems s ON b.SystemId = s.SystemId
+			JOIN services v ON b.ServiceId = v.ServiceId
+			WHERE b.BookingDate BETWEEN ? AND ?";
+		
+		// Additional conditions based on optional parameters
+		if (is_null($page_start) && is_null($limit)) {
+			$stmt = $db->prepare($sql);
+			$stmt->bind_param('ss', $startDate, $startDate);
+		}else {
+			$sql .= " LIMIT ?, ?";
+			$stmt = $db->prepare($sql);
+			$stmt->bind_param('ssii', $startDate, $startDate, $page_start, $limit);
+		}
+		
+		$stmt->execute();
+
+		// Bind result variables
+		$stmt->bind_result($systemName, $bookingForDate, $bookingFrom, $bookingTo, $businessName);
+
+		// Initialize an array to store the booking data
+		$bookings = array();
+
+		// Fetch the data and store it in the array
+		while ($stmt->fetch()) {
+			$bookings[] = array(
+				'systemName' => $systemName,
+				'bookingForDate' => $bookingForDate,
+				'bookingFrom' => $bookingFrom,
+				'bookingTo' => $bookingTo,
+				'businessName' => $businessName,
+			);
+		}
+
+		// Close the statement
+		$stmt->close();
+
+		// Return the array of booking data
+		return $bookings;
+	}
+	
+	// Added by CodeMAX (2024-04-21)
+	function getReportBookingSummary($startDate, $endDate, $page_start, $limit, $systemId, $locationId){
+	
+		$db = getDBConnection();
+    
+		// Base SQL query
+		$sql = "SELECT s.FullName, b.BookingDate, b.IsCancelled, b.BookingFrom, b.BookingTo, b.createdAt, b.BookingCode, c.FullName, b.Attended
+			FROM bookings b
+			JOIN customers c ON b.CustomerId = c.CustomerId
+			JOIN systems s ON b.SystemId = s.SystemId
+			WHERE b.BookingDate BETWEEN ? AND ?";
+		
+		// Additional conditions based on optional parameters
+		if (is_null($page_start) && is_null($limit)) {
+			$stmt = $db->prepare($sql);
+			$stmt->bind_param('ss', $startDate, $endDate);
+		}
+		else if (!is_null($locationId)) {
+			$sql .= " AND s.LocationId = ? LIMIT ?, ?";
+			$stmt = $db->prepare($sql);
+			$stmt->bind_param('ssiii', $startDate, $endDate, $locationId, $page_start, $limit);
+		}
+		else if (!is_null($systemId)) {
+			$sql .= " AND b.SystemId = ? LIMIT ?, ?";
+			$stmt = $db->prepare($sql);
+			$stmt->bind_param('ssiii', $startDate, $endDate, $systemId, $page_start, $limit);
+		}
+		else if (is_null($systemId) && is_null($locationId)) {
+			$sql .= " LIMIT ?, ?";
+			$stmt = $db->prepare($sql);
+			$stmt->bind_param('ssii', $startDate, $endDate, $page_start, $limit);
+		}
+		$stmt->execute();
+
+		// Bind result variables
+		$stmt->bind_result($systemName, $bookingForDate, $isCancelled, $bookingFrom, $bookingTo, $bookingDate, $bookingCode, $businessName, $isAttended);
+
+		// Initialize an array to store the booking data
+		$bookings = array();
+
+		// Fetch the data and store it in the array
+		while ($stmt->fetch()) {
+			$bookings[] = array(
+				'systemName' => $systemName,
+				'bookingForDate' => $bookingForDate,
+				'isCancelled' => $isCancelled,
+				'bookingFrom' => $bookingFrom,
+				'bookingTo' => $bookingTo,
+				'bookingDate' => $bookingDate,
+				'bookingCode' => $bookingCode,
+				'businessName' => $businessName,
+				'isAttended' => $isAttended
+			);
+		}
+
+		// Close the statement
+		$stmt->close();
+
+		// Return the array of booking data
+		return $bookings;
 	}
 ?>
