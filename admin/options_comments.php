@@ -1,6 +1,7 @@
 <?php 
     require_once('../config.php');
     require_once('../lib.php');
+    require_once('utils.php');
 
     $booking_code = -1;
 
