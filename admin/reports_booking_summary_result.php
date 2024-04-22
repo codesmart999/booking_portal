@@ -1,4 +1,6 @@
 <?php
+// CREATED BY CodeMAX 2024-04-22;
+
 require_once('../config.php');
 require_once('../lib.php');
 
@@ -8,7 +10,7 @@ $endDate = isset($_GET['endDate']) ? $_GET['endDate'] : '';
 
 if (!isset($startDate) || empty($startDate) || !isset($endDate) || empty($endDate)) {
     // Redirect back to the previous page
-    header("Location: /admin/reports_all_customize.php");
+    header("Location: /admin/reports_booking_summary.php");
     exit(); // Make sure to exit after redirecting to prevent further execution
 }
 
@@ -18,7 +20,7 @@ $formattedEndDate = date('l, F j, Y', strtotime($endDate));
 
 $searchChoice = isset($_GET['searchchoice']) ? $_GET['searchchoice'] : '';
 
-$acrosspage = isset($_GET['acrosspage']) ? $_GET['acrosspage'] == 'Y' : false;
+$acrosspage = isset($_GET['acrosspage']) ? $_GET['acrosspage'] == 'Y' : false; //flag to show screen mode / export CSV mode
 
 $numberminutes = isset($_GET['numberminutes']) ? intval($_GET['numberminutes']) : 60;
 
@@ -39,7 +41,7 @@ if ($searchChoice === 'bsall') {
     if ($searchByDP1 == -1) { // Exception
         // Redirect back to the previous page
         header("Location: /admin/reports_booking_summary.php");
-        exit(); // Make sure to exit after redirecting to prevent further execution
+        exit();
     }
 
     $locationID = $searchByDP1;
@@ -57,22 +59,24 @@ if ($searchChoice === 'bsall') {
 
     if ($searchByBS == -1) { // Exception handling
         // Redirect back to the previous page
-        header("Location: /admin/reports_all_customize.php");
-        exit(); // Make sure to exit after redirecting to prevent further execution
+        header("Location: /admin/reports_booking_summary.php");
+        exit();
     }
 
     $criteriaType = 1; // SystemID
     $systemID = $searchByBS;
 
     // Get the name corresponding to the selected service
-    foreach ($arrServices as $key => $objService) {
+    foreach ($arrSystems as $key => $objSystem) {
         if ($key == $searchByBS) {
-            $reportOption = "Report Option 2 - Booking System : " . $objService['fullname'];
+            $reportOption = "Report Option 2 - Booking System : " . $objSystem['fullname'];
             break;
         }
     }
 }
 
+
+//export CSV mode
 if ($_GET['output'] === 'csv' && !$acrosspage) {
     // Generate CSV content
     $csvContent = '';
@@ -252,13 +256,11 @@ if ($_GET['output'] === 'csv' && $acrosspage) {
     header('Content-Type: text/csv');
     header('Content-Disposition: attachment; filename="bookingsummary.csv"');
 
-    // Output CSV content
     echo $csvContent;
-
-    // Stop further execution
     exit;
 }
 ?>
+
 <style>
 td {
     font-size: 10pt;
@@ -363,9 +365,12 @@ body {
                                     <font face="arial" size="2"></font>
                                 </td>
                             </tr>';
+
+                            //for calc total 
                             $sumTotal = 0;
                             $sumBooked = 0;
                             $sumAvailable = 0;
+
                             foreach ($availableInfo as $key => $info) :
                                 if ($info["durationAvailable"] > 0) {
                                     $keyFormatted = date('l, F j, Y', strtotime($key));
@@ -378,8 +383,6 @@ body {
                                     $sumAvailable += $availableDuratoin;
 
                                     $percentage = $bookedDuration * 100 / $totalDuration;
-
-
                                     echo '
                                     <tr>
                                         <td>
@@ -387,7 +390,6 @@ body {
                                                     href="booking_access.php?SystemId=' . $objSystem["id"] . '&startDate=' . $key . '&endDate=' . $key . '"
                                                     target="_blank">' . $keyFormatted . '</a></font>
                                         </td>
-
                                         <td>&nbsp;</td>
                                         <td align="right">
                                             <font face="arial" size="2">' . number_format($totalDuration / $numberminutes, 1) . '</font>
@@ -459,7 +461,6 @@ body {
                     </tbody>
                 </table>
                 <br>
-
             </td>
         </tr>
     </tbody>
