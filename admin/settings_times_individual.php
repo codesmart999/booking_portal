@@ -32,6 +32,16 @@
     while ($stmt->fetch()) {
     	$arr_availability_by_weekday[$weekday] = $isAvailable;
     }
+
+	if (empty($arr_availability_by_weekday)) {
+		$stmt = $db->prepare("SELECT weekday, isAvailable FROM setting_weekdays WHERE `SystemId`=0");
+		$stmt->execute();
+		$stmt->bind_result($weekday, $isAvailable);
+		$stmt->store_result();
+		while ($stmt->fetch()) {
+			$arr_availability_by_weekday[$weekday] = $isAvailable;
+		}
+	}
     
 	// Save Settings
     if ( isset($_POST['Save']) ) {
