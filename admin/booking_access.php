@@ -172,7 +172,7 @@ $message = '<p class="Message fst-italic fw-bold text-success d-none">' . _lang(
                                 }
                             ?>
                             <!-- <a href="javascript:showService(<?php echo $systemId;?>)" target="_self" style="color: blue;" onmouseover="this.style.color='red';" onmouseout="this.style.color='blue';">Services</a> -->
-                            <a target="_self" href="#">Options</a>&nbsp; 
+                            <a target="_self" href="settings_times_individual?<?php echo getQueryParameters();?>">Manage your time</a>&nbsp; 
                         </font>
                     </td>
                 </tr>

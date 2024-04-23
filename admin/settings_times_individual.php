@@ -2,60 +2,75 @@
 	require_once('header.php');
 	require_once('utils.php');
 
+	if (!isset($_GET['SystemId'])) {
+		header('Location: '. SECURE_URL . ADMIN_INDEX, true, 301);
+        exit; // Make sure to exit after redirection to prevent further script execution
+	}
+
+	$system_id = $_GET['SystemId'];
+	$system_fullname = '';
+
+	$db = getDBConnection();
+
+	$stmt = $db->prepare("SELECT FullName FROM systems WHERE `SystemId`=" . $system_id);
+	$stmt->execute();
+    $stmt->bind_result($system_fullname);
+    $stmt->store_result();
+    if (!$stmt->fetch() || empty($system_fullname)) {
+		header('Location: '. SECURE_URL . ADMIN_INDEX, true, 301);
+        exit; // Make sure to exit after redirection to prevent further script execution
+	}
+
 	$message = '<p class="Message fst-italic fw-bold text-success d-none"></p>';
-    $db = getDBConnection();
 
 	// Get setting_weekdays
     $arr_availability_by_weekday = array(); // if set TRUE, it's available on that day
-    $stmt = $db->prepare("SELECT weekday, isAvailable FROM setting_weekdays WHERE `SystemId`=0");
+    $stmt = $db->prepare("SELECT weekday, isAvailable FROM setting_weekdays WHERE `SystemId`=" . $system_id);
 	$stmt->execute();
     $stmt->bind_result($weekday, $isAvailable);
     $stmt->store_result();
     while ($stmt->fetch()) {
     	$arr_availability_by_weekday[$weekday] = $isAvailable;
     }
-
-    // Save Settings
+    
+	// Save Settings
     if ( isset($_POST['Save']) ) {
    	    $key = $_POST['settingKey'];
 
 		switch ($key) {
-			case 'AVAILABLE_WEEK_DAYS':
+			case 'SYSTEM_AVAILABLE_WEEKDAYS':
 				$arr_unavailable_weekdays = array_values($_POST['weekday_availability']);
-				$arr_systems = $_POST['Systems'];
 
-				$stmt = $db->prepare( 'TRUNCATE TABLE setting_weekdays' );
+				$stmt = $db->prepare( 'DELETE FROM setting_weekdays WHERE SystemId=?' );
+				$stmt->bind_param('i', $system_id);
 				$stmt->execute() or die($stmt->error);
 
 				$stmt = $db->prepare("INSERT INTO `setting_weekdays` (SystemId, weekday, isAvailable) VALUES (?, ?, ?)");
 				for ($day = 0; $day < 7; $day++) {
-					$system_id = 0;
 					$isAvailable = !in_array($day, $arr_unavailable_weekdays);
 					$stmt->bind_param('iii', $system_id, $day, $isAvailable);
 					$stmt->execute() or die($stmt->error);
 
-					foreach ($arr_systems as $system_id) {
-						$stmt->bind_param('iii', $system_id, $day, $isAvailable);
-						$stmt->execute() or die($stmt->error);
-					}
+					$arr_availability_by_weekday[$day] = $isAvailable;
 				}
 
 				break;
-			case 'DEFAULT_REGULAR_TIME':
+			case 'SYSTEM_REGULAR_TIME':
 				$arr_bookingperiod_summary_by_weekday = summarize_bookingperiod_details($_POST);
 				
-				$stmt = $db->prepare( 'DELETE FROM setting_bookingperiods WHERE SystemId = 0 AND isRegular = 1' );
+				$stmt = $db->prepare( 'DELETE FROM setting_bookingperiods WHERE SystemId = ? AND isRegular = 1' );
+				$stmt->bind_param('i', $system_id);
 				$stmt->execute() or die($stmt->error);
 
 				if (!empty($arr_bookingperiod_summary_by_weekday)) {
-					$stmt = $db->prepare("INSERT INTO `setting_bookingperiods` (weekday, FromInMinutes, ToInMinutes, isAvailable) VALUES (?, ?, ?, ?)");
+					$stmt = $db->prepare("INSERT INTO `setting_bookingperiods` (SystemId, weekday, FromInMinutes, ToInMinutes, isAvailable) VALUES (?, ?, ?, ?, ?)");
 					
 					foreach ($arr_bookingperiod_summary_by_weekday as $weekday => $arr_workhours) {
 						$isAvailable = $arr_availability_by_weekday[$weekday];
 
 						for ($i = $arr_workhours['FromInMinutes']; $i < $arr_workhours['ToInMinutes']; $i += $arr_workhours['DurationInMinutes']) {
 							$to_in_mins = $i + $arr_workhours['DurationInMinutes'];
-							$stmt->bind_param('iiii', $weekday, $i, $to_in_mins, $isAvailable);
+							$stmt->bind_param('iiiii', $system_id, $weekday, $i, $to_in_mins, $isAvailable);
 							$stmt->execute() or die($stmt->error);
 						}
 					}
@@ -119,7 +134,8 @@
 		'6' => array()
 	);
 
-	$stmt = $db->prepare("SELECT weekday, FromInMinutes, ToInMinutes, isRegular, isAvailable FROM setting_bookingperiods WHERE `SystemId`= 0 ORDER BY weekday ASC, FromInMinutes ASC");
+	$stmt = $db->prepare("SELECT weekday, FromInMinutes, ToInMinutes, isRegular, isAvailable FROM setting_bookingperiods WHERE `SystemId`= ? ORDER BY weekday ASC, FromInMinutes ASC");
+	$stmt->bind_param('i', $system_id);	
 	$stmt->execute();
     $stmt->bind_result($weekday, $from_in_mins, $to_in_mins, $isRegular, $isAvailable);
     $stmt->store_result();
@@ -147,8 +163,7 @@
 		$regular_weekday_duration_hours, $regular_weekday_duration_minutes) = array_values($result);
 ?>
 
-<h4 class="page-title">Manage Default Time Settings</h4>
-<p>Denotes option which can be applied across all or individual existing systems.</p>
+<h4 class="page-title">Manage Time Settings - <?php echo $system_fullname; ?></h4>
 <?php echo $message ?>
 <div class="table-responsive">
 	<table border="0" cellspacing="0" cellpadding="5" width="100%" class="table">
@@ -179,6 +194,8 @@
 	</table>
 </div>
 
+<a target="_self" href="booking_access?<?php echo getQueryParameters();?>">Go to Previous</a>&nbsp; 
+
 <?php
 
 $stmt->close();
@@ -187,7 +204,7 @@ $db->close();
 require_once('footer.php');
 ?>
 <?php
-	$settingKey = "DEFAULT_REGULAR_TIME";
+	$settingKey = "SYSTEM_REGULAR_TIME";
 	$settingValue = json_decode($arrSettings[$settingKey]['value'], true);
 ?>
 <div class="modal fade" id="regularModal" tabindex="-1" role="dialog" aria-labelledby="saveModalLabel" aria-hidden="true">
@@ -325,7 +342,7 @@ require_once('footer.php');
 </div>
 
 <?php
-	$settingKey = "DEFAULT_IRREGULAR_TIME";
+	$settingKey = "SYSTEM_IRREGULAR_TIME";
 	$settingValue = json_decode($arrSettings[$settingKey]['value'], true);
 ?>
 <div class="modal fade" id="irregularModal" tabindex="-1" role="dialog" aria-labelledby="saveModalLabel" aria-hidden="true">
@@ -333,6 +350,7 @@ require_once('footer.php');
 		<form method="post" class="form-horizontal setting_form" id="IRREGULAR_TIME_FORM">
 			<input type="hidden" name="settingKey" id="settingKey" value="<?php echo $settingKey;?>" />
 			<input type="hidden" name="isWeekdayAvailable" id="isWeekdayAvailable" />
+			<input type="hidden" name="system_id" id="system_id" value="<?php echo $system_id; ?>"/>
 			<div class="modal-content">
 				<div class="modal-header">
 					<h5 class="modal-title step1" id="saveModalLabel">Select Individual Day to Assign Irregular Booking Periods</h5>
@@ -445,6 +463,7 @@ require_once('footer.php');
 	<div class="modal-dialog" role="document"  style="max-width: 800px; margin: 1.75rem auto;">
 		<form method="post" class="form-horizontal setting_form" id="AVAILABLE_PERIOD_FORM">
 			<input type="hidden" name="settingKey" id="settingKey" value="<?php echo $settingKey;?>" />
+			<input type="hidden" name="system_id" id="system_id" value="<?php echo $system_id;?>" />
 			<div class="modal-content">
 				<div class="modal-header">
 					<h5 class="modal-title step1" id="saveModalLabel">Unavailable/Available Booking Periods</h5>
@@ -498,7 +517,7 @@ require_once('footer.php');
 	</div>
 </div>
 <?php
-	$settingKey = "AVAILABLE_WEEK_DAYS";
+	$settingKey = "SYSTEM_AVAILABLE_WEEKDAYS";
 ?>
 <div class="modal fade" id="bookingDaysModal" tabindex="-1" role="dialog" aria-labelledby="saveModalLabel" aria-hidden="true">
 	<div class="modal-dialog" role="document">
@@ -547,24 +566,10 @@ require_once('footer.php');
 							<?php } ?>
 						</tbody>
 					</table>
-					<h6 class="step2">Select individual Systems that you want the changes applied to</p>
-					<table border="0" cellspacing="0" cellpadding="5" width="100%" class="table step2">
-						<thead>
-						<tr>
-							<td width="40" nowrap>Select</td>
-							<td width="40" nowrap>Name</td>
-						</tr>
-						</thead>
-						<tbody id="tbl_weekday_systems">
-
-						</tbody>
-					</table>
 				</div>
 				<div class="modal-footer">
 					<button type="button" class="btn btn-secondary btn-sm step1" data-dismiss="modal">Close</button>
-					<button type="button" class="btn btn-primary btn-sm step1 btn-next" data-modal-name="available_weekdays">Next</button>
-					<button type="button" class="btn btn-secondary btn-sm step2 btn-previous" >Previous</button>
-					<button type="submit" class="btn btn-primary btn-sm step2" name="Save" value="Save" id="btnSave">Save</button>
+					<button type="submit" class="btn btn-primary btn-sm step1" name="Save" value="Save" id="btnSave">Save</button>
 				</div>
 			</div>
 		</form>
@@ -651,6 +656,7 @@ require_once('footer.php');
 			var formData = [];
 			formData.push({ name: "action", value: "get_bookingperiods_by_weekday" });
 			formData.push({ name: "weekday", value: $(this).val() });
+			formData.push({ name: "system_id", value: $("#system_id").val()}) // Added by Hennadii (2024-04-23)
 
 			$.post(apiUri, formData, function (data) {
 				var res = JSON.parse(data);
@@ -675,6 +681,7 @@ require_once('footer.php');
 			var formData = [];
 			formData.push({ name: "action", value: "get_bookingperiods_by_weekday" });
 			formData.push({ name: "weekday", value: $(this).val() });
+			formData.push({ name: "system_id", value: $("#system_id").val()}) // Added by Hennadii (2024-04-23)
 
 			$.post(apiUri, formData, function (data) {
 				var res = JSON.parse(data);
@@ -719,36 +726,6 @@ require_once('footer.php');
 			
 			const getDayName = dayNumber => ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayNumber];
 			parentForm.find('.span_cur_weekday').html(getDayName(weekday));
-
-			if ($(this).attr('data-modal-name') == 'available_weekdays') {
-				var formData = [];
-				formData.push({ name: "action", value: "get_all_systems" });
-
-				$.post(apiUri, formData, function(data) {
-					var res = JSON.parse(data);
-
-					$("#tbl_weekday_systems").empty();
-
-					if (res.status != "success")
-						return;
-					
-					var systemsData = res.data;
-
-					for (var i = 0; i < systemsData.length; i++) {
-						var system = systemsData[i];
-						var html = `<tr>
-							<td>
-								<div class="form-group">
-									<input name="Systems[]" value="${system.SystemId}" type="checkbox" checked>
-								</div>
-							</td>
-							<td>${system.FullName}</td>
-						</tr>`;
-						
-						$("#tbl_weekday_systems").append(html);
-					}
-				});
-			}
 		});
 
 		// Added by Hennadii (2024-03-26)
@@ -802,8 +779,15 @@ require_once('footer.php');
 				} else {
 					$(".Message").removeClass("text-danger");
 					$(".Message").addClass("text-success");
-					location.reload();
+					$(".Message").removeClass("d-none");
+                    $('#bookingPeriodModal').modal('hide');
+
+                    setTimeout(function() {
+                        $(".Message").addClass("d-none");
+                    }, 3000);
 				}
+
+				$(".Message").html( res.hasOwnProperty('message') ? res.message : "" );
 	        });
 		});
 

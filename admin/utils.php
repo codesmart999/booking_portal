@@ -119,4 +119,21 @@ function get_display_text_from_minutes($from_in_mins, $to_in_mins = '') {
     return $start_hour . ':' . $start_minutes . '' . $start_AP;
 }
 
+function getQueryParameters() {
+    // Initialize an empty string to store query parameters
+    $queryString = "";
+
+    // Loop through all query parameters
+    foreach ($_GET as $key => $value) {
+        // Concatenate parameter name and value to the string
+        $queryString .= $key . '=' . urlencode($value) . '&';
+    }
+
+    // Remove the trailing '&' character
+    $queryString = rtrim($queryString, '&');
+
+    // Output the resulting query string
+    return $queryString;
+}
+
 ?>

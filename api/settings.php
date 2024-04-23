@@ -11,7 +11,10 @@
     $db = getDBConnection();
 	// Added by Hennadii (2024-03-26)
 	if ( $_POST['action'] == 'get_bookingperiods_by_weekday') {
-		$arr_bookingperiod_list = getBookingPeriodsByWeekday($_POST['weekday']);
+		$system_id = isset($_POST['system_id']) ? $_POST['system_id'] : 0; // Added by Hennadii (2024-04-23)
+
+		// Updated by Hennadii (2024-04-23)
+		$arr_bookingperiod_list = getBookingPeriodsByWeekday($_POST['weekday'], $system_id);
 
 		$res["status"] = "success";
 		$res["data"] = $arr_bookingperiod_list;
@@ -21,12 +24,14 @@
 	
 	// Added by Awesome (2024-03-27)
 	if ($_POST['action'] == "save_booking_periods_availability") {
+		$system_id = isset($_POST['system_id']) ? $_POST['system_id'] : 0; // Added by Hennadii (2024-04-23)
+
 		$weekday = $_POST['weekday'];
 		$arr_unavailable_bookingperiods = isset($_POST['unavailable_bookingperiod']) ? $_POST['unavailable_bookingperiod'] : array();
 		$arr_bookingperiod_ids = array_keys($arr_unavailable_bookingperiods);
 
-		$stmt = $db->prepare( 'UPDATE setting_bookingperiods SET isAvailable = 1 WHERE SystemId = 0 AND weekday = ?' );
-		$stmt->bind_param('i', $weekday);
+		$stmt = $db->prepare( 'UPDATE setting_bookingperiods SET isAvailable = 1 WHERE SystemId = ? AND weekday = ?' );
+		$stmt->bind_param('ii', $system_id, $weekday);
 		$stmt->execute() or die($stmt->error);
 
 		if (!empty($arr_bookingperiod_ids)) {
@@ -46,14 +51,15 @@
 	// Added by Hennadii (2024-03-26)
 	if ($_POST['action'] == "save_booking_periods") {
 		$weekday = $_POST['weekday'];
+		$system_id = isset($_POST['system_id']) ? $_POST['system_id'] : 0;
 		$isAvailable = $_POST['isWeekdayAvailable'];
 
 		$arr_bookingperiods = isset($_POST['list_bookingperiods']) ? $_POST['list_bookingperiods'] : array();
-		$stmt = $db->prepare( 'DELETE FROM setting_bookingperiods WHERE SystemId = 0 AND weekday = ?' );
-		$stmt->bind_param('i', $weekday);
+		$stmt = $db->prepare( 'DELETE FROM setting_bookingperiods WHERE SystemId = ? AND weekday = ?' );
+		$stmt->bind_param('ii', $system_id, $weekday);
 		$stmt->execute() or die($stmt->error);
 
-		$stmt = $db->prepare("INSERT INTO `setting_bookingperiods` (weekday, FromInMinutes, ToInMinutes, isRegular, isAvailable) VALUES (?, ?, ?, ?, ?)");
+		$stmt = $db->prepare("INSERT INTO `setting_bookingperiods` (SystemId, weekday, FromInMinutes, ToInMinutes, isRegular, isAvailable) VALUES (?, ?, ?, ?, ?, ?)");
 		foreach ($arr_bookingperiods as $booking_period) {
 			$arr_params = explode('-', $booking_period);
 			list($from_in_mins, $to_in_mins) = $arr_params;
@@ -62,7 +68,7 @@
 			if (count($arr_params) === 3)
 				$isRegular = 0;
 			
-			$stmt->bind_param('iiiii', $weekday, $from_in_mins, $to_in_mins, $isRegular, $isAvailable);
+			$stmt->bind_param('iiiiii', $system_id, $weekday, $from_in_mins, $to_in_mins, $isRegular, $isAvailable);
 			$stmt->execute() or die($stmt->error);
 		}
 
