@@ -262,18 +262,18 @@ while ($startDateTime <= $endDateTime) {
                                 }
                             }
                         
-                            echo '&nbsp;
-                                <input type="checkbox" 
+                            echo '<input type="checkbox" 
                                     name="timeslot" 
                                     date = "'.$startDateTime.'" 
                                     status = "'.$available.'" 
-                                    style="margin-top: 5px" 
+                                    style="margin-top: 5px; margin-left: 3px;" 
                                     value="'.$timeSlot.'">&nbsp;
                                 <span 
                                     style="background-color: #'.$background_color.'">'
                                     .$timeRender.'
                                 </span>';
-                            echo '<a target="_self" href="#" onclick="bookedClientView('.$customer_id.');"><span class="CustName">'.$businessName.' ('.$bookingCode.')</span><br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
+                            echo '<a target="_self" href="#" onclick="bookedClientView('.$customer_id.');"><span class="CustName" style="color: ' . generateTextColor($bookingCode) .'"><i class="fa fa-user"></i>'
+                                . $businessName . ' (' . $bookingCode . ')</span><br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
                             echo '<a target="_self" href="#" onclick="bookedAddComments(&quot;'.$bookingCode.'&quot;);">';
                             if ($hasComment) {
                                 echo '<img title="Comment Added" border="0" src="/images/comment.png">
