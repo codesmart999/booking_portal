@@ -52,6 +52,8 @@ $day = date('d');
 // Initialize startDate with today's date as default
 $startDate = date('Y-m-d');
 
+$showFlag = WEEKLY_SHOWING_MODE;
+
 // Check if startDate is set in the GET parameters
 if (isset($_GET['startDate'])) {
     // Extract the value of startDate
@@ -84,7 +86,20 @@ if (isset($_GET['endDate'])) {
     } else {
         $endDate = date('Y-m-d');
     }
+} else if (isset($_GET['startDate'])) {
+    // Convert the start date to the first day of the month
+    $startDate = date('Y-m-01', strtotime($startDate));
+
+    // Convert the start date to the last day of the month
+    $endDate = date('Y-m-t', strtotime($startDate));
+
+    $showFlag = MONTHLY_SHOWING_MODE;
 }
+
+if ($startDate === $endDate) {
+    $showFlag = DAYILY_SHOWING_MODE;
+}
+
 // Exception handling: check if any of the values are invalid or undefined
 if ($year === 0 || $month === 0 || $day === 0) {
     // Set default values (current date)
@@ -120,7 +135,9 @@ $nextDay = $date->format('Y-m-d');
 
 $date->modify('-2 day');// Add prev
 
-$prevDay = $date->format('Y-m-d')
+$prevDay = $date->format('Y-m-d');
+
+$message = '<p class="Message fst-italic fw-bold text-success d-none">' . _lang('success_update') . '</p>';
 
 ?>
 <div class="dropdown" onmouseover="showPopupMenu()" onmouseout="hidePopupMenu()">
@@ -129,10 +146,11 @@ $prevDay = $date->format('Y-m-d')
     <a class="dropdown-item" href="#">Manage Booking</a>
   </div>
 </div>
+<?php echo $message; ?>
 <div class="container-fluid">
     <div class="row">
         <!-- Administrator and System Info -->
-        <div class="col-md-12" id = "adminDashBoardTitle"bgcolor="#FFFFFF" valign="top" align="left">
+        <div class="col-md-12" id = "adminDashBoardTitle" bgcolor="#FFFFFF" valign="top" align="left">
             <table width="100%" border="0" cellspacing="0" cellpadding="0">
                 <tr bgcolor="#FFFFFF" style="border-size: 0px;">
                     <td bgcolor="#FFFFFF" valign="top" width="20%" align="left" style="white-space: nowrap">
@@ -142,9 +160,19 @@ $prevDay = $date->format('Y-m-d')
                         <font face="Arial" color="#000000" size="2"><b>
                             <span title="<?php echo $systemName; ?>" style="font-size: 14px;"><?php echo $systemName; ?></span>
                             &nbsp;&nbsp;&nbsp;
-                            <a target="_self" href="#" onclick="redirectToToday()" style="color: blue;" onmouseover="this.style.color='red';" onmouseout="this.style.color='blue';" onmouseover="window.status='Calendar View for Today';return true" onmouseout="window.status='';return true">Today</a>
-                            <!-- <a href="javascript:showService(<?php echo $systemId;?>)" target="_self" style="color: blue;" onmouseover="this.style.color='red';" onmouseout="this.style.color='blue';">Services</a>&nbsp; Updated link -->
-                            <a target="_self" href="#" style="color: blue;" onmouseover="this.style.color='red';" onmouseout="this.style.color='blue';" onmouseover="window.status='Access Options Menu';return true" onmouseout="window.status='';return true">Options</a>&nbsp; 
+                            <a target="_self" href="#" onclick="redirectToToday()">Today</a>&nbsp;|&nbsp;
+                            <?php
+                                switch ($showFlag) {
+                                    case DAYILY_SHOWING_MODE:
+                                        echo '<a href="#" data-toggle="modal" data-target="#ApplyTemplateModal">Apply Day as Template</a>&nbsp;|&nbsp;';
+                                        break;
+                                    case WEEKLY_SHOWING_MODE:
+                                        echo '<a href="#" data-toggle="modal" data-target="#ApplyTemplateModal">Apply Week as Template</a>&nbsp;|&nbsp;';
+                                        break;
+                                }
+                            ?>
+                            <!-- <a href="javascript:showService(<?php echo $systemId;?>)" target="_self" style="color: blue;" onmouseover="this.style.color='red';" onmouseout="this.style.color='blue';">Services</a> -->
+                            <a target="_self" href="#">Options</a>&nbsp; 
                         </font>
                     </td>
                 </tr>
@@ -288,78 +316,191 @@ $prevDay = $date->format('Y-m-d')
 
         <!-- Main Content (Time Slots) -->
         <div class="col-md-9 col-sm-12 time-slots-sidebar">
-             <table id="timeSlotsTable" width="100%" table-bordered cellpadding="2" cellspacing="1" bgcolor="#000080">
-                
-                    <?php
+            <table id="timeSlotsTable" width="100%" table-bordered cellpadding="2" cellspacing="1" bgcolor="#000080">
+                <?php
                     // Include the contents of temp.php here
-                        require_once('booking_table.php');
-                    ?>
-                   
+                    require_once('booking_table.php');
+                ?>
                 </tbody>
             </table>
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="ApplyTemplateModal" tabindex="-1" role="dialog" aria-labelledby="ApplyTemplateModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="ApplyTemplateModalLabel">
+                    <?php echo $showFlag == DAYILY_SHOWING_MODE ? 'Apply Day as Template' : 'Apply Week as Template'; ?>
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body vertical-labels">
+                <form method="post" class="form-horizontal" id="APPLY_TEMPLATE_FORM">
+                    <input type="hidden" name="template_systemId" value="<?php echo $systemId; ?>" />
+                    <input type="hidden" name="template_startDate" value="<?php echo $startDate; ?>" />
+                    <input type="hidden" name="template_endDate" value="<?php echo $endDate; ?>" />
+                    <div class="form-group">
+                        <label class="bg-blue">Select Days</label>
+                        <div class="days_container">
+                            <?php
+                                for ( $day = 0; $day < 7; $day++ ) { 
+                                    $dayKey = date('D', strtotime("Sunday +{$day} days"));
+
+                                    echo '<input type="checkbox" id="apply_day' . $day . '" name="apply_days[]" value="' . $day . '">';
+                                    echo '<label for="apply_day' . $day . '">' . $dayKey . '</label>';
+                                }
+                            ?>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="bg-blue">Select Date Range</label>
+                        <div class="row">
+                            <div class="col-md-1 display-flex">
+                                <div class="vertical-center">From</div>
+                            </div>
+                            <div class="col-md-4 input-group">
+                                <div class="input-group-append">
+                                    <span class="input-group-text"><i class="fa fa-calendar"></i></span> <!-- Date icon -->
+                                </div>
+                                <input type="text" id="apply_startDate" name="apply_startDate" class="date valid form-control form-control-sm" placeholder="dd/mm/yyyy" value="<?php echo $startDate; ?>"/>
+                            </div>
+                            <div class="col-md-1 display-flex">
+                                <div class="vertical-center">To</div>
+                            </div>
+                            <div class="col-md-4 input-group">
+                                <div class="input-group-append">
+                                    <span class="input-group-text"><i class="fa fa-calendar"></i></span> <!-- Date icon -->
+                                </div>
+                                <input type="text" id="apply_endDate" name="apply_endDate" class="date valid form-control form-control-sm" placeholder="dd/mm/yyyy" value="<?php echo date('Y-m-d', strtotime($startDate . ' +30 days')); ?>"/>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="bg-blue">Include Bookings?</label>
+                        <div>
+                            <label class="toggle-switch">
+                                <input id="include_bookings" name="include_bookings" type="checkbox" value="">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary btn-sm" name="Save" value="Save" id="btnSave">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<?php
+require_once('footer.php');
+?>
+
 <script>
-    
-    const weekCells = document.querySelectorAll('.week-number');
-    const monthCells = document.querySelectorAll('.month-name');
-    const yearCells = document.querySelectorAll('.year-number');
+    $(document).ready(function() { 
+        const weekCells = document.querySelectorAll('.week-number');
+        const monthCells = document.querySelectorAll('.month-name');
+        const yearCells = document.querySelectorAll('.year-number');
 
-    // Add event listeners to each week cell
-    weekCells.forEach(cell => {
-        cell.addEventListener('mouseover', () => {
-            cell.style.color = 'red'; // Change font color to red on mouseover
-        });
-        cell.addEventListener('mouseout', () => {
-            cell.style.color = 'blue'; // Change font color to blue on mouseout
-        });
-        cell.addEventListener('click', () => {
-            const from = cell.getAttribute('data-week-from');
-            const to = cell.getAttribute('data-week-to'); 
-            // Split the dates to get the year, month, and day components
-            const fromDateComponents = from.split('-');
-            const toDateComponents = to.split('-');
+        // Add event listeners to each week cell
+        weekCells.forEach(cell => {
+            cell.addEventListener('mouseover', () => {
+                cell.style.color = 'red'; // Change font color to red on mouseover
+            });
+            cell.addEventListener('mouseout', () => {
+                cell.style.color = 'blue'; // Change font color to blue on mouseout
+            });
+            cell.addEventListener('click', () => {
+                const from = cell.getAttribute('data-week-from');
+                const to = cell.getAttribute('data-week-to'); 
+                // Split the dates to get the year, month, and day components
+                const fromDateComponents = from.split('-');
+                const toDateComponents = to.split('-');
 
-            // Construct the URL with the startDate and endDate parameters
-            const url = window.location.origin + window.location.pathname + '?SystemId=<?php echo $systemId?>&startDate=' + fromDateComponents[0] + '-' + fromDateComponents[1] + '-' + fromDateComponents[2] +
-                        '&endDate=' + toDateComponents[0] + '-' + toDateComponents[1] + '-' + toDateComponents[2];
+                // Construct the URL with the startDate and endDate parameters
+                const url = window.location.origin + window.location.pathname + '?SystemId=<?php echo $systemId?>&startDate=' + fromDateComponents[0] + '-' + fromDateComponents[1] + '-' + fromDateComponents[2] +
+                            '&endDate=' + toDateComponents[0] + '-' + toDateComponents[1] + '-' + toDateComponents[2];
 
-            // Redirect to the constructed URL
-            window.location.href = url;
+                // Redirect to the constructed URL
+                window.location.href = url;
+            });
         });
-    });
 
-    // Add event listeners to each month cell
-    monthCells.forEach(cell => {
-        cell.addEventListener('mouseover', () => {
-            cell.style.color = 'red'; // Change font color to red on mouseover
+        // Add event listeners to each month cell
+        monthCells.forEach(cell => {
+            cell.addEventListener('mouseover', () => {
+                cell.style.color = 'red'; // Change font color to red on mouseover
+            });
+            cell.addEventListener('mouseout', () => {
+                cell.style.color = 'blue'; // Change font color to blue on mouseout
+            });
+            cell.addEventListener('click', () => {      
+                var year = $(cell).attr('data-year');
+                var month = $(cell).attr('data-month');
+                const startDate = year +'-'+ month + '-1'; // Format the date as M/D/Y
+                var newUrl = window.location.origin + window.location.pathname + "?SystemId=<?php echo $systemId?>&startDate=" + startDate;
+                window.location.href = newUrl;
+            });
         });
-        cell.addEventListener('mouseout', () => {
-            cell.style.color = 'blue'; // Change font color to blue on mouseout
-        });
-        cell.addEventListener('click', () => {      
-            var year = $(cell).attr('data-year');
-            var month = $(cell).attr('data-month');
-            const startDate = year +'-'+ month + '-1'; // Format the date as M/D/Y
-            var newUrl = window.location.origin + window.location.pathname + "?SystemId=<?php echo $systemId?>&startDate=" + startDate;
-            window.location.href = newUrl;
-        });
-    });
 
-    // Add event listeners to each year cell
-    yearCells.forEach(cell => {
-        cell.addEventListener('mouseover', () => {
-            cell.style.color = 'red'; // Change font color to red on mouseover
+        // Add event listeners to each year cell
+        yearCells.forEach(cell => {
+            cell.addEventListener('mouseover', () => {
+                cell.style.color = 'red'; // Change font color to red on mouseover
+            });
+            cell.addEventListener('mouseout', () => {
+                cell.style.color = 'blue'; // Change font color to blue on mouseout
+            });
+            cell.addEventListener('click', () => {
+                var year = $(cell).attr('data-year');
+                const startDate = year + '-1-1'; // Format the date as Y/M/D
+                const newUrl = window.location.origin + window.location.pathname + "?SystemId=<?php echo $systemId; ?>&startDate=" + startDate;
+                window.location.href = newUrl;
+            });
         });
-        cell.addEventListener('mouseout', () => {
-            cell.style.color = 'blue'; // Change font color to blue on mouseout
-        });
-        cell.addEventListener('click', () => {
-            var year = $(cell).attr('data-year');
-            const startDate = year + '-1-1'; // Format the date as Y/M/D
-            const newUrl = window.location.origin + window.location.pathname + "?SystemId=<?php echo $systemId; ?>&startDate=" + startDate;
-            window.location.href = newUrl;
+
+        $('#btnSave').click(function(e) {
+			e.preventDefault();
+
+            var selectedValues = $('#APPLY_TEMPLATE_FORM input[name="apply_days[]"]:checked').map(function(){
+                return $(this).val();
+            }).get();
+
+            if (!selectedValues || !selectedValues.length) {
+                alert("Please select days.");
+				return false;
+            }
+
+            var formData = $("#APPLY_TEMPLATE_FORM").serializeArray();
+
+            var apiUri = "/api/bookings.php";
+
+            formData.push({ name: "action", value: "apply_template" });
+
+            $.post(apiUri, formData, function (data) {
+				var res = JSON.parse(data);
+
+				if (res.status == "error") {
+					$(".Message").removeClass("text-success");
+					$(".Message").addClass("text-danger");
+				} else {
+					$(".Message").removeClass("text-danger");
+                    $(".Message").removeClass("d-none");
+					$(".Message").addClass("text-success");
+                    $('#ApplyTemplateModal').modal('hide');
+
+                    setTimeout(function() {
+                        $(".Message").addClass("d-none");
+                    }, 3000);
+				}
+				$(".Message").html( res.message );
+	        });
         });
     });
 
@@ -380,6 +521,7 @@ $prevDay = $date->format('Y-m-d')
             calendarWidget.style.display = "block"; // Show the calendar widget
         }
     }
+
     function showService(systemId){
         var width = 800;
         var height = 600;
@@ -398,7 +540,3 @@ $prevDay = $date->format('Y-m-d')
 
 </script>
 <script src="./js/booking_access.js"></script>
-<?php
-require_once('footer.php');
-?>
-

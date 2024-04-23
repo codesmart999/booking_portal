@@ -2298,4 +2298,60 @@
 		// Return the array of booking data
 		return $bookings;
 	}
+
+	function apply_template($apply_date, $template_systemId, $template_date, $bIncludeBookings = false) {
+		$db = getDBConnection();
+
+		$stmt = $db->prepare('DELETE FROM `setting_bookingperiods_special` WHERE `SystemId` = ? AND `SetDate` = ?');
+		$stmt->bind_param('is', $template_systemId, $apply_date);
+		$stmt->execute();
+
+		$stmt = $db->prepare('INSERT INTO `setting_bookingperiods_special` (`SystemId`, `SetDate`, `FromInMinutes`, `ToInMinutes`, `isAvailable`)
+			SELECT 
+				`SystemId`,
+				? AS `SetDate`,
+				`FromInMinutes`,
+				`ToInMinutes`,
+				`isAvailable`
+			FROM 
+				`setting_bookingperiods_special`
+			WHERE 
+				`SystemId` = ? AND
+				`SetDate` = ?
+			ORDER BY 
+				`FromInMinutes` ASC;');
+		$stmt->bind_param('sis', $apply_date, $template_systemId, $template_date);
+		$stmt->execute();
+
+		if ($bIncludeBookings) {
+			$stmt = $db->prepare('DELETE FROM `bookings` WHERE `SystemId` = ? AND `BookingDate` = ?');
+			$stmt->bind_param('is', $template_systemId, $apply_date);
+			$stmt->execute();
+
+			$stmt = $db->prepare('INSERT INTO `bookings` (`ServiceId`, `SystemId`, `CustomerId`, `StaffName`, `PatientName`, `BookingDate`, `BookingFrom`, `BookingTo`, `BookingCode`, `IsCancelled`, `Attended`, `Comments`, `Messages`)
+				SELECT 
+					`ServiceId`,
+					`SystemId`,
+					`CustomerId`,
+					`StaffName`,
+					`PatientName`,
+					? AS `BookingDate`,
+					`BookingFrom`,
+					`BookingTo`,
+					`BookingCode` AS `BookingCode`,
+					`IsCancelled`,
+					`Attended`,
+					`Comments`,
+					`Messages`
+				FROM 
+					`bookings`
+				WHERE 
+					`SystemId` = ? AND
+					`BookingDate` = ?
+				ORDER BY 
+					`BookingFrom` ASC;');
+			$stmt->bind_param('sis', $apply_date, $template_systemId, $template_date);
+			$stmt->execute();
+		}
+	}
 ?>

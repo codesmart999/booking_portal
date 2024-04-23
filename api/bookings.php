@@ -5,7 +5,7 @@
 
 	$res = [
 		"status" 	=> "success",
-		"message"	=> ""
+		"message"	=> _lang('success_update')
 	];
 
     $db = getDBConnection();
@@ -232,6 +232,55 @@
 
             $res["status"] = "success";
 
+            break;
+        case 'apply_template':
+            $template_systemId = $_POST['template_systemId'];
+            $template_startDate = $_POST['template_startDate'];
+            $template_endDate = $_POST['template_endDate'];
+            $apply_days = $_POST['apply_days'];
+            $apply_startDate = str_replace('/', '-', $_POST['apply_startDate']);
+            $apply_endDate = str_replace('/', '-', $_POST['apply_endDate']);
+            $bIncludeBookings = isset($_POST['include_bookings']);
+
+            // Apply Day as Teamplte
+            if ($template_startDate == $template_endDate) {
+                // Iterate from start date to end date
+                $apply_curDate = strtotime($apply_startDate);
+                while ($apply_curDate <= strtotime($apply_endDate)) {
+                    $apply_curWeekday = date('w', $apply_curDate);
+
+                    if (in_array($apply_curWeekday, $apply_days) && $apply_curDate != strtotime($template_startDate)) {
+                        apply_template(date('Y-m-d', $apply_curDate), $template_systemId, $template_startDate, $bIncludeBookings);
+                    }
+
+                    // Move to the next day
+                    $apply_curDate = strtotime('+1 day', $apply_curDate);
+                }
+            } else {
+                // Apply Week as Template
+                $template_curDate = strtotime($template_startDate);
+                while ($template_curDate <= strtotime($template_endDate)) {
+                    $template_curWeekday = date('w', $template_curDate);
+
+                    if (in_array($template_curWeekday, $apply_days)) {
+                        // Iterate from start date to end date
+                        $apply_curDate = strtotime($apply_startDate);
+                        while ($apply_curDate <= strtotime($apply_endDate)) {
+                            $apply_curWeekday = date('w', $apply_curDate);
+
+                            if ($apply_curWeekday == $template_curWeekday && $template_curDate != $apply_curDate) {
+                                apply_template(date('Y-m-d', $apply_curDate), $template_systemId, date('Y-m-d', $template_curDate), $bIncludeBookings);
+                            }
+
+                            // Move to the next day
+                            $apply_curDate = strtotime('+1 day', $apply_curDate);
+                        }
+                    }
+
+                    // Move to the next day
+                    $template_curDate = strtotime('+1 day', $template_curDate);
+                }
+            }
             break;
         // case 'move_booking':
         //     $booking_code = $_POST['chk_from_booking'];

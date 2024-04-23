@@ -276,6 +276,44 @@ input[type="checkbox"]:checked + .toggle-slider:before {
     flex-direction: column;
 }
 
-.vertical-labels .form-group label {
+.vertical-labels .form-group > label {
     margin-bottom: 5px;
+}
+
+.vertical-labels .form-group > label.bg-blue {
+	/* border: 1px solid #888; */
+    background-color: #C5D4F0;
+	color: black;
+	padding: 5px;
+}
+
+.display-flex .vertical-center {
+	margin: auto;
+	padding-left: 5px;
+}
+
+#adminDashBoardTitle a {
+	color: blue;
+}
+
+#adminDashBoardTitle a:hover {
+	color: red;
+}
+
+#APPLY_TEMPLATE_FORM .days_container {
+	margin: 5px;
+}
+
+#APPLY_TEMPLATE_FORM .days_container input[type="checkbox"] {
+	display: inline-block;
+	margin-right: 10px;
+}
+
+#APPLY_TEMPLATE_FORM .days_container label {
+	display: inline-block;
+	margin-right: 20px;
+}
+
+.ui-datepicker {
+	z-index: 9999 !important;
 }

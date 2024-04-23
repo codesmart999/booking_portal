@@ -145,7 +145,7 @@
             </div>
             <div class="modal-body vertical-labels">
                 <div class="form-group">
-                    <label>Seleted Bookings</label>
+                    <label>Selected Bookings</label>
                     <table id="summaryTable">
                         <thead>
                             <tr>

@@ -9,34 +9,34 @@ if (!isset($systemId) || !isset($startDate)){ //exception
     exit; // Make sure to exit after redirection to prevent further script execution
 }
 
-$showFlag = WEEKLY_SHOWING_MODE;
+// $showFlag = WEEKLY_SHOWING_MODE;
 
 $filterFlag = 0x0; //Show Whole Day.
-if (isset($_GET['filter'])){
+if (isset($_GET['filter'])) {
     $filterFlag = $_GET['filter'];
 }
 $filter_array = getFilterArray($filterFlag);
 
 
-if (!isset($_GET['endDate'])) {
-    $showFlag = MONTHLY_SHOWING_MODE;
+// if (!isset($_GET['endDate'])) {
+//     $showFlag = MONTHLY_SHOWING_MODE;
 
-    // Convert the start date to the first day of the month
-    $startDate = date('Y-m-01', strtotime($startDate));
+//     // Convert the start date to the first day of the month
+//     $startDate = date('Y-m-01', strtotime($startDate));
 
-    // Convert the start date to the last day of the month
-    $endDate = date('Y-m-t', strtotime($startDate));
-}
+//     // Convert the start date to the last day of the month
+//     $endDate = date('Y-m-t', strtotime($startDate));
+// }
 
-//if request url is url?systemId=5 then -> set start date as today
-if (!isset($_GET['startDate'])) {
-    $startDate = date('Y-m-d');
-    $endDate = date('Y-m-d');
-}
+// //if request url is url?systemId=5 then -> set start date as today
+// if (!isset($_GET['startDate'])) {
+//     $startDate = date('Y-m-d');
+//     $endDate = date('Y-m-d');
+// }
 
-if ($startDate === $endDate) {
-    $showFlag = DAYILY_SHOWING_MODE;
-}
+// if ($startDate === $endDate) {
+//     $showFlag = DAYILY_SHOWING_MODE;
+// }
 
 $isGroupBooking = 0;
 if (isset($_GET['groupBooking'])) {
