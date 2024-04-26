@@ -269,7 +269,7 @@ while ($startDateTime <= $endDateTime) {
                                     style="margin-top: 5px; margin-left: 3px;" 
                                     value="'.$timeSlot.'">&nbsp;
                                 <span 
-                                    style="background-color: #'.$background_color.'">'
+                                    style="color: ' . generateTextColor($bookingCode) . '">'
                                     .$timeRender.'
                                 </span>';
                             echo '<a target="_self" href="#" onclick="bookedClientView('.$customer_id.');"><span class="CustName" style="color: ' . generateTextColor($bookingCode) .'"><i class="fa fa-user"></i>'
