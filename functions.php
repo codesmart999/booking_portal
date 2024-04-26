@@ -126,20 +126,36 @@
 		$arrSystemIds = array_keys($arrSystems);
 		$arrBookings = array();
 		$arrSpecialBookingPeriods = array();
-		foreach ($arrSystemIds as $SystemId) {
-			$arrBookings[$SystemId] = getBookedInfo($SystemId, $date, $endDate);
-			$arrSpecialBookingPeriods[$SystemId] = getBookingPeriodsSpecialByDate($SystemId, $date, $endDate);
+		foreach ($arrSystemIds as $systemId) {
+			$arrBookings[$systemId] = getBookedInfo($systemId, $date, $endDate);
+			$arrSpecialBookingPeriods[$systemId] = getBookingPeriodsSpecialByDate($systemId, $date, $endDate);
 		}
 
-		// 3) Get Available Booking Periods
+		// 3) Get Booking Periods Availability
 		$arrSystemIds[] = 0; // Add Default System Id
 		$strSystemIds = implode(',', $arrSystemIds);
-		
+
+		// 3-1) Get Weekdays Availability
+		$stmt = $link->prepare('SELECT SystemId, weekday, isAvailable FROM setting_weekdays'
+			. ' WHERE SystemId IN (' . $strSystemIds . ')'
+			. ' ORDER BY SystemId ASC');
+	    $stmt->execute();
+	    $stmt->bind_result($systemId, $weekday, $is_available);
+	    while ($stmt->fetch()) {
+			if (!isset($arrSystems[$systemId]))
+				$arrSystems[$systemId] = array();
+	        
+			$arrSystems[$systemId][$weekday] = $is_available;
+	    }
+		unset($arrSystems[0]);
+
+		// 3-2) Load All Booking Periods for the given SystemIDs
 		$strQuery = 'SELECT 
 						sbp.weekday,
 						sbp.SystemId AS SystemId,
 						sbp.FromInMinutes AS FromInMinutes,
 						sbp.ToInMinutes AS ToInMinutes,
+						sbp.isAvailable AS isAvailable,
 						CASE
 							WHEN sbp.weekday - DAYOFWEEK(?) + 1 < 0 THEN sbp.weekday - DAYOFWEEK(?) + 1 + 7
 							ELSE sbp.weekday - DAYOFWEEK(?) + 1
@@ -149,9 +165,7 @@
 					JOIN 
 						setting_weekdays sw ON sbp.weekday = sw.weekday AND sbp.SystemId = sw.SystemId
 					WHERE 
-						sbp.SystemId IN (' . $strSystemIds . ')
-						AND sw.isAvailable = 1
-						AND sbp.isAvailable = 1' .
+						sbp.SystemId IN (' . $strSystemIds . ')' .
 					($bLookInFiveDays ? '
 						AND sw.weekday IN (
 							DAYOFWEEK(?) - 1, -- Current day
@@ -171,48 +185,65 @@
 		}
 		
 	    $stmt->execute();
-	    $stmt->bind_result($weekday, $SystemId, $FromInMinutes, $ToInMinutes, $days_diff);
+	    $stmt->bind_result($weekday, $systemId, $FromInMinutes, $ToInMinutes, $isAvailable, $days_diff);
 	    
 		while($stmt->fetch()) {
-			if (!isset($arrBookingPeriodsByDaysDiff[$SystemId])) {
-				$arrBookingPeriodsByDaysDiff[$SystemId] = array();
+			if (!isset($arrBookingPeriodsByDaysDiff[$systemId])) {
+				$arrBookingPeriodsByDaysDiff[$systemId] = array();
 			}
-			if (!isset($arrBookingPeriodsByDaysDiff[$SystemId][$days_diff])) {
-				$arrBookingPeriodsByDaysDiff[$SystemId][$days_diff] = array();
-			}
-
-			$calculated_date = date('Y-m-d', strtotime($date . ' +' . $days_diff . ' days'));
-
-			// Check Explicitly-Set Unavailable Timeslots (in setting_bookingperiods_special)
-			if (isset($arrSpecialBookingPeriods[$SystemId]) && isset($arrSpecialBookingPeriods[$SystemId][$calculated_date])
-				 && isset($arrSpecialBookingPeriods[$SystemId][$calculated_date][$FromInMinutes . '-' . $ToInMinutes])
-				 && empty($arrSpecialBookingPeriods[$SystemId][$calculated_date][$FromInMinutes . '-' . $ToInMinutes])) {
-				continue;
+			if (!isset($arrBookingPeriodsByDaysDiff[$systemId][$days_diff])) {
+				$arrBookingPeriodsByDaysDiff[$systemId][$days_diff] = array();
 			}
 
-			// Check if it has already passed the current time
-			$newDate = date('Y-m-d H:i:s', strtotime($calculated_date . ' +' . $ToInMinutes . ' minutes'));
-			if (strtotime($newDate) < strtotime('now')) {
-				continue;
-			}
-
-			$arrBookingPeriodsByDaysDiff[$SystemId][$days_diff][] = array(
+			$arrBookingPeriodsByDaysDiff[$systemId][$days_diff][] = array(
 				'weekday' => $weekday,
-				'SystemId' => $SystemId,
+				'SystemId' => $systemId,
 				'FromInMinutes' => $FromInMinutes,
 				'ToInMinutes' => $ToInMinutes,
+				'isAvailable' => $isAvailable
 			);
 		}
 
-		// 4) Copy default booking periods
-		foreach ($arrSystems as $system_id => $objSystem) {
-			if (!isset($arrBookingPeriodsByDaysDiff[$system_id])) {
-				$arrBookingPeriodsByDaysDiff[$system_id] = unserialize(serialize($arrBookingPeriodsByDaysDiff[0]));
+		// 3-3) Copy default booking periods & update availability
+		foreach ($arrSystems as $systemId => $objSystem) {
+			if (!isset($arrBookingPeriodsByDaysDiff[$systemId])) {
+				$arrBookingPeriodsByDaysDiff[$systemId] = unserialize(serialize($arrBookingPeriodsByDaysDiff[0]));
+			}
+
+			foreach ($arrBookingPeriodsByDaysDiff[$systemId] as $days_diff => $booking_periods) {
+				$calculated_date = date('Y-m-d', strtotime($date . ' +' . $days_diff . ' days'));
+				$weekday = date('w', strtotime($calculated_date));
+
+				foreach ($booking_periods as $i => $period) {
+					$isAvailable = $period['isAvailable'];
+
+					if (isset($objSystem[$weekday])) {
+						$isAvailable = $objSystem[$weekday];
+					} else {
+						$isAvailable = $arrSystems[0][$weekday];
+					}
+
+					// Check Explicitly-Set Unavailable Timeslots (in setting_bookingperiods_special)
+					if (isset($arrSpecialBookingPeriods[$systemId]) && isset($arrSpecialBookingPeriods[$systemId][$calculated_date])
+						&& isset($arrSpecialBookingPeriods[$systemId][$calculated_date][$FromInMinutes . '-' . $ToInMinutes])) {
+						$isAvailable = $arrSpecialBookingPeriods[$systemId][$calculated_date][$FromInMinutes . '-' . $ToInMinutes];
+					}
+
+					// Check if it has already passed the current time
+					$newDate = date('Y-m-d H:i:s', strtotime($calculated_date . ' +' . $ToInMinutes . ' minutes'));
+					if (strtotime($newDate) < strtotime('now')) {
+						$isAvailable = false;
+					}
+
+					$arrBookingPeriodsByDaysDiff[$systemId][$days_diff][$i]['isAvailable'] = $isAvailable;
+				}
 			}
 		}
+		
+		unset($arrBookingPeriodsByDaysDiff[0]);
 
 		// 5) Add Explicitly-Set Available Timeslots (in setting_bookingperiods_special)
-		foreach ($arrSpecialBookingPeriods as $SystemId => $arr_special_bookingperiods_by_date) {
+		foreach ($arrSpecialBookingPeriods as $systemId => $arr_special_bookingperiods_by_date) {
 			foreach ($arr_special_bookingperiods_by_date as $special_date => $arr_special_bookingperiods) {
 				$weekday = date('w', strtotime($special_date));
 				$diffInSeconds = strtotime($special_date) - strtotime($date);
@@ -227,10 +258,10 @@
 					$elementExists = false;
 
 					// Check if the element already exists in the array
-					if (isset($arrBookingPeriodsByDaysDiff[$SystemId][$days_diff])) {
-						foreach ($arrBookingPeriodsByDaysDiff[$SystemId][$days_diff] as $period) {
+					if (isset($arrBookingPeriodsByDaysDiff[$systemId][$days_diff])) {
+						foreach ($arrBookingPeriodsByDaysDiff[$systemId][$days_diff] as $period) {
 							if ($period['weekday'] == $weekday &&
-								$period['SystemId'] == $SystemId &&
+								$period['SystemId'] == $systemId &&
 								$period['FromInMinutes'] == $FromInMinutes &&
 								$period['ToInMinutes'] == $ToInMinutes) {
 								$elementExists = true;
@@ -241,11 +272,12 @@
 
 					// If the element does not exist, add it to the array
 					if (!$elementExists) {
-						$arrBookingPeriodsByDaysDiff[$SystemId][$days_diff][] = array(
+						$arrBookingPeriodsByDaysDiff[$systemId][$days_diff][] = array(
 							'weekday' => $weekday,
-							'SystemId' => $SystemId,
+							'SystemId' => $systemId,
 							'FromInMinutes' => $FromInMinutes,
 							'ToInMinutes' => $ToInMinutes,
+							'isAvailable' => true
 						);
 					}
 				}
@@ -256,25 +288,28 @@
 	    $link->close();
 
 		// 6) Remove Already-Booked Timeslots (in bookings table)
-		foreach ($arrSystems as $system_id => $objSystem) {
-			foreach ($arrBookingPeriodsByDaysDiff[$system_id] as $days_diff => &$arr_bookingperiods) {
+		foreach ($arrSystems as $systemId => $objSystem) {
+			foreach ($arrBookingPeriodsByDaysDiff[$systemId] as $days_diff => &$arr_bookingperiods) {
 				$calculated_date = date('Y-m-d', strtotime($date . ' +' . $days_diff . ' days'));
 				
 				foreach ($arr_bookingperiods as $index => $values) {
-					if (isset($arrBookings[$system_id]) && isset($arrBookings[$system_id][$calculated_date])
-						&& isset($arrBookings[$system_id][$calculated_date][$values['FromInMinutes'] . '-' . $values['ToInMinutes']])
-						&& count($arrBookings[$system_id][$calculated_date][$values['FromInMinutes'] . '-' . $values['ToInMinutes']]) >= $objSystem['max_multiple_bookings']) {
+					if (isset($arrBookings[$systemId]) && isset($arrBookings[$systemId][$calculated_date])
+						&& isset($arrBookings[$systemId][$calculated_date][$values['FromInMinutes'] . '-' . $values['ToInMinutes']])
+						&& count($arrBookings[$systemId][$calculated_date][$values['FromInMinutes'] . '-' . $values['ToInMinutes']]) >= $objSystem['max_multiple_bookings']) {
 						unset($arr_bookingperiods[$index]);
 					}
 				}
 			}
 		}
 
-		unset($arrBookingPeriodsByDaysDiff[0]);
-
-		foreach ($arrBookingPeriodsByDaysDiff as $SystemId => $values) {
-			ksort($values); //Sorty by key (i.e. days_diff)
-			$arrBookingPeriodsByDaysDiff[$SystemId] = $values;
+		foreach ($arrBookingPeriodsByDaysDiff as $systemId => &$days) {
+			foreach ($days as $days_diff => &$periods) {
+				foreach ($periods as $i => $period) {
+					if (empty($period['isAvailable'])) {
+						unset($arrBookingPeriodsByDaysDiff[$systemId][$days_diff][$i]);
+					}
+				}
+			}
 		}
 
     	return compact('arrSystems', 'arrBookingPeriodsByDaysDiff');
@@ -298,9 +333,9 @@
 		$arrSystemIds = array_keys($arrSystems);
 		$arrBookings = array();
 		$arrSpecialBookingPeriods = array();
-		foreach ($arrSystemIds as $SystemId) {
-			$arrBookings[$SystemId] = getBookedInfo($SystemId, $date, $endDate);
-			$arrSpecialBookingPeriods[$SystemId] = getBookingPeriodsSpecialByDate($SystemId, $date, $endDate);
+		foreach ($arrSystemIds as $systemId) {
+			$arrBookings[$systemId] = getBookedInfo($systemId, $date, $endDate);
+			$arrSpecialBookingPeriods[$systemId] = getBookingPeriodsSpecialByDate($systemId, $date, $endDate);
 		}
 
 		// 3) Get Available Booking Periods
@@ -327,28 +362,28 @@
 		$stmt = $link->prepare($strQuery);
 		$stmt->bind_param('sss', $date, $date, $date);
 	    $stmt->execute();
-	    $stmt->bind_result($weekday, $SystemId, $FromInMinutes, $ToInMinutes, $days_diff);
+	    $stmt->bind_result($weekday, $systemId, $FromInMinutes, $ToInMinutes, $days_diff);
 	    
 		while($stmt->fetch()) {
-			if (!isset($arrBookingPeriodsByDaysDiff[$SystemId])) {
-				$arrBookingPeriodsByDaysDiff[$SystemId] = array();
+			if (!isset($arrBookingPeriodsByDaysDiff[$systemId])) {
+				$arrBookingPeriodsByDaysDiff[$systemId] = array();
 			}
-			if (!isset($arrBookingPeriodsByDaysDiff[$SystemId][$days_diff])) {
-				$arrBookingPeriodsByDaysDiff[$SystemId][$days_diff] = array();
+			if (!isset($arrBookingPeriodsByDaysDiff[$systemId][$days_diff])) {
+				$arrBookingPeriodsByDaysDiff[$systemId][$days_diff] = array();
 			}
 
 			$calculated_date = date('Y-m-d', strtotime($date . ' +' . $days_diff . ' days'));
 
 			// Check Explicitly-Set Unavailable Timeslots (in setting_bookingperiods_special)
-			if (isset($arrSpecialBookingPeriods[$SystemId]) && isset($arrSpecialBookingPeriods[$SystemId][$calculated_date])
-				 && isset($arrSpecialBookingPeriods[$SystemId][$calculated_date][$FromInMinutes . '-' . $ToInMinutes])
-				 && empty($arrSpecialBookingPeriods[$SystemId][$calculated_date][$FromInMinutes . '-' . $ToInMinutes])) {
+			if (isset($arrSpecialBookingPeriods[$systemId]) && isset($arrSpecialBookingPeriods[$systemId][$calculated_date])
+				 && isset($arrSpecialBookingPeriods[$systemId][$calculated_date][$FromInMinutes . '-' . $ToInMinutes])
+				 && empty($arrSpecialBookingPeriods[$systemId][$calculated_date][$FromInMinutes . '-' . $ToInMinutes])) {
 				continue;
 			}
 
-			$arrBookingPeriodsByDaysDiff[$SystemId][$days_diff][] = array(
+			$arrBookingPeriodsByDaysDiff[$systemId][$days_diff][] = array(
 				'weekday' => $weekday,
-				'SystemId' => $SystemId,
+				'SystemId' => $systemId,
 				'FromInMinutes' => $FromInMinutes,
 				'ToInMinutes' => $ToInMinutes,
 			);
@@ -356,22 +391,22 @@
 
 		// Expand to 31 days  - different from getAvailableSystems()
 		for ($i = 0; $i <= 30; $i++) {
-			foreach ($arrSystemIds as $SystemId) {
-				if (isset($arrBookingPeriodsByDaysDiff[$SystemId][$i % 7])) {
-					$arrBookingPeriodsByDaysDiff[$SystemId][$i] = $arrBookingPeriodsByDaysDiff[$SystemId][$i % 7];
+			foreach ($arrSystemIds as $systemId) {
+				if (isset($arrBookingPeriodsByDaysDiff[$systemId][$i % 7])) {
+					$arrBookingPeriodsByDaysDiff[$systemId][$i] = $arrBookingPeriodsByDaysDiff[$systemId][$i % 7];
 				}
 			}
 		}
 
 		// 4) Copy default booking periods
-		foreach ($arrSystems as $system_id => $objSystem) {
-			if (!isset($arrBookingPeriodsByDaysDiff[$system_id])) {
-				$arrBookingPeriodsByDaysDiff[$system_id] = unserialize(serialize($arrBookingPeriodsByDaysDiff[0]));
+		foreach ($arrSystems as $systemId => $objSystem) {
+			if (!isset($arrBookingPeriodsByDaysDiff[$systemId])) {
+				$arrBookingPeriodsByDaysDiff[$systemId] = unserialize(serialize($arrBookingPeriodsByDaysDiff[0]));
 			}
 		}
 
 		// 5) Add Explicitly-Set Available Timeslots (in setting_bookingperiods_special)
-		foreach ($arrSpecialBookingPeriods as $SystemId => $arr_special_bookingperiods_by_date) {
+		foreach ($arrSpecialBookingPeriods as $systemId => $arr_special_bookingperiods_by_date) {
 			foreach ($arr_special_bookingperiods_by_date as $special_date => $arr_special_bookingperiods) {
 				$weekday = date('w', strtotime($special_date));
 				$diffInSeconds = strtotime($special_date) - strtotime($date);
@@ -386,10 +421,10 @@
 					$elementExists = false;
 
 					// Check if the element already exists in the array
-					if (isset($arrBookingPeriodsByDaysDiff[$SystemId][$days_diff])) {
-						foreach ($arrBookingPeriodsByDaysDiff[$SystemId][$days_diff] as $period) {
+					if (isset($arrBookingPeriodsByDaysDiff[$systemId][$days_diff])) {
+						foreach ($arrBookingPeriodsByDaysDiff[$systemId][$days_diff] as $period) {
 							if ($period['weekday'] == $weekday &&
-								$period['SystemId'] == $SystemId &&
+								$period['SystemId'] == $systemId &&
 								$period['FromInMinutes'] == $FromInMinutes &&
 								$period['ToInMinutes'] == $ToInMinutes) {
 								$elementExists = true;
@@ -400,9 +435,9 @@
 
 					// If the element does not exist, add it to the array
 					if (!$elementExists) {
-						$arrBookingPeriodsByDaysDiff[$SystemId][$days_diff][] = array(
+						$arrBookingPeriodsByDaysDiff[$systemId][$days_diff][] = array(
 							'weekday' => $weekday,
-							'SystemId' => $SystemId,
+							'SystemId' => $systemId,
 							'FromInMinutes' => $FromInMinutes,
 							'ToInMinutes' => $ToInMinutes,
 						);
@@ -415,14 +450,14 @@
 	    $link->close();
 
 		// 6) Remove Already-Booked Timeslots (in bookings table)
-		foreach ($arrSystems as $system_id => $objSystem) {
-			foreach ($arrBookingPeriodsByDaysDiff[$system_id] as $days_diff => &$arr_bookingperiods) {
+		foreach ($arrSystems as $systemId => $objSystem) {
+			foreach ($arrBookingPeriodsByDaysDiff[$systemId] as $days_diff => &$arr_bookingperiods) {
 				$calculated_date = date('Y-m-d', strtotime($date . ' +' . $days_diff . ' days'));
 				
 				foreach ($arr_bookingperiods as $index => $values) {
-					if (isset($arrBookings[$system_id]) && isset($arrBookings[$system_id][$calculated_date])
-						&& isset($arrBookings[$system_id][$calculated_date][$values['FromInMinutes'] . '-' . $values['ToInMinutes']])
-						&& count($arrBookings[$system_id][$calculated_date][$values['FromInMinutes'] . '-' . $values['ToInMinutes']]) >= $objSystem['max_multiple_bookings']) {
+					if (isset($arrBookings[$systemId]) && isset($arrBookings[$systemId][$calculated_date])
+						&& isset($arrBookings[$systemId][$calculated_date][$values['FromInMinutes'] . '-' . $values['ToInMinutes']])
+						&& count($arrBookings[$systemId][$calculated_date][$values['FromInMinutes'] . '-' . $values['ToInMinutes']]) >= $objSystem['max_multiple_bookings']) {
 						unset($arr_bookingperiods[$index]);
 					}
 				}
@@ -432,7 +467,7 @@
 		unset($arrBookingPeriodsByDaysDiff[0]);
 
 		// 7) Count the number of Available Slots
-		foreach ($arrBookingPeriodsByDaysDiff as $SystemId => &$arrSystemBookingPeriodsByDaysDiff) {
+		foreach ($arrBookingPeriodsByDaysDiff as $systemId => &$arrSystemBookingPeriodsByDaysDiff) {
 			ksort($arrSystemBookingPeriodsByDaysDiff); //Sorty by key (i.e. days_diff)
 
 			foreach ($arrSystemBookingPeriodsByDaysDiff as $days_diff => $booking_periods) {
@@ -440,9 +475,9 @@
 
 				$single_bookings = 0;
 				$group_bookings = 0;
-				if (isset($arrBookings[$SystemId][$calculated_date])) {
+				if (isset($arrBookings[$systemId][$calculated_date])) {
 
-					foreach ($arrBookings[$SystemId][$calculated_date] as $key => $values) {
+					foreach ($arrBookings[$systemId][$calculated_date] as $key => $values) {
 						if (strpos($key, '-') !== false) {
 							$single_bookings += count($values);
 						} else
@@ -450,7 +485,7 @@
 					}
 				}
 
-				$result[$SystemId][$days_diff] = array(
+				$result[$systemId][$days_diff] = array(
 					'available_slots' => count($booking_periods),
 					'single_bookings' => $single_bookings,
 					'group_bookings' => $group_bookings,
@@ -1512,16 +1547,16 @@
 		$stmt->close();
 	}
 
-	function getBookedInfoByBookingCode($booking_code, $system_id = 0) {
+	function getBookedInfoByBookingCode($booking_code, $systemId = 0) {
 	    $db = getDBConnection();
-		if (empty($system_id)) {
+		if (empty($systemId)) {
         	$sql = "SELECT FullName, BookingCode, BookingDate, BookingFrom, BookingTo, Attended, Comments FROM (SELECT * FROM bookings WHERE BookingCode = ? ORDER BY BookingFrom) AS T1 JOIN customers ON T1.CustomerId = customers.CustomerId ORDER BY BookingFrom ASC";
 			$stmt = $db->prepare($sql);
 			$stmt->bind_param("s", $booking_code);
 		} else {
 			$sql = "SELECT FullName, BookingCode, BookingDate, BookingFrom, BookingTo, Attended, Comments FROM (SELECT * FROM bookings WHERE BookingCode = ? AND SystemId = ? ORDER BY BookingFrom) AS T1 JOIN customers ON T1.CustomerId = customers.CustomerId ORDER BY BookingFrom ASC";
 			$stmt = $db->prepare($sql);
-			$stmt->bind_param("si", $booking_code, $system_id);
+			$stmt->bind_param("si", $booking_code, $systemId);
 		}
         $stmt->execute();
 		$stmt->bind_result($businessName, $bookingCode, $bookingDate, $fromInMinutes, $toInMinutes, $attended, $comments);
@@ -1677,9 +1712,9 @@
 		if (!empty($_system_id))
 			$arr_systems[] = 0;
 
-		foreach ($arr_systems as $system_id) {
+		foreach ($arr_systems as $systemId) {
 			$stmt = $db->prepare("SELECT id, FromInMinutes, ToInMinutes, isRegular, isAvailable FROM setting_bookingperiods WHERE SystemId = ? AND weekday = ? ORDER BY FromInMinutes ASC");
-			$stmt->bind_param('ii', $system_id, $weekday);
+			$stmt->bind_param('ii', $systemId, $weekday);
 			$stmt->execute();
 			$stmt->bind_result($id, $from_in_mins, $to_in_mins, $isRegular, $isAvailable);
 			$stmt->store_result();
@@ -1706,7 +1741,7 @@
 	}
 
 	// Added by Hennadii (2024-04-01)
-	function getBookingPeriodsSpecialByDate($system_id, $start_date, $end_date = '') {
+	function getBookingPeriodsSpecialByDate($systemId, $start_date, $end_date = '') {
 		$db = getDBConnection();
 
 		$result = array();
@@ -1715,7 +1750,7 @@
 			$end_date = $start_date;
 		
 			$stmt = $db->prepare("SELECT SetDate, FromInMinutes, ToInMinutes, isAvailable FROM setting_bookingperiods_special WHERE SystemId = ? AND SetDate >= ? AND SetDate <= ? ORDER BY FromInMinutes ASC");
-		$stmt->bind_param('iss', $system_id, $start_date, $end_date);
+		$stmt->bind_param('iss', $systemId, $start_date, $end_date);
 		$stmt->execute();
 		$stmt->bind_result( $date, $from_in_mins, $to_in_mins, $isAvailable);
 		$stmt->store_result();
@@ -2000,8 +2035,8 @@
 	// Added by Hennadii (2024-04-17)
 	function getSystemNames($arrSystems, $arrBookedSystemIds) {
 		$arr_system_fullnames = array();
-		foreach ($arrBookedSystemIds as $system_id)
-			$arr_system_fullnames[] = $arrSystems[$system_id]['fullname'];
+		foreach ($arrBookedSystemIds as $systemId)
+			$arr_system_fullnames[] = $arrSystems[$systemId]['fullname'];
 
 		return implode(',', $arr_system_fullnames);
 	}
@@ -2353,5 +2388,13 @@
 			$stmt->bind_param('sis', $apply_date, $template_systemId, $template_date);
 			$stmt->execute();
 		}
+	}
+
+	function filterAvailable($item) {
+		return !empty($item['isAvailable']);
+	}
+
+	function filterUnavailable($item) {
+		return empty($item['isAvailable']);
 	}
 ?>
