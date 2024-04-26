@@ -12,132 +12,57 @@ if (!empty($_REQUEST['year']) && !empty($_REQUEST['month']) && !empty($_REQUEST[
     $year = (int)$_REQUEST['year'];
     $month = (int)$_REQUEST['month'];
 
-    
     // Get the first and last day of the current month
     $firstDayOfMonth = date('Y-m-01', strtotime("$year-$month-01"));
     $lastDayOfMonth = date('Y-m-t', strtotime("$year-$month-01"));
 
-    $monthAvailableInfo = getAvailableCountInMonth($systemId, $firstDayOfMonth, $lastDayOfMonth);
+    // Added by Hennadii(20204-04-26)
+    $arrMonthlySummaryBySystems = getMonthlySummary(array($systemId), $firstDayOfMonth, $lastDayOfMonth);
+    $monthAvailableInfo = $arrMonthlySummaryBySystems[$systemId];
+
     //Sample Return Result 
     // [2025-10-10] => Array
     //     (
-    //         [nAvailable] => 7
-    //         [nUnavailable] => 0
-    //         [weekday] => 5
+    //         [available_slots] => 7
+    //         [unavailable_slots] => 0
+    //         [single_bookings] => 5
+    //         [group_bookings] => 2
     //     )
 
     // [2025-10-13] => Array
     //     (
-    //         [nAvailable] => 20
-    //         [nUnavailable] => 0
-    //         [weekday] => 1
+    //         [available_slots] => 7
+    //         [unavailable_slots] => 0
+    //         [single_bookings] => 5
+    //         [group_bookings] => 2
     //     )
     //__debug($monthAvailableInfo);
-    $weekAvailableInfo = getAvailableWithCountInWeek($systemId);
-    //__debug($weekAvailableInfo);
-    //Sample Return Result
-    //[0] => Array
-    //     (
-    //         [nAvailable] => 0
-    //         [nUnavailable] => 4
-    //     )
-
-    // [1] => Array
-    //     (
-    //         [nAvailable] => 20
-    //         [nUnavailable] => 0
-    //     )
-
-    // [2] => Array
-    //     (
-    //         [nAvailable] => 0
-    //         [nUnavailable] => 30
-    //     )
-
-    // [3] => Array
-    //     (
-    //         [nAvailable] => 0
-    //         [nUnavailable] => 40
-    //     )
-
-    // [4] => Array
-    //     (
-    //         [nAvailable] => 0
-    //         [nUnavailable] => 30
-    //     )
-
-    // [5] => Array
-    //     (
-    //         [nAvailable] => 0
-    //         [nUnavailable] => 7
-    //     )
-
-    // [6] => Array
-    //     (
-    //         [nAvailable] => 0
-    //         [nUnavailable] => 4
-    //     )
-    // Fetch booking data for the current month
-    $query = "SELECT BookingDate, COUNT(*) AS numBookings 
-          FROM bookings 
-          WHERE SystemID = ? AND BookingDate BETWEEN ? AND ? 
-          GROUP BY BookingDate";
-    $statement = $db->prepare($query);
-    $statement->bind_param("iss", $systemId, $firstDayOfMonth, $lastDayOfMonth);
-    $success = $statement->execute();
-
-    if ($success === false) {
-        // Handle query execution failure
-        header('HTTP/1.1 500 Internal Server Error');
-        exit;
-    }
-
-    // Bind the result variables
-    $statement->bind_result($bookingDate, $numBookings);
-
-    //contain booked info
-    $bookedDates = [];
-
-    // Fetch the booking data
-    while ($statement->fetch()) {
-        $bookedDates[$bookingDate] = $numBookings;
-    }
 
     $data = [];
 
     // Initialize the date to the first day of the month
     $date = new DateTime("$year-$month-01");
+    $days_diff = 0;
 
     // Loop through each day of the month
     while ($date->format('Y-m') === sprintf('%04d-%02d', $year, $month)) {
         // Fetch the weekday of the current date (0 for Sunday, 1 for Monday, etc.)
         $weekday = $date->format('w');
 
-        // Determine the date in YYYY-MM-DD format
-        $currentDate = $date->format('Y-m-d');
-
         $className = 'grade-available';
 
-        if (isset($weekAvailableInfo[$weekday]['nUnavailable']) && $weekAvailableInfo[$weekday]['nUnavailable'] != 0)
+        if (!empty($monthAvailableInfo[$days_diff]['unavailable_slots'])){
             $className = 'grade-unavailable';
-        if (isset($weekAvailableInfo[$weekday]['nAvailable']) && $weekAvailableInfo[$weekday]['nAvailable'] != 0)
-            $className = 'grade-available';
-       
-        if (isset($monthAvailableInfo[$currentDate]['nUnavailable']) && $monthAvailableInfo[$currentDate]['nUnavailable']!= 0){
-            if (isset($weekAvailableInfo[$weekday]['nUnavailable'])){
-                if (($weekAvailableInfo[$weekday]['nUnavailable'] + $weekAvailableInfo[$weekday]['nAvailable']) == $monthAvailableInfo[$currentDate]['nUnavailable'])
-                $className = 'grade-unavailable';
-            }
         }
             
-        if (isset($monthAvailableInfo[$currentDate]['nAvailable']) && $monthAvailableInfo[$currentDate]['nAvailable']!= 0)
+        if (!empty($monthAvailableInfo[$days_diff]['available_slots'])) {
             $className = 'grade-available';
+        }
 
         // Check if the current date is booked and count the number of bookings
-        $numBookings = isset($bookedDates[$currentDate]) ? $bookedDates[$currentDate] : 0;
-        if ($numBookings > 3) {
+        if ($monthAvailableInfo[$days_diff]['group_bookings'] > 1) {
             $className = 'grade-booked-many';
-        } elseif ($numBookings > 0) {
+        } elseif ($monthAvailableInfo[$days_diff]['single_bookings'] > 0) {
             $className = 'grade-booked';
         }
 
@@ -150,6 +75,7 @@ if (!empty($_REQUEST['year']) && !empty($_REQUEST['month']) && !empty($_REQUEST[
 
         // Move to the next day
         $date->modify('+1 day');
+        $days_diff++;
     }
 
     // Set the content type to JSON

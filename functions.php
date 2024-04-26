@@ -1,4 +1,6 @@
 <?php
+	require_once('admin/utils.php');
+
 	function __debug( $var ) {
 		echo "<pre>";
 		print_r( $var );
@@ -287,7 +289,7 @@
         $stmt->close();
 	    $link->close();
 
-		// 6) Remove Already-Booked Timeslots (in bookings table)
+		// 6) Check Already-Booked Timeslots (in bookings table)
 		foreach ($arrSystems as $systemId => $objSystem) {
 			foreach ($arrBookingPeriodsByDaysDiff[$systemId] as $days_diff => &$arr_bookingperiods) {
 				$calculated_date = date('Y-m-d', strtotime($date . ' +' . $days_diff . ' days'));
@@ -296,7 +298,7 @@
 					if (isset($arrBookings[$systemId]) && isset($arrBookings[$systemId][$calculated_date])
 						&& isset($arrBookings[$systemId][$calculated_date][$values['FromInMinutes'] . '-' . $values['ToInMinutes']])
 						&& count($arrBookings[$systemId][$calculated_date][$values['FromInMinutes'] . '-' . $values['ToInMinutes']]) >= $objSystem['max_multiple_bookings']) {
-						unset($arr_bookingperiods[$index]);
+						$arr_bookingperiods[$index]['isAvailable'] = false;
 					}
 				}
 			}
@@ -320,17 +322,31 @@
 	// Array (
 	//	'{DAYS_DIFF}' => Array ( [available_slots] => 39 [bookings] => 6)
 	// )
-	function getMonthlySummary( $date, $arrSystems ) {
-		$endDate = date('Y-m-d', strtotime($date . ' +30 days'));
+	function getMonthlySummary( $arrSystemIds, $date, $endDate = '' ) {
+		if (empty($endDate))
+			$endDate = date('Y-m-d', strtotime($date . ' +30 days'));
 
     	$link = getDBConnection();
 
 		$result = array();
 		
+		$arrSystems = array();
 		$arrBookingPeriodsByDaysDiff = array();
 
+		// 1) Get Systems
+		$query = 'SELECT SystemId, MaxMultipleBookings FROM systems WHERE SystemId IN (' . implode(',', $arrSystemIds) . ')';
+
+		$stmt = $link->prepare($query);
+		$stmt->execute();
+		$stmt->bind_result($system_id, $max_multiple_bookings);
+		$stmt->store_result();
+		while ($stmt->fetch()) {
+			$arrSystems[$system_id] = array(
+				'max_multiple_bookings' => $max_multiple_bookings,
+			);
+		}
+
 		// 2) Get Already-Existing Bookings & Get Explicitly-Set Unavailable Booking Periods
-		$arrSystemIds = array_keys($arrSystems);
 		$arrBookings = array();
 		$arrSpecialBookingPeriods = array();
 		foreach ($arrSystemIds as $systemId) {
@@ -475,7 +491,7 @@
         $stmt->close();
 	    $link->close();
 
-		// 6) Remove Already-Booked Timeslots (in bookings table)
+		// 6) Check Already-Booked Timeslots (in bookings table)
 		foreach ($arrSystems as $systemId => $objSystem) {
 			foreach ($arrBookingPeriodsByDaysDiff[$systemId] as $days_diff => &$arr_bookingperiods) {
 				$calculated_date = date('Y-m-d', strtotime($date . ' +' . $days_diff . ' days'));
@@ -484,7 +500,7 @@
 					if (isset($arrBookings[$systemId]) && isset($arrBookings[$systemId][$calculated_date])
 						&& isset($arrBookings[$systemId][$calculated_date][$values['FromInMinutes'] . '-' . $values['ToInMinutes']])
 						&& count($arrBookings[$systemId][$calculated_date][$values['FromInMinutes'] . '-' . $values['ToInMinutes']]) >= $objSystem['max_multiple_bookings']) {
-						unset($arr_bookingperiods[$index]);
+						$arr_bookingperiods[$index]['isAvailable'] = false;
 					}
 				}
 			}
@@ -513,8 +529,10 @@
 
 				$result[$systemId][$days_diff] = array(
 					'available_slots' => count(array_filter($booking_periods, 'filterAvailable')),
+					'unavailable_slots' => count(array_filter($booking_periods, 'filterUnavailable')),
 					'single_bookings' => $single_bookings,
 					'group_bookings' => $group_bookings,
+					'booking_periods' => $booking_periods
 				);
 			}
 		}
@@ -765,96 +783,27 @@
 	 * @return array Associative array containing availability data for each date in the range.
 	 */
 	function getAvailabilityDataWithCounts($systemId, $startDate, $endDate) {
+		$arrMonthlySummaryBySystems = getMonthlySummary(array($systemId), $startDate, $endDate);
+    	$arrMonthlySummary = $arrMonthlySummaryBySystems[$systemId];
 
-		// SQL query to retrieve availability data
-		$db = getDBConnection();
-
-		$sql = "SELECT 
-					TB2.SetDate, 
-					SUM(CASE WHEN COALESCE(SP.isAvailable, TB2.isAvailable) = 1 THEN 1 ELSE 0 END) AS nAvailable,
-					SUM(CASE WHEN COALESCE(SP.isAvailable, TB2.isAvailable) = 0 THEN 1 ELSE 0 END) AS nUnAvailable
-				FROM 
-					(
-						SELECT 
-							date_column AS SetDate, 
-							D1.weekday, 
-							FromInMinutes, 
-							ToInMinutes, 
-							isRegular, 
-							isAvailable 
-						FROM 
-							(
-								SELECT
-									date_column,
-									MOD(DAYOFWEEK(date_column) + 6, 7) AS weekday
-								FROM
-									(
-										SELECT
-											DATE(?) + INTERVAL (t4*10000 + t3*1000 + t2*100 + t1*10 + t0) DAY AS date_column
-										FROM
-											(SELECT 0 t0 UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) t0,
-											(SELECT 0 t1 UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) t1,
-											(SELECT 0 t2 UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) t2,
-											(SELECT 0 t3 UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) t3,
-											(SELECT 0 t4 UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) t4
-									) dates
-								WHERE
-									date_column BETWEEN ? AND ?
-							) AS D1 
-						LEFT JOIN 
-							(
-								SELECT * FROM setting_bookingperiods 
-								WHERE 
-									SystemId = IFNULL(
-										(
-											SELECT 
-												SystemId 
-											FROM 
-												setting_bookingperiods 
-											WHERE 
-												SystemId = ?
-											LIMIT 1
-										),
-										0
-									)
-							) AS SB
-						ON 
-							D1.weekday = SB.weekday 
-						ORDER BY 
-							D1.date_column
-					) AS TB2 
-				LEFT JOIN 
-					setting_bookingperiods_special AS SP 
-				ON 
-					TB2.SetDate = SP.SetDate 
-					AND TB2.FromInMinutes = SP.FromInMinutes 
-					AND TB2.ToInMinutes = SP.ToInMinutes 
-				GROUP BY 
-					TB2.SetDate 
-				ORDER BY 
-					TB2.SetDate;
-		";
-
-		// Prepare the SQL statement
-		$stmt = $db ->prepare($sql);
-
-		// Bind parameters and execute the query
-		$stmt->bind_param("sssi", $startDate, $startDate, $endDate, $systemId);
-		$stmt->execute();
-		$stmt->bind_result($setDate, $nAvailable, $nUnAvailable);
-
-		// Initialize an array to store the available time slots
 		$result = [];
-		// Fetch the booking periods
-		while ($stmt->fetch()) {
-			$result[$setDate]["nAvailable"] = $nAvailable;
-			$result[$setDate]["nUnavailable"] = $nUnAvailable;
 
-			if ($nAvailable != 0) //store this value for Make All Available/Make All Unavialble
-				$result[1][] = $setDate;
-			if ($nUnAvailable!= 0)
-				$result[0][] = $setDate;
+		foreach ($arrMonthlySummary as $days_diff => $data) {
+			if (isset($data['available_slots']) && isset($data['unavailable_slots'])) {
+				$calculated_date = date('Y-m-d', strtotime($startDate . ' +' . $days_diff . ' days'));
+
+				$result[$calculated_date]['nAvailable'] = $data['available_slots'];
+				$result[$calculated_date]['nUnavailable'] = $data['unavailable_slots'];
+
+				if (!empty($data['available_slots'])) {
+					$result[1][] = $calculated_date;
+				}
+				if (!empty($data['unavailable_slots'])) {
+					$result[0][] = $calculated_date;
+				}
+			}
 		}
+
 		return $result;
 	}
 
@@ -1058,281 +1007,23 @@
 		}
 		return $result;
 	}
-	
-	//Get Available and Unavailable count in Date Range 
-	//USAGE: To show available/unavailable days on calendar
-	function getAvailableCountInMonth($systemId, $startDate, $endDate){
-		$db = getDBConnection();
-		// Prepare and execute a query to retrieve available time slots for the specified systemId
-		$sql = "SELECT 
-			SP_TB.SetDate, 
-			SUM(CASE WHEN COALESCE(SP_TB.isAvailable, Week_TB.isAvailable) = 1 THEN 1 ELSE 0 END) AS nAvailable,
-			SUM(CASE WHEN COALESCE(SP_TB.isAvailable, Week_TB.isAvailable) = 0 THEN 1 ELSE 0 END) AS nUnAvailable,
-			weekday
-			FROM 
-				(
-					SELECT 
-						SetDate, 
-						FromInMinutes, 
-						ToInMinutes, 
-						isAvailable, 
-						MOD(DAYOFWEEK(SetDate) + 6, 7) AS weekday_calc 
-					FROM 
-						setting_bookingperiods_special 
-					WHERE 
-						SystemId = ? AND 
-						Date(SetDate) BETWEEN ? AND ?
-				) AS SP_TB 
-			LEFT JOIN 
-				(
-					SELECT 
-						weekday, 
-						FromInMinutes, 
-						ToInMinutes, 
-						isAvailable 
-					FROM 
-						setting_bookingperiods 
-					WHERE 
-						SystemId = IFNULL(
-							(
-								SELECT 
-									SystemId 
-								FROM 
-									setting_bookingperiods 
-								WHERE 
-									SystemId = ?
-								LIMIT 1
-							),
-							0
-						)
-				) AS Week_TB 
-			ON 
-				Week_TB.FromInMinutes = SP_TB.FromInMinutes 
-				AND Week_TB.ToInMinutes = SP_TB.ToInMinutes 
-				AND Week_TB.weekday = SP_TB.weekday_calc
-			GROUP BY 
-				SP_TB.SetDate;
-				";
-		//RESULT
-		//SetDate		nAvailable		nUnAvailable
-		// 2025-10-10	7				0
-		// 2025-10-13	20				0
-		// 2025-10-17	3				0
-		// 2025-10-25	0				2
-		$stmt = $db->prepare($sql);
-		$stmt->bind_param("issi", $systemId, $startDate, $endDate, $systemId);
-		$stmt->execute();
-		$stmt->bind_result($setDate, $nAvailable, $nUnAvailable, $weekday);
-
-
-		// Initialize an array to store the available time slots
-		$result = [];
-		
-		// Fetch the booking periods
-		while ($stmt->fetch()) {
-			$result[$setDate]["nAvailable"] = $nAvailable;
-			$result[$setDate]["nUnavailable"] = $nUnAvailable;
-			$result[$setDate]["weekday"] = $weekday;
-		}
-		return $result;
-	}
-
-
-	/**
-	 * Retrieves available time slots with their respective counts for a given week in the system.
-	 *
-	 * This function queries the system to fetch available time slots for a specified week and calculates
-	 * the count of available slots for each time slot. It provides an overview of the availability within
-	 * the specified week.
-	 *
-	 * @param int $systemId The ID of the system for which availability is being queried.
-	 *
-	 * @return array An associative array containing available time slots with their respective counts.
-	 *               The array structure is as follows:
-	 *               - Key: Date in Y-m-d format (e.g., "2024-03-28").
-	 *               - Value: An array containing time slots as keys and the count of available slots as values.
-	 *               Example: [
-	 *                   //Sample Return Result
-	 *							[0] => Array
-	 *					//     (
-	 *					//         [nAvailable] => 0
-	 *					//         [nUnavailable] => 4
-	 *					//     )
-	 *                   ],
-	 *                   // Additional dates and time slots...
-	 *               ]
-	 */
-	function getAvailableWithCountInWeek($systemId){
-		$db = getDBConnection();
-		// Prepare and execute a query to retrieve available time slots for the specified systemId
-		$sql = "SELECT 
-				weekday, 
-				COUNT(CASE WHEN isAvailable = 1 THEN 1 END) AS nAvailable,
-				COUNT(CASE WHEN isAvailable = 0 THEN 1 END) AS nUnavailable
-				FROM 
-					setting_bookingperiods 
-				WHERE 
-					SystemId = COALESCE(
-						(
-							SELECT 
-								SystemId 
-							FROM 
-								setting_bookingperiods 
-							WHERE 
-								SystemId = ?
-							LIMIT 1
-						),
-						0
-					)
-				GROUP BY
-					weekday;
-			";
-		//RESULT
-		//weekday		nAvailable		nUnAvailable
-		// 0			7				0
-		// 2			20				0
-		// 3			3				0
-		// 4			0				2
-		$stmt = $db->prepare($sql);
-		$stmt->bind_param("i", $systemId);
-		$stmt->execute();
-		$stmt->bind_result($weekday, $nAvailable, $nUnAvailable);
-
-		// Initialize an array to store the available time slots
-		$result = [];
-		// Fetch the booking periods
-		while ($stmt->fetch()) {
-			$result[$weekday]["nAvailable"] = $nAvailable;
-			$result[$weekday]["nUnavailable"] = $nUnAvailable;
-		}
-
-		return $result;
-	}
-
-	//get available/unvavailable time periods from setting_bookingperiods DB
-	//USAGE: For weekly show and dailys show case
-	function getTimePeriodsByWeek($systemId){
-
-		$db = getDBConnection();
-		// Prepare and execute a query to retrieve available time slots for the specified systemId
-		$sql = "SELECT weekday, FromInMinutes, ToInMinutes, isAvailable
-				FROM setting_bookingperiods
-				WHERE SystemId = IFNULL(
-							(SELECT SystemId 
-							FROM setting_bookingperiods 
-							WHERE SystemId = ?
-							LIMIT 1),
-							0)";
-
-		$stmt = $db->prepare($sql);
-		$stmt->bind_param("i", $systemId);
-		$stmt->execute();
-
-		// Bind the result variables
-		$stmt->bind_result($weekday, $fromMinutes, $toMinutes, $isAvailable);
-
-		// Initialize an array to store the available time slots
-		$result = [];
-		// Fetch the booking periods
-
-		$isAvailableCountByWeekday = []; //temp variable to check $weekday is new.
-		while ($stmt->fetch()) {
-			// Increment the corresponding counter based on isAvailable value and weekday
-			if (!isset($isAvailableCountByWeekday[$weekday])) {
-				$result[$weekday] = [
-					0 => 0,
-					1 => 0
-				];
-				$isAvailableCountByWeekday[$weekday] = 1; //temp
-			}
-			
-			// Store the available time slot information
-			$result[$weekday]["timeslot"][] = [
-				'FromInMinutes' => $fromMinutes,
-				'ToInMinutes' => $toMinutes,
-				'isAvailable' => $isAvailable
-			];
-			$result[$weekday][$isAvailable]+=1;
-		}
-		return $result;
-	}
 
 	//Get one Week time periods with DateRange by comibining BookingPeriods DB and Special DB
 	function getAvailableInfoInOneWeekRange($systemId, $startDate, $endDate){
-		$db = getDBConnection();
-		// Prepare and execute a query to retrieve available time slots for the specified systemId
-		$sql = "SELECT
-				Week_TB.weekday, 
-				Week_TB.FromInMinutes, 
-				Week_TB.ToInMinutes, 
-				COALESCE(SP_TB.isAvailable, Week_TB.isAvailable) AS isAvailable,
-				SP_TB.isAvailable as specialAvailable
-			FROM
-				(
-					SELECT
-						setting_bookingperiods.*
-					FROM
-						setting_bookingperiods
-					WHERE SystemId = IFNULL(
-						(SELECT SystemId 
-						FROM setting_bookingperiods 
-						WHERE SystemId = ?
-						LIMIT 1),
-						0
-					)
-				) AS Week_TB
-				LEFT JOIN
-				(
-					SELECT
-						id,FromInMinutes, ToInMinutes, isAvailable,
-						MOD(DAYOFWEEK(SetDate) + 6, 7) AS weekday_calc
-					FROM
-						setting_bookingperiods_special
-					WHERE
-						systemId = ? AND
-						DATE(SetDate) BETWEEN ? AND ?
-				) AS SP_TB
-				ON 
-					Week_TB.FromInMinutes = SP_TB.FromInMinutes AND
-					Week_TB.ToInMinutes = SP_TB.ToInMinutes AND
-					Week_TB.weekday = SP_TB.weekday_calc
-			ORDER BY
-				Week_TB.weekday ASC,
-				Week_TB.FromInMinutes ASC
-				";
+		$arrWeeklySummaryBySystems = getMonthlySummary(array($systemId), $startDate, $endDate);
+    	$arrWeeklySummary = $arrWeeklySummaryBySystems[$systemId];
 
-		$stmt = $db->prepare($sql);
-		$stmt->bind_param("iiss", $systemId, $systemId, $startDate, $endDate);
-		$stmt->execute();
-		$stmt->bind_result($weekday, $fromMinutes, $toMinutes, $isAvailable, $specialAvailable);
-
-
-		// Initialize an array to store the available time slots
 		$result = [];
-		// Fetch the booking periods
+		foreach ($arrWeeklySummary as $days_diff => $data) {
+			if (isset($data['available_slots']) && isset($data['unavailable_slots'])) {
+				$weekday = date('w', strtotime($startDate . ' +' . $days_diff . ' days'));
 
-		$isAvailableCountByWeekday = []; //temp variable to check $weekday is new.
-		while ($stmt->fetch()) {
-			// Increment the corresponding counter based on isAvailable value and weekday
-			if (!isset($isAvailableCountByWeekday[$weekday])) {
-				$result[$weekday] = [
-					0 => 0,
-					1 => 0
-				];
-				$isAvailableCountByWeekday[$weekday] = 1; //temp
+				$result[$weekday]['timeslot'] = $data['booking_periods'];
+				$result[$weekday][0] = $data['unavailable_slots'];
+				$result[$weekday][1] = $data['available_slots'];
 			}
-
-			$time_slot = $fromMinutes . '-' . $toMinutes;
-			// Store the available time slot information
-			$result[$weekday]["timeslot"][] = [
-				'FromInMinutes' => $fromMinutes,
-				'ToInMinutes' => $toMinutes,
-				'isAvailable' => $isAvailable,
-				'isSpecailAvailable' => $specialAvailable
-			];
-			$result[$weekday][$time_slot] = $isAvailable;
-			$result[$weekday][$isAvailable]+=1;
 		}
+
 		return $result;
 		
 	}

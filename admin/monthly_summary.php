@@ -25,18 +25,17 @@
 
     $arrSystems = array();
 
-    $query = 'SELECT SystemId, FullName, MaxMultipleBookings FROM systems';
+    $query = 'SELECT SystemId, FullName FROM systems';
     if (!empty($_GET['location']))
         $query .= ' WHERE LocationId = ' . $_GET['location'];
 
     $stmt = $db->prepare($query);
 	$stmt->execute();
-    $stmt->bind_result($system_id, $full_name, $max_multiple_bookings);
+    $stmt->bind_result($system_id, $full_name);
     $stmt->store_result();
     while ($stmt->fetch()) {
     	$arrSystems[$system_id] = array(
             'full_name' => $full_name,
-            'max_multiple_bookings' => $max_multiple_bookings,
             'selected' => isset($_GET['system']) && $_GET['system'] == $system_id ? 'selected' : ''
         );
     }
@@ -54,7 +53,7 @@
         );
     }
 
-    $arrMonthlySummaryBySystems = getMonthlySummary(date("Y-m-d", strtotime(str_replace('/', '-', $selected_date))), $arrSystems);
+    $arrMonthlySummaryBySystems = getMonthlySummary($arrSystemIds, date("Y-m-d", strtotime(str_replace('/', '-', $selected_date))));
 ?>
 
 <h4 class="page-title">Monthly Summary (<?php echo format_date($selected_date) . ' ~ ' . format_date($end_date); ?>)</h4>

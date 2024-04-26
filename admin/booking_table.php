@@ -28,6 +28,7 @@ $bookCount = getNumberOfBookings($arrBookingsOfSystem);
 
 //Get available/unavailable timesolt by week
 $availableSlots =  ($showFlag == MONTHLY_SHOWING_MODE) ? getAvailabilityDataWithCounts($systemId, $startDate, $endDate) : getAvailableInfoInOneWeekRange($systemId, $startDate, $endDate);
+
 //__debug($availableSlots);
 // Iterate over each date in the date range
 $currentDateTime = strtotime(date('Y-m-d'));
@@ -292,7 +293,7 @@ while ($startDateTime <= $endDateTime) {
                         }
                     } else {
 
-                        if (isset($availableSlots[$weekday][$timeSlot]) && $availableSlots[$weekday][$timeSlot] == 0) { //unavailable case
+                        if (empty($isAvailable)) { //unavailable case
                             if (in_array(2, $filter_array)) //if hide unavailable time filter case 
                                 continue;
                             if (in_array(1, $filter_array)){ //if hide past time filter case 
