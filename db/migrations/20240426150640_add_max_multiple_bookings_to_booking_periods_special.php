@@ -21,7 +21,7 @@ final class AddMaxMultipleBookingsToBookingPeriodsSpecial extends AbstractMigrat
         $table = $this->table('setting_bookingperiods_special');
 
         // Add SystemType column as string with default value 'D'
-        $table->addColumn('MaxMultipleBookings', 'integer', ['default' => 1, 'null' => false, 'after' => 'isAvailable'])
+        $table->addColumn('MaxMultipleBookings', 'integer', ['default' => 0, 'null' => false, 'after' => 'isAvailable'])
               ->update();
     }
 }

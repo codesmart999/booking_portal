@@ -233,6 +233,7 @@
 					}
 
 					$arrBookingPeriodsByDaysDiff[$systemId][$days_diff][$i]['isAvailable'] = $isAvailable;
+					$arrBookingPeriodsByDaysDiff[$systemId][$days_diff][$i]['max_multiple_bookings'] = $arrSystems[$systemId]['max_multiple_bookings'];
 				}
 			}
 		}
@@ -261,7 +262,9 @@
 								$period['ToInMinutes'] == $ToInMinutes) {
 								$elementExists = true;
 								$arrBookingPeriodsByDaysDiff[$systemId][$days_diff][$i]['isAvailable'] = $values['isAvailable'];
-								$arrBookingPeriodsByDaysDiff[$systemId][$days_diff][$i]['max_multiple_bookings'] = $values['max_multiple_bookings'];
+
+								if (!empty($values['max_multiple_bookings'])) // zero is default value in setting_bookingperiods_special (no influence)
+									$arrBookingPeriodsByDaysDiff[$systemId][$days_diff][$i]['max_multiple_bookings'] = $values['max_multiple_bookings'];
 								break;
 							}
 						}
@@ -275,7 +278,7 @@
 							'FromInMinutes' => $FromInMinutes,
 							'ToInMinutes' => $ToInMinutes,
 							'isAvailable' => $values['isAvailable'],
-							'max_multiple_bookings' => $values['max_multiple_bookings'],
+							'max_multiple_bookings' => empty($values['max_multiple_bookings']) ? $arrSystems[$systemId]['max_multiple_bookings'] : $values['max_multiple_bookings'],
 						);
 					}
 				}
@@ -337,10 +340,10 @@
 
 		$stmt = $link->prepare($query);
 		$stmt->execute();
-		$stmt->bind_result($system_id, $max_multiple_bookings);
+		$stmt->bind_result($systemId, $max_multiple_bookings);
 		$stmt->store_result();
 		while ($stmt->fetch()) {
-			$arrSystems[$system_id] = array(
+			$arrSystems[$systemId] = array(
 				'max_multiple_bookings' => $max_multiple_bookings,
 			);
 		}
@@ -435,6 +438,7 @@
 					}
 
 					$arrBookingPeriodsByDaysDiff[$systemId][$days_diff][$i]['isAvailable'] = $isAvailable;
+					$arrBookingPeriodsByDaysDiff[$systemId][$days_diff][$i]['max_multiple_bookings'] = $arrSystems[$systemId]['max_multiple_bookings'];
 				}
 			}
 		}
@@ -471,7 +475,9 @@
 								$period['ToInMinutes'] == $ToInMinutes) {
 								$elementExists = true;
 								$arrBookingPeriodsByDaysDiff[$systemId][$days_diff][$i]['isAvailable'] = $values['isAvailable'];
-								$arrBookingPeriodsByDaysDiff[$systemId][$days_diff][$i]['max_multiple_bookings'] = $values['max_multiple_bookings'];
+								
+								if (!empty($values['max_multiple_bookings'])) // zero is default value in setting_bookingperiods_special (no influence)
+									$arrBookingPeriodsByDaysDiff[$systemId][$days_diff][$i]['max_multiple_bookings'] = $values['max_multiple_bookings'];
 								break;
 							}
 						}
@@ -485,7 +491,7 @@
 							'FromInMinutes' => $FromInMinutes,
 							'ToInMinutes' => $ToInMinutes,
 							'isAvailable' => $values['isAvailable'],
-							'max_multiple_bookings' => $values['max_multiple_bookings'],
+							'max_multiple_bookings' => empty($values['max_multiple_bookings']) ? $arrSystems[$systemId]['max_multiple_bookings'] : $values['max_multiple_bookings'],
 						);
 					}
 				}
