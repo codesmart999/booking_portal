@@ -154,6 +154,29 @@ if (!empty($_REQUEST['action']) && $_POST['action'] == "change_availability_date
     exit();
 }
 
+//MUTIL BOOKING
+if (!empty($_REQUEST['action']) && $_POST['action'] === 'multi_bookings') {
+
+    $availableInfo = isset($_POST['availableInfo']) ? $_POST['availableInfo'] : 0;
+    $timeSlot = isset($_POST['slot']) ? $_POST['slot'] : 0;
+    $date = isset($_POST['date']) ? $_POST['date'] : 0;
+    $multiple_booking = isset($_POST['multiple_booking']) ? $_POST['multiple_booking'] : '';
+    $max_multiple_bookings = isset($_POST['max_multiple_bookings']) ? $_POST['max_multiple_bookings'] : '';
+    $systemId = isset($_POST['systemId']) ? $_POST['systemId'] : [];
+    
+    // Validate input
+    if ($date == 0 || empty($systemId)) {
+        // Handle invalid input, maybe return an error response
+        return;
+    }
+    $formattedDate = date('Y-m-d', $date);
+    list($fromInMinutes, $toInMinutes) = explode('-', $timeSlot);
+    insertIntoUnavailableBookingPeriods($systemId, $date, $fromInMinutes, $toInMinutes, $availableInfo, $max_multiple_bookings, 1); //final param 1 means updating multiplebookings
+
+    echo json_encode(1);
+    exit();
+}
+
 //API for action "Make All Available/ Make All Unavialable" Button on Montly Show Table
 if (!empty($_REQUEST['action']) && $_POST['action'] == "change_availability_month") {
     $data = isset($_POST['data']) ? json_decode($_POST['data']) : [];

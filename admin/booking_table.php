@@ -161,6 +161,8 @@ while ($startDateTime <= $endDateTime) {
        
         $weekday = date('N', $startDateTime) % 7; // Get the weekday (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
         if ($showFlag == WEEKLY_SHOWING_MODE){
+
+            
             if ($i == 0)
                 echo '<tr id="trHeader"><td colspan="2">' . date('l, F j, Y', $startDateTime) . '</td></tr>';
             else {
@@ -226,6 +228,11 @@ while ($startDateTime <= $endDateTime) {
                     $background_color = "FFFFFF"; // White for available
                     $fullName = "";
                     $available = 1; //available
+
+                    //set MultiBooking info
+                    $multibookingCounts = 1;
+                    $multibookingColor = $multibookingCounts > 1 ? '#ff0000' : '#0000ff';
+
                     // Check if the time slot is booked
                     if (isset($arrBookingsOfSystem[$dateYMD][$timeSlot])) { //booked case
 
@@ -277,7 +284,11 @@ while ($startDateTime <= $endDateTime) {
                                     .$timeRender.'
                                 </span>';
                             echo '<a target="_self" href="#" onclick="bookedClientView('.$customer_id.');"><span class="CustName" style="color: ' . generateTextColor($bookingCode) .'"><i class="fa fa-user"></i>'
-                                . $businessName . ' (' . $bookingCode . ')</span><br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
+                                . $businessName . ' (' . $bookingCode . ')</span>';
+
+                            echo '<a href="#" title="Multi Bookings" data-toggle="modal" data-target="#setMultiBooking" data-date= "'.$startDateTime.'" data-status="1" data-slot="'.$fromMinutes.'-'.$toMinutes.'" style = "color: '.$multibookingColor.'" data-value='.$multibookingCounts.'>MB</a>';
+                            
+                            echo '<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
                             echo '<a target="_self" href="#" onclick="bookedAddComments(&quot;'.$bookingCode.'&quot;);">';
                             if ($hasComment) {
                                 echo '<img title="Comment Added" border="0" src="/images/comment.png">
@@ -313,7 +324,9 @@ while ($startDateTime <= $endDateTime) {
                             }
                             $background_color = "FFE2A6"; //unavailable
                             $available = 0; //unavailable
-                            echo '&nbsp;<input type="checkbox" name="timeslot" date = "'.$startDateTime.'" status = "'.$available.'" style="margin-top: 5px" value="'.$fromMinutes.'-'.$toMinutes.'">&nbsp;<span style="background-color: #'.$background_color.'">'.$timeRender.'</span>&nbsp;&nbsp;<br/>';
+                            echo '&nbsp;<input type="checkbox" name="timeslot" date = "'.$startDateTime.'" status = "'.$available.'" style="margin-top: 5px" value="'.$fromMinutes.'-'.$toMinutes.'">&nbsp;<span style="background-color: #'.$background_color.'">'.$timeRender.'</span>&nbsp;&nbsp;';
+                            echo '<a href="#" title="Multi Bookings" data-toggle="modal" data-target="#setMultiBooking" data-date= "'.$startDateTime.'" data-status="0" data-slot="'.$fromMinutes.'-'.$toMinutes.'" style = "color: '.$multibookingColor.'" data-value='.$multibookingCounts.'>MB</a>';
+                            echo '<br/>';
                         }
                         else {
                             if (in_array(16, $filter_array)) //if hide available time filter case 
@@ -323,13 +336,13 @@ while ($startDateTime <= $endDateTime) {
                                 if ($startDateTime < $currentTime) 
                                 continue;
                             }
-                            echo '&nbsp;<input type="checkbox" name="timeslot" date = "'.$startDateTime.'" status = "'.$available.'" style="margin-top: 5px" value="'.$fromMinutes.'-'.$toMinutes.'">&nbsp;<span style="background-color: #'.$background_color.'">'.$timeRender.'</span>&nbsp;&nbsp;<br/>';
+                            echo '&nbsp;<input type="checkbox" name="timeslot" date = "'.$startDateTime.'" status = "'.$available.'" style="margin-top: 5px" value="'.$fromMinutes.'-'.$toMinutes.'">&nbsp;<span style="background-color: #'.$background_color.'">'.$timeRender.'</span>&nbsp;&nbsp;';
+                            echo '<a href="#" title="Multi Bookings" data-toggle="modal" data-target="#setMultiBooking" data-date= "'.$startDateTime.'" data-status="1" data-slot="'.$fromMinutes.'-'.$toMinutes.'" style = "color: '.$multibookingColor.'" data-value='.$multibookingCounts.'>MB</a>';
+                            echo'<br/>';
                         }
                         
                         
                     }
-
-                    
                 }
             }
             echo '</font>';
@@ -363,9 +376,95 @@ while ($startDateTime <= $endDateTime) {
     $startDateTime = strtotime('+1 day', $startDateTime);
 }
 
+//modal for multiple booking set
+echo '<div class="modal fade" id="setMultiBooking" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+            <form method="post" class="form-horizontal" action="/api/calendar_ajax_api.php" method="post">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Multiple Bookings</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <input type="hidden" id="availableInfo" name="availableInfo" value="">
+                            <input type="hidden" id="slot" name="slot" value="">
+                            <input type="hidden" id="date" name="date" value="">
+                            <p class="Message fst-italic fw-bold p-0"></p>
+                            <div class="form-group">
+                            <label for="multiple_booking">Specify the number of multiple bookings</label>
+                            <div class="display-flex">
+                                <div>
+                                    <label class="toggle-switch">
+                                        <input id="multiple_booking" name="multiple_booking" type="checkbox" value="">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                <div id="max_multiple_bookings_container" class="d-none">
+                                    <input type="number" id="mb_count" class="form-control"name="max_multiple_bookings" value="1"/>
+                                </div>
+                            </div>
+                        </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>
+                            <button type="submit" class="btn btn-primary btn-sm" name="Save" value="Save" id="save">Save</button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>';
 ?>
 
 <script>
+    $(document).ready(function () {
+        $('a[data-toggle="modal"]').click(function () {
+            // Get the data attributes values
+            var dateValue = $(this).data("date");
+            var statusValue = $(this).data("status");
+            var slotValue = $(this).data("slot");
+            var count = $(this).data("value");
+
+            console.log(statusValue);
+
+            // Set the values to the input fields inside the modal
+            $("#availableInfo").val(statusValue); // Assuming you want to reflect the status here
+            $("#slot").val(slotValue);
+            $("#date").val(dateValue);
+            $("#mb_count").val(count);
+
+            if(count > 1) {
+                // Check the checkbox
+                $('#multiple_booking').prop('checked', true);
+                // Make the number input visible
+                $('#max_multiple_bookings_container').removeClass('d-none');
+            }
+        });
+        $("form").submit(function (event) {
+            // Prevent the default form submission
+            event.preventDefault();
+
+            // Serialize the form data
+            var formData = $(this).serialize();
+            formData += '&systemId=' + encodeURIComponent('<?php echo $systemId; ?>');
+            formData += '&action=multi_bookings';
+            // AJAX request
+            $.ajax({
+                url: "/api/calendar_ajax_api.php", // The URL to the PHP script
+                type: "POST", // The HTTP method to use for the request
+                data: formData, // The data to send in the request
+                success: function (response) {
+                    console.log("Success:", response);
+                    $("#setMultiBooking").modal("hide");
+                },
+                error: function (xhr, status, error) {
+                    console.log("Error:", error);
+                },
+            });
+            });
+    });
+
     function prevDay() {
         const newUrl = `${window.location.origin}${window.location.pathname}?SystemId=${<?php echo $systemId; ?>}&startDate=<?php echo $prevDay;?>&endDate=<?php echo $prevDay;?>`;
         window.location.href = newUrl;
@@ -580,5 +679,17 @@ while ($startDateTime <= $endDateTime) {
             }
         });
     });
+
+    //multi booking toggle event 
+    $("#multiple_booking").change(function(){
+			// If checkbox is checked, show the input container
+			if($(this).is(":checked")){
+				$("#max_multiple_bookings_container").removeClass("d-none");
+			} else {
+				// If checkbox is unchecked, hide the input container and reset input value
+				$("#max_multiple_bookings_container").addClass("d-none");
+				$("#max_multiple_bookings").val("1");
+			}
+	});
 
 </script>

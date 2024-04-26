@@ -1203,47 +1203,65 @@
 	}
 
 	// Function to insert into unavailable_bookingperiods table
-	function insertIntoUnavailableBookingPeriods($systemId, $date, $fromInMinutes, $toInMinutes, $status) {
-		// Get database connection
+	function insertIntoUnavailableBookingPeriods($systemId, $date, $fromInMinutes, $toInMinutes, $status, $maxMultiBookings = 1, $type = 0) {
+		//type == 0 means that updating $status
+        //type == 1 means that updating $maxMultiBookings
+        
+        // Get database connection
 		$db = getDBConnection();
-
 		// Format date
 		$formattedDate = date('Y-m-d', $date);
 
 		// Check if the record already exists
-		$stmt = $db->prepare("SELECT COUNT(*) FROM setting_bookingperiods_special WHERE SystemId = ? AND SetDate = ? AND FromInMinutes = ? AND ToInMinutes = ?");
+		$stmt = $db->prepare("SELECT COUNT(*), isAvailable, MaxMultipleBookings  FROM setting_bookingperiods_special WHERE SystemId = ? AND SetDate = ? AND FromInMinutes = ? AND ToInMinutes = ?");
 		$stmt->bind_param("isii", $systemId, $formattedDate, $fromInMinutes, $toInMinutes);
 		$stmt->execute();
-		$stmt->bind_result($existingRecordsCount);
+		$stmt->bind_result($existingRecordsCount, $_isAvailable, $_maxMultiBookings);
 		$stmt->fetch();
 		$stmt->close();
 
 		/// If no matching record found, insert the new record
 		if ($existingRecordsCount == 0) {
 			// Prepare and execute SQL statement to insert the record
-			$insertStmt = $db->prepare("INSERT INTO setting_bookingperiods_special (SystemId, SetDate, FromInMinutes, ToInMinutes, isAvailable) VALUES (?, ?, ?, ?, ?)");
+			$insertStmt = $db->prepare("INSERT INTO setting_bookingperiods_special (SystemId, SetDate, FromInMinutes, ToInMinutes, isAvailable, MaxMultipleBookings) VALUES (?, ?, ?, ?, ?, ?)");
 			if (!$insertStmt) {
 				die('Error in preparing insert SQL statement: ' . $db->error);
 			}
 
-			$insertStmt->bind_param('isiii', $systemId, $formattedDate, $fromInMinutes, $toInMinutes, $status);
+			$insertStmt->bind_param('isiiii', $systemId, $formattedDate, $fromInMinutes, $toInMinutes, $status, $maxMultiBookings);
 			if (!$insertStmt->execute()) {
 				die('Error executing insert SQL statement: ' . $insertStmt->error);
 			}
 
 			$insertStmt->close();
 		}else {
-			$updateStmt = $db->prepare("UPDATE setting_bookingperiods_special SET isAvailable = ? WHERE SystemId=? AND SetDate = ? AND FromInMinutes = ? AND ToInMinutes = ?");
-			if (!$updateStmt) {
-				die('Error in preparing insert SQL statement: ' . $db->error);
-			}
 
-			$updateStmt->bind_param('iisii', $status, $systemId, $formattedDate, $fromInMinutes, $toInMinutes);
-			if (!$updateStmt->execute()) {
-				die('Error executing insert SQL statement: ' . $updateStmt->error);
-			}
+            if($type == 0){ //update status
+                $updateStmt = $db->prepare("UPDATE setting_bookingperiods_special SET isAvailable = ? WHERE SystemId=? AND SetDate = ? AND FromInMinutes = ? AND ToInMinutes = ? ");
+                if (!$updateStmt) {
+                    die('Error in preparing insert SQL statement: ' . $db->error);
+                }
 
-			$updateStmt->close();
+                $updateStmt->bind_param('iisii', $status, $systemId, $formattedDate, $fromInMinutes, $toInMinutes);
+                if (!$updateStmt->execute()) {
+                    die('Error executing insert SQL statement: ' . $updateStmt->error);
+                }
+
+			    $updateStmt->close();
+
+            }else{ //update maxMultipleBookings
+                $updateStmt = $db->prepare("UPDATE setting_bookingperiods_special SET isAvailable = ?, MaxMultipleBookings = ? WHERE SystemId=? AND SetDate = ? AND FromInMinutes = ? AND ToInMinutes = ? ");
+                if (!$updateStmt) {
+                    die('Error in preparing insert SQL statement: ' . $db->error);
+                }
+
+                $updateStmt->bind_param('iiisii', $status, $maxMultiBookings, $systemId, $formattedDate, $fromInMinutes, $toInMinutes);
+                if (!$updateStmt->execute()) {
+                    die('Error executing insert SQL statement: ' . $updateStmt->error);
+                }
+
+                $updateStmt->close();
+            }
     	}
 	}
 
