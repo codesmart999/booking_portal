@@ -1,5 +1,5 @@
-<?php 
-	require_once('header.php');
+<?php
+require_once 'header.php';
 ?>
 <link href="./css/reports.css" rel="stylesheet">
 <h4 class="page-title">Report on All Scheduled Bookings</h4>
@@ -29,7 +29,7 @@
                                     <option value="">Select Search Criteria</option>
                                     <?php foreach ($arrLocations as $key => $values): ?>
                                     <option value="<?php echo $key; ?>"><?php echo $values['name']; ?></option>
-                                    <?php endforeach; ?>
+                                    <?php endforeach;?>
                                 </select>
                             </div>
                             <div class="form-check">
@@ -44,7 +44,7 @@
                                     <option value="">Select Specific Individual System</option>
                                     <?php foreach ($arrSystems as $key => $objSystem): ?>
                                     <option value="<?php echo $key; ?>"><?php echo $objSystem['fullname']; ?></option>
-                                    <?php endforeach; ?>
+                                    <?php endforeach;?>
                                 </select>
                             </div>
                             <div class="form-check">
@@ -100,7 +100,7 @@
                         </div>
                     </div>
 
-                    <!-- <div class="row">
+                    <div class="row">
                         <div class="col">
                             <div class="bg-light p-3">
                                 <label for="reportCriteria" class="mb-2 fw-bold fs-5 text-danger">Select scheduled
@@ -113,44 +113,100 @@
                         <div class="col-lg-12">
                             <div class="bg-white p-3">
                                 <div class="mb-3">
-                                    <div class="form-check" id="display_check">
-                                        <input class="form-check-input" type="checkbox" name="printuser" id="printuser"
-                                            checked>
-                                        <label class="form-check-label" for="printuser"
-                                            style="font-size: 1rem; margin-top: 5px;">User</label><br>
-
-                                        <input class="form-check-input" type="checkbox" name="printtitle"
-                                            id="printtitle" checked>
-                                        <label class="form-check-label" for="printtitle"
-                                            style="font-size: 1rem; margin-top: 5px;">Title Label</label><br>
-
-                                        <input class="form-check-input" type="checkbox" name="printname1"
-                                            id="printname1" checked>
-                                        <label class="form-check-label" for="printname1"
-                                            style="font-size: 1rem; margin-top: 5px;">Name Label 1 (Default : First
-                                            Name)</label><br>
-
-                                        <input class="form-check-input" type="checkbox" name="printname2"
-                                            id="printname2" checked>
-                                        <label class="form-check-label" for="printname2"
-                                            style="font-size: 1rem; margin-top: 5px;">Name Label 2 (Default : Last
-                                            Name)</label><br>
-
-                                        <input class="form-check-input" type="checkbox" name="printlink" id="printlink"
-                                            checked>
-                                        <label class="form-check-label" for="printlink"
-                                            style="font-size: 1rem; margin-top: 5px;">System Name</label><br>
-
-                                        <input class="form-check-input" type="checkbox" name="printdate" id="printdate"
-                                            checked>
-                                        <label class="form-check-label" for="printdate"
-                                            style="font-size: 1rem; margin-top: 5px;">Date of Booking</label><br>
-
-                                        <input class="form-check-input" type="checkbox" name="printstatus"
-                                            id="printstatus" checked>
-                                        <label class="form-check-label" for="printstatus"
-                                            style="font-size: 1rem; margin-top: 5px;">Status</label><br>
-
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-check" id="display_check">
+                                                <input class="form-check-input" type="checkbox" name="location"
+                                                    id="location" checked>
+                                                <label class="form-check-label" for="location">Location</label>
+                                            </div>
+                                            <div class="form-check" id="display_check">
+                                                <input class="form-check-input" type="checkbox" name="bookedFor"
+                                                    id="bookedFor" checked>
+                                                <label class="form-check-label" for="bookedFor">Booked For</label>
+                                            </div>
+                                            <div class="form-check" id="display_check">
+                                                <input class="form-check-input" type="checkbox" name="cancelled"
+                                                    id="cancelled" checked>
+                                                <label class="form-check-label" for="cancelled">Cancelled</label>
+                                            </div>
+                                            <div class="form-check" id="display_check">
+                                                <input class="form-check-input" type="checkbox" name="from" id="from"
+                                                    checked>
+                                                <label class="form-check-label" for="from">Booking From</label>
+                                            </div>
+                                            <div class="form-check" id="display_check">
+                                                <input class="form-check-input" type="checkbox" name="to" id="to"
+                                                    checked>
+                                                <label class="form-check-label" for="to">Booking To</label>
+                                            </div>
+                                            <div class="form-check" id="display_check">
+                                                <input class="form-check-input" type="checkbox" name="serviceName"
+                                                    id="serviceName" checked>
+                                                <label class="form-check-label" for="serviceName">Service Name</label>
+                                            </div>
+                                            <div class="form-check" id="display_check">
+                                                <input class="form-check-input" type="checkbox" name="servicePrice"
+                                                    id="servicePrice" checked>
+                                                <label class="form-check-label" for="servicePrice">Service Price</label>
+                                            </div>
+                                            <div class="form-check" id="display_check">
+                                                <input class="form-check-input" type="checkbox" name="serviceDuration"
+                                                    id="serviceDuration" checked>
+                                                <label class="form-check-label" for="serviceDuration">Service
+                                                    Duration</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-check" id="display_check">
+                                                <input class="form-check-input" type="checkbox" name="bookingDate"
+                                                    id="bookingDate" checked>
+                                                <label class="form-check-label" for="bookingDate">Booking Date</label>
+                                            </div>
+                                            <div class="form-check" id="display_check">
+                                                <input class="form-check-input" type="checkbox" name="bookingCode"
+                                                    id="bookingCode" checked>
+                                                <label class="form-check-label" for="bookingCode">Booking Code</label>
+                                            </div>
+                                            <div class="form-check" id="display_check">
+                                                <input class="form-check-input" type="checkbox" name="bookedBy"
+                                                    id="bookedBy" checked>
+                                                <label class="form-check-label" for="bookedBy">Booked By</label>
+                                            </div>
+                                            <div class="form-check" id="display_check">
+                                                <input class="form-check-input" type="checkbox" name="businessName"
+                                                    id="businessName" checked>
+                                                <label class="form-check-label" for="businessName">Business Name</label>
+                                            </div>
+                                            <div class="form-check" id="display_check">
+                                                <input class="form-check-input" type="checkbox" name="isAttended"
+                                                    id="isAttended" checked>
+                                                <label class="form-check-label" for="isAttended">Client Attended</label>
+                                            </div>
+                                            <div class="form-check" id="display_check">
+                                                <input class="form-check-input" type="checkbox" name="customerEmail"
+                                                    id="customerEmail" checked>
+                                                <label class="form-check-label" for="customerEmail">Customer
+                                                    Email</label>
+                                            </div>
+                                            <div class="form-check" id="display_check">
+                                                <input class="form-check-input" type="checkbox" name="customerPhone"
+                                                    id="customerPhone" checked>
+                                                <label class="form-check-label" for="customerPhone">Customer
+                                                    Phone</label>
+                                            </div>
+                                            <div class="form-check" id="display_check">
+                                                <input class="form-check-input" type="checkbox" name="customerAddress"
+                                                    id="customerAddress" checked>
+                                                <label class="form-check-label" for="customerAddress">Customer
+                                                    Address</label>
+                                            </div>
+                                            <div class="form-check" id="display_check">
+                                                <input class="form-check-input" type="checkbox" name="patientName"
+                                                    id="patientName" checked>
+                                                <label class="form-check-label" for="patientName">Patient Name</label>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="mb-3">
@@ -161,7 +217,7 @@
 
                                 </div>
                             </div>
-                        </div> -->
+                        </div>
 
                         <div class="row">
                             <div class="col">
