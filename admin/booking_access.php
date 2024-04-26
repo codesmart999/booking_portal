@@ -220,9 +220,8 @@ $message = '<p class="Message fst-italic fw-bold text-success d-none">' . _lang(
                                     const month = parseInt(parts[1]); // Extract the month (convert to integer)
                                     const day = parseInt(parts[2]); // Extract the day (convert to integer)
                                     const startDate = year+'-'+month+'-'+ day; // Format the date as M/D/Y
-                                    var newUrl = window.location.origin + window.location.pathname + "?SystemId=<?php echo $systemId?>&startDate="+ startDate + "&endDate=" + startDate;
+                                    var newUrl = window.location.origin + window.location.pathname + "?SystemId=<?php echo $systemId?>&startDate="+ e.value + "&endDate=" + e.value;
                                     window.location.href = newUrl;
-                                    
                                 });         
                             </script>
                         </div>

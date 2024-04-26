@@ -1886,7 +1886,7 @@
 			$stmt = $db->prepare($sql);
 			$stmt->bind_param('ssiii', $startDate, $endDate, $systemId, $page_start, $limit);
 		} else if (is_null($systemId) && is_null($locationId)) {
-			$sql .= "ORDER BY s.SystemId LIMIT ?, ?";
+			$sql .= " ORDER BY s.SystemId LIMIT ?, ?";
 			$stmt = $db->prepare($sql);
 			$stmt->bind_param('ssii', $startDate, $endDate, $page_start, $limit);
 		}
