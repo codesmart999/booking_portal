@@ -350,6 +350,8 @@
 		$arrBookings = array();
 		$arrSpecialBookingPeriods = array();
 		foreach ($arrSystemIds as $systemId) {
+			if (empty($systemId))
+				continue;
 			$arrBookings[$systemId] = getBookedInfo($systemId, $date, $endDate);
 			$arrSpecialBookingPeriods[$systemId] = getBookingPeriodsSpecialByDate($systemId, $date, $endDate);
 		}
@@ -1466,23 +1468,20 @@
 		if (empty($end_date))
 			$end_date = $start_date;
 		
-			$stmt = $db->prepare("SELECT SetDate, FromInMinutes, ToInMinutes, isAvailable FROM setting_bookingperiods_special WHERE SystemId = ? AND SetDate >= ? AND SetDate <= ? ORDER BY FromInMinutes ASC");
+		$stmt = $db->prepare("SELECT SetDate, FromInMinutes, ToInMinutes, isAvailable FROM setting_bookingperiods_special WHERE SystemId = ? AND SetDate >= ? AND SetDate <= ? ORDER BY FromInMinutes ASC");
 		$stmt->bind_param('iss', $systemId, $start_date, $end_date);
 		$stmt->execute();
 		$stmt->bind_result( $date, $from_in_mins, $to_in_mins, $isAvailable);
 		$stmt->store_result();
 
 		while ($stmt->fetch()) {
-			if (empty($result[$date]))
+			if (!isset($result[$date]))
 				$result[$date] = array();
 			
 			$result[$date][$from_in_mins . '-' . $to_in_mins] = $isAvailable;
 		}
 
 		$stmt->close();
-
-		if ($start_date == $end_date && isset($result[$start_date]))
-			return $result[$start_date];
 
 		return $result;
 	}

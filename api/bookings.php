@@ -59,30 +59,6 @@
                 'BookingPeriodFrom' => format_date($selected_date) . ' ' . get_display_text_from_minutes($target_booking_period_from)
             );
             break;
-        case 'get_bookings_by_system_date': // Deprecated!! (used in move_bookings_old.php)
-            $systemId = $_POST['system_id'];
-            $date = date('Y-m-d', strtotime(str_replace('/', '-', $_POST['date'])));
-
-            $bookingInfo = getBookedInfo($systemId, $date, $date);
-
-            $weekday = date('N', strtotime($date)) % 7;
-            $booking_periods =  getBookingPeriodsByWeekday($weekday, $systemId);
-
-            $arr_availability_by_timeslot = getBookingPeriodsSpecialByDate($systemId, $date);
-
-            $len = count($booking_periods);
-            for ($i = 0; $i < $len; $i++) {
-                $from_in_mins = $booking_periods[$i]['FromInMinutes'];
-                $to_in_mins = $booking_periods[$i]['ToInMinutes'];
-
-                if (isset($arr_availability_by_timeslot[$from_in_mins . '-' . $to_in_mins]))
-                    $booking_periods[$i]['isAvailable'] = $arr_availability_by_timeslot[$from_in_mins . '-' . $to_in_mins];
-            }
-
-            $res["status"] = "success";
-            $res["booking_info"] = isset($bookingInfo[$date]) ? $bookingInfo[$date] : array();
-            $res['booking_periods'] = $booking_periods;
-            break;
         case 'move_booking':
             // 1) Check Authentication
             $objCurUser = $_SESSION['User'];

@@ -18,7 +18,7 @@ if (!empty($_REQUEST['year']) && !empty($_REQUEST['month']) && !empty($_REQUEST[
 
     // Added by Hennadii(20204-04-26)
     $arrMonthlySummaryBySystems = getMonthlySummary(array($systemId), $firstDayOfMonth, $lastDayOfMonth);
-    $monthAvailableInfo = $arrMonthlySummaryBySystems[$systemId];
+    $arrMonthlySummary = $arrMonthlySummaryBySystems[$systemId];
 
     //Sample Return Result 
     // [2025-10-10] => Array
@@ -36,7 +36,7 @@ if (!empty($_REQUEST['year']) && !empty($_REQUEST['month']) && !empty($_REQUEST[
     //         [single_bookings] => 5
     //         [group_bookings] => 2
     //     )
-    //__debug($monthAvailableInfo);
+    //__debug($arrMonthlySummary);
 
     $data = [];
 
@@ -51,18 +51,18 @@ if (!empty($_REQUEST['year']) && !empty($_REQUEST['month']) && !empty($_REQUEST[
 
         $className = 'grade-available';
 
-        if (!empty($monthAvailableInfo[$days_diff]['unavailable_slots'])){
+        if (!empty($arrMonthlySummary[$days_diff]['unavailable_slots'])){
             $className = 'grade-unavailable';
         }
             
-        if (!empty($monthAvailableInfo[$days_diff]['available_slots'])) {
+        if (!empty($arrMonthlySummary[$days_diff]['available_slots'])) {
             $className = 'grade-available';
         }
 
         // Check if the current date is booked and count the number of bookings
-        if ($monthAvailableInfo[$days_diff]['group_bookings'] > 1) {
+        if ($arrMonthlySummary[$days_diff]['group_bookings'] > 1) {
             $className = 'grade-booked-many';
-        } elseif ($monthAvailableInfo[$days_diff]['single_bookings'] > 0) {
+        } elseif ($arrMonthlySummary[$days_diff]['single_bookings'] > 0) {
             $className = 'grade-booked';
         }
 

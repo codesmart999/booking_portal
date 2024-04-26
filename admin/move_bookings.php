@@ -44,22 +44,19 @@
     foreach ($arrSystems as $systemId => $objSystemInfo) {
         $bookingInfo = getBookedInfo($systemId, $date, $date);
 
-        $weekday = date('N', strtotime($date)) % 7;
-        $booking_periods =  getBookingPeriodsByWeekday($weekday, $systemId);
-
-        $arr_availability_by_timeslot = getBookingPeriodsSpecialByDate($systemId, $date);
-
-        $len = count($booking_periods);
-        for ($i = 0; $i < $len; $i++) {
-            $from_in_mins = $booking_periods[$i]['FromInMinutes'];
-            $to_in_mins = $booking_periods[$i]['ToInMinutes'];
-
-            if (isset($arr_availability_by_timeslot[$from_in_mins . '-' . $to_in_mins]))
-                $booking_periods[$i]['isAvailable'] = $arr_availability_by_timeslot[$from_in_mins . '-' . $to_in_mins];
-        }
+        $arrMonthlySummaryBySystems = getMonthlySummary(array($systemId), $date, $date);
+        $arrDaySummary = $arrMonthlySummaryBySystems[$systemId][0]; // days_diff = 0
+        
+        // array(
+        //     'available_slots' => ,
+        //     'unavailable_slots' => ,
+        //     'single_bookings' => ,
+        //     'group_bookings' => ,
+        //     'booking_periods' => array()
+        // );
 
         $arrSystems[$systemId]["booking_info"] = isset($bookingInfo[$date]) ? $bookingInfo[$date] : array();
-        $arrSystems[$systemId]['booking_periods'] = $booking_periods;
+        $arrSystems[$systemId]['booking_periods'] = $arrDaySummary['booking_periods'];
     }
 
     $message = '<p class="Message fst-italic fw-bold text-success d-none">'._lang('success_update').'</p>';
@@ -104,6 +101,7 @@
                     <?php
                         foreach ($objSystemInfo['booking_periods'] as $objBookingPeriod) {
                             $str_booking_period = $objBookingPeriod['FromInMinutes'] . '-' . $objBookingPeriod['ToInMinutes'];
+                            $objBookingPeriod['DisplayText'] = get_display_text_from_minutes( $objBookingPeriod['FromInMinutes'], $objBookingPeriod['ToInMinutes']);
 
                             if (isset($objSystemInfo['booking_info'][$str_booking_period])) {
                                 $arrBookingInfo = $objSystemInfo['booking_info'][$str_booking_period];
