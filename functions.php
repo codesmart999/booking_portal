@@ -257,7 +257,6 @@
 					if (isset($arrBookingPeriodsByDaysDiff[$systemId][$days_diff])) {
 						foreach ($arrBookingPeriodsByDaysDiff[$systemId][$days_diff] as $i => $period) {
 							if (is_array($period) && $period['weekday'] == $weekday &&
-								$period['SystemId'] == $systemId &&
 								$period['FromInMinutes'] == $FromInMinutes &&
 								$period['ToInMinutes'] == $ToInMinutes) {
 								$elementExists = true;
@@ -294,7 +293,7 @@
 				$calculated_date = date('Y-m-d', strtotime($date . ' +' . $days_diff . ' days'));
 				
 				foreach ($arr_bookingperiods as $index => $values) {
-					$max_multiple_bookings = empty($values['max_multiple_bookings']) ? 0 : max($values['max_multiple_bookings'], $objSystem['max_multiple_bookings']);
+					$max_multiple_bookings = $values['max_multiple_bookings'];
 					if (isset($arrBookings[$systemId]) && isset($arrBookings[$systemId][$calculated_date])
 						&& isset($arrBookings[$systemId][$calculated_date][$values['FromInMinutes'] . '-' . $values['ToInMinutes']])
 						&& count($arrBookings[$systemId][$calculated_date][$values['FromInMinutes'] . '-' . $values['ToInMinutes']]) >= $max_multiple_bookings) {
@@ -507,7 +506,7 @@
 				$calculated_date = date('Y-m-d', strtotime($date . ' +' . $days_diff . ' days'));
 				
 				foreach ($arr_bookingperiods as $index => $values) {
-					$max_multiple_bookings = empty($values['max_multiple_bookings']) ? 0 : max($values['max_multiple_bookings'], $objSystem['max_multiple_bookings']);
+					$max_multiple_bookings = $values['max_multiple_bookings'];
 					if (isset($arrBookings[$systemId]) && isset($arrBookings[$systemId][$calculated_date])
 						&& isset($arrBookings[$systemId][$calculated_date][$values['FromInMinutes'] . '-' . $values['ToInMinutes']])
 						&& count($arrBookings[$systemId][$calculated_date][$values['FromInMinutes'] . '-' . $values['ToInMinutes']]) >= $max_multiple_bookings) {
