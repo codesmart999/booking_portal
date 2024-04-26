@@ -96,7 +96,7 @@
         ?>
             <div class="panel-container">
                 <div class="panel-header panel-header-sm">
-                    <?php echo '<a href="booking_access?SystemId=' . $systemId . '&startDate=' . $selected_date . '&endDate=' . $selected_date . '">'
+                    <?php echo '<a href="booking_access?SystemId=' . $systemId . '&startDate=' . $date . '&endDate=' . $date . '">'
                         . $objSystemInfo['full_name']
                         . '</a>';?>
                 </div>
