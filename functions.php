@@ -468,12 +468,11 @@
 					// Check if the element already exists in the array
 					if (isset($arrBookingPeriodsByDaysDiff[$systemId][$days_diff])) {
 						foreach ($arrBookingPeriodsByDaysDiff[$systemId][$days_diff] as $i => $period) {
-							if ($period['weekday'] == $weekday &&
-								$period['SystemId'] == $systemId &&
+							if (is_array($period) && $period['weekday'] == $weekday &&
 								$period['FromInMinutes'] == $FromInMinutes &&
 								$period['ToInMinutes'] == $ToInMinutes) {
 								$elementExists = true;
-								$arrBookingPeriodsByDaysDiff[$systemId][$days_diff][$i] = $isAvailable;
+								$arrBookingPeriodsByDaysDiff[$systemId][$days_diff][$i]['isAvailable'] = $isAvailable;
 								break;
 							}
 						}

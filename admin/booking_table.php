@@ -40,6 +40,9 @@ $tableTitle = formatDateRange($startDate, $endDate, $showFlag);
 
 $weekDates = getWeekDates($endDate);
 
+$availableDatedInMonth = 0;
+$unavailableDatedInMonth = 0;
+
 //building TABLE HEADER part
 if ($showFlag == MONTHLY_SHOWING_MODE){
     //For Make All Available/Make All Unavaiable Button Event on Monthly show list 
