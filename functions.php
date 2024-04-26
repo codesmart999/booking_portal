@@ -326,6 +326,8 @@
 		if (empty($endDate))
 			$endDate = date('Y-m-d', strtotime($date . ' +30 days'));
 
+		$total_days_diff = (strtotime($endDate) - strtotime($date)) / 86400;
+
     	$link = getDBConnection();
 
 		$result = array();
@@ -362,16 +364,17 @@
 	
 		// 3-1) Get Weekdays Availability
 		$stmt = $link->prepare('SELECT SystemId, weekday, isAvailable FROM setting_weekdays'
-		  . ' WHERE SystemId IN (' . $strSystemIds . ')'
-		  . ' ORDER BY SystemId ASC');
-		  $stmt->execute();
-		  $stmt->bind_result($systemId, $weekday, $is_available);
-		  while ($stmt->fetch()) {
-		  if (!isset($arrSystems[$systemId]))
-			$arrSystems[$systemId] = array();
-			  
-		  $arrSystems[$systemId][$weekday] = $is_available;
-		  }
+			. ' WHERE SystemId IN (' . $strSystemIds . ')'
+			. ' ORDER BY SystemId ASC'
+		);
+		$stmt->execute();
+		$stmt->bind_result($systemId, $weekday, $is_available);
+		while ($stmt->fetch()) {
+			if (!isset($arrSystems[$systemId]))
+				$arrSystems[$systemId] = array();
+			
+			$arrSystems[$systemId][$weekday] = $is_available;
+		}
 		unset($arrSystems[0]);
 	
 		// 3-2) Load All Booking Periods for the given SystemIDs
@@ -398,50 +401,50 @@
 		$stmt->bind_result($weekday, $systemId, $FromInMinutes, $ToInMinutes, $isAvailable, $days_diff);
 		  
 		while($stmt->fetch()) {
-		  if (!isset($arrBookingPeriodsByDaysDiff[$systemId])) {
-			$arrBookingPeriodsByDaysDiff[$systemId] = array();
-		  }
-		  if (!isset($arrBookingPeriodsByDaysDiff[$systemId][$days_diff])) {
-			$arrBookingPeriodsByDaysDiff[$systemId][$days_diff] = array();
-		  }
-	
-		  $arrBookingPeriodsByDaysDiff[$systemId][$days_diff][] = array(
-			'weekday' => $weekday,
-			'SystemId' => $systemId,
-			'FromInMinutes' => $FromInMinutes,
-			'ToInMinutes' => $ToInMinutes,
-			'isAvailable' => $isAvailable
-		  );
+			if (!isset($arrBookingPeriodsByDaysDiff[$systemId])) {
+				$arrBookingPeriodsByDaysDiff[$systemId] = array();
+			}
+			if (!isset($arrBookingPeriodsByDaysDiff[$systemId][$days_diff])) {
+				$arrBookingPeriodsByDaysDiff[$systemId][$days_diff] = array();
+			}
+
+			$arrBookingPeriodsByDaysDiff[$systemId][$days_diff][] = array(
+				'weekday' => $weekday,
+				'SystemId' => $systemId,
+				'FromInMinutes' => $FromInMinutes,
+				'ToInMinutes' => $ToInMinutes,
+				'isAvailable' => $isAvailable
+			);
 		}
 	
 		// 3-3) Copy default booking periods & update availability
 		foreach ($arrSystems as $systemId => $objSystem) {
-		  if (!isset($arrBookingPeriodsByDaysDiff[$systemId])) {
-			$arrBookingPeriodsByDaysDiff[$systemId] = unserialize(serialize($arrBookingPeriodsByDaysDiff[0]));
-		  }
-	
-		  foreach ($arrBookingPeriodsByDaysDiff[$systemId] as $days_diff => $booking_periods) {
-			$calculated_date = date('Y-m-d', strtotime($date . ' +' . $days_diff . ' days'));
-			$weekday = date('w', strtotime($calculated_date));
-	
-			foreach ($booking_periods as $i => $period) {
-			  $isAvailable = $period['isAvailable'];
-	
-			  if (isset($objSystem[$weekday])) {
-				$isAvailable = $objSystem[$weekday];
-			  } else {
-				$isAvailable = $arrSystems[0][$weekday];
-			  }
-	
-			  $arrBookingPeriodsByDaysDiff[$systemId][$days_diff][$i]['isAvailable'] = $isAvailable;
+			if (!isset($arrBookingPeriodsByDaysDiff[$systemId])) {
+				$arrBookingPeriodsByDaysDiff[$systemId] = unserialize(serialize($arrBookingPeriodsByDaysDiff[0]));
 			}
-		  }
+
+			foreach ($arrBookingPeriodsByDaysDiff[$systemId] as $days_diff => $booking_periods) {
+				$calculated_date = date('Y-m-d', strtotime($date . ' +' . $days_diff . ' days'));
+				$weekday = date('w', strtotime($calculated_date));
+
+				foreach ($booking_periods as $i => $period) {
+					$isAvailable = $period['isAvailable'];
+
+					if (isset($objSystem[$weekday])) {
+						$isAvailable = $objSystem[$weekday];
+					} else {
+						$isAvailable = $arrSystems[0][$weekday];
+					}
+
+					$arrBookingPeriodsByDaysDiff[$systemId][$days_diff][$i]['isAvailable'] = $isAvailable;
+				}
+			}
 		}
 		
 		unset($arrBookingPeriodsByDaysDiff[0]);
 
-		// 4) Expand to 31 days  - different from getAvailableSystems()
-		for ($i = 0; $i <= 30; $i++) {
+		// 4) Expand days  - different from getAvailableSystems()
+		for ($i = 7; $i <= $total_days_diff; $i++) {
 			foreach ($arrSystemIds as $systemId) {
 				if (isset($arrBookingPeriodsByDaysDiff[$systemId][$i % 7])) {
 					$arrBookingPeriodsByDaysDiff[$systemId][$i] = $arrBookingPeriodsByDaysDiff[$systemId][$i % 7];
@@ -1011,7 +1014,7 @@
 	}
 
 	//Get one Week time periods with DateRange by comibining BookingPeriods DB and Special DB
-	function getAvailableInfoInOneWeekRange($systemId, $startDate, $endDate){
+	function getAvailableInfoInOneWeekRange($systemId, $startDate, $endDate) {
 		$arrWeeklySummaryBySystems = getMonthlySummary(array($systemId), $startDate, $endDate);
     	$arrWeeklySummary = $arrWeeklySummaryBySystems[$systemId];
 

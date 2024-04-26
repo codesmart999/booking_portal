@@ -40,11 +40,11 @@ $tableTitle = formatDateRange($startDate, $endDate, $showFlag);
 
 $weekDates = getWeekDates($endDate);
 
-//For Make All Available/Make All Unavaiable Button Event on Monthly show list 
-$availableDatedInMonth = (isset($availableSlots[1])) ? json_encode($availableSlots[1]) : json_encode(array());
-$unavailableDatedInMonth = (isset($availableSlots[0])) ? json_encode($availableSlots[0]) : json_encode(array());
 //building TABLE HEADER part
 if ($showFlag == MONTHLY_SHOWING_MODE){
+    //For Make All Available/Make All Unavaiable Button Event on Monthly show list 
+    $availableDatedInMonth = (isset($availableSlots[1])) ? json_encode($availableSlots[1]) : json_encode(array());
+    $unavailableDatedInMonth = (isset($availableSlots[0])) ? json_encode($availableSlots[0]) : json_encode(array());
 ?>
     <thead>
         <tr>
