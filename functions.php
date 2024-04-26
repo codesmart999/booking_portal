@@ -202,7 +202,8 @@
 				'SystemId' => $systemId,
 				'FromInMinutes' => $FromInMinutes,
 				'ToInMinutes' => $ToInMinutes,
-				'isAvailable' => $isAvailable
+				'isAvailable' => $isAvailable,
+				'max_multiple_bookings' => 1
 			);
 		}
 
@@ -225,12 +226,6 @@
 						$isAvailable = $arrSystems[0][$weekday];
 					}
 
-					// Check Explicitly-Set Unavailable Timeslots (in setting_bookingperiods_special)
-					if (isset($arrSpecialBookingPeriods[$systemId]) && isset($arrSpecialBookingPeriods[$systemId][$calculated_date])
-						&& isset($arrSpecialBookingPeriods[$systemId][$calculated_date][$FromInMinutes . '-' . $ToInMinutes])) {
-						$isAvailable = $arrSpecialBookingPeriods[$systemId][$calculated_date][$FromInMinutes . '-' . $ToInMinutes];
-					}
-
 					// Check if it has already passed the current time
 					$newDate = date('Y-m-d H:i:s', strtotime($calculated_date . ' +' . $ToInMinutes . ' minutes'));
 					if (strtotime($newDate) < strtotime('now')) {
@@ -251,9 +246,7 @@
 				$diffInSeconds = strtotime($special_date) - strtotime($date);
 				$days_diff = floor($diffInSeconds / (60 * 60 * 24));
 
-				foreach ($arr_special_bookingperiods as $timeslot => $isAvailable) {
-					if (empty($isAvailable)) continue;
-
+				foreach ($arr_special_bookingperiods as $timeslot => $values) {
 					list($FromInMinutes, $ToInMinutes) = explode('-', $timeslot);
 
 					// Create a flag to check if the element already exists
@@ -261,12 +254,14 @@
 
 					// Check if the element already exists in the array
 					if (isset($arrBookingPeriodsByDaysDiff[$systemId][$days_diff])) {
-						foreach ($arrBookingPeriodsByDaysDiff[$systemId][$days_diff] as $period) {
-							if ($period['weekday'] == $weekday &&
+						foreach ($arrBookingPeriodsByDaysDiff[$systemId][$days_diff] as $i => $period) {
+							if (is_array($period) && $period['weekday'] == $weekday &&
 								$period['SystemId'] == $systemId &&
 								$period['FromInMinutes'] == $FromInMinutes &&
 								$period['ToInMinutes'] == $ToInMinutes) {
 								$elementExists = true;
+								$arrBookingPeriodsByDaysDiff[$systemId][$days_diff][$i]['isAvailable'] = $values['isAvailable'];
+								$arrBookingPeriodsByDaysDiff[$systemId][$days_diff][$i]['max_multiple_bookings'] = $values['max_multiple_bookings'];
 								break;
 							}
 						}
@@ -279,7 +274,8 @@
 							'SystemId' => $systemId,
 							'FromInMinutes' => $FromInMinutes,
 							'ToInMinutes' => $ToInMinutes,
-							'isAvailable' => true
+							'isAvailable' => $values['isAvailable'],
+							'max_multiple_bookings' => $values['max_multiple_bookings'],
 						);
 					}
 				}
@@ -295,9 +291,10 @@
 				$calculated_date = date('Y-m-d', strtotime($date . ' +' . $days_diff . ' days'));
 				
 				foreach ($arr_bookingperiods as $index => $values) {
+					$max_multiple_bookings = empty($values['max_multiple_bookings']) ? 0 : max($values['max_multiple_bookings'], $objSystem['max_multiple_bookings']);
 					if (isset($arrBookings[$systemId]) && isset($arrBookings[$systemId][$calculated_date])
 						&& isset($arrBookings[$systemId][$calculated_date][$values['FromInMinutes'] . '-' . $values['ToInMinutes']])
-						&& count($arrBookings[$systemId][$calculated_date][$values['FromInMinutes'] . '-' . $values['ToInMinutes']]) >= $objSystem['max_multiple_bookings']) {
+						&& count($arrBookings[$systemId][$calculated_date][$values['FromInMinutes'] . '-' . $values['ToInMinutes']]) >= $max_multiple_bookings) {
 						$arr_bookingperiods[$index]['isAvailable'] = false;
 					}
 				}
@@ -413,7 +410,8 @@
 				'SystemId' => $systemId,
 				'FromInMinutes' => $FromInMinutes,
 				'ToInMinutes' => $ToInMinutes,
-				'isAvailable' => $isAvailable
+				'isAvailable' => $isAvailable,
+				'max_multiple_bookings' => 1
 			);
 		}
 	
@@ -459,7 +457,7 @@
 				$diffInSeconds = strtotime($special_date) - strtotime($date);
 				$days_diff = floor($diffInSeconds / (60 * 60 * 24));
 
-				foreach ($arr_special_bookingperiods as $timeslot => $isAvailable) {
+				foreach ($arr_special_bookingperiods as $timeslot => $values) {
 					list($FromInMinutes, $ToInMinutes) = explode('-', $timeslot);
 
 					// Create a flag to check if the element already exists
@@ -472,7 +470,8 @@
 								$period['FromInMinutes'] == $FromInMinutes &&
 								$period['ToInMinutes'] == $ToInMinutes) {
 								$elementExists = true;
-								$arrBookingPeriodsByDaysDiff[$systemId][$days_diff][$i]['isAvailable'] = $isAvailable;
+								$arrBookingPeriodsByDaysDiff[$systemId][$days_diff][$i]['isAvailable'] = $values['isAvailable'];
+								$arrBookingPeriodsByDaysDiff[$systemId][$days_diff][$i]['max_multiple_bookings'] = $values['max_multiple_bookings'];
 								break;
 							}
 						}
@@ -485,7 +484,8 @@
 							'SystemId' => $systemId,
 							'FromInMinutes' => $FromInMinutes,
 							'ToInMinutes' => $ToInMinutes,
-							'isAvailable' => $isAvailable
+							'isAvailable' => $values['isAvailable'],
+							'max_multiple_bookings' => $values['max_multiple_bookings'],
 						);
 					}
 				}
@@ -501,9 +501,10 @@
 				$calculated_date = date('Y-m-d', strtotime($date . ' +' . $days_diff . ' days'));
 				
 				foreach ($arr_bookingperiods as $index => $values) {
+					$max_multiple_bookings = empty($values['max_multiple_bookings']) ? 0 : max($values['max_multiple_bookings'], $objSystem['max_multiple_bookings']);
 					if (isset($arrBookings[$systemId]) && isset($arrBookings[$systemId][$calculated_date])
 						&& isset($arrBookings[$systemId][$calculated_date][$values['FromInMinutes'] . '-' . $values['ToInMinutes']])
-						&& count($arrBookings[$systemId][$calculated_date][$values['FromInMinutes'] . '-' . $values['ToInMinutes']]) >= $objSystem['max_multiple_bookings']) {
+						&& count($arrBookings[$systemId][$calculated_date][$values['FromInMinutes'] . '-' . $values['ToInMinutes']]) >= $max_multiple_bookings) {
 						$arr_bookingperiods[$index]['isAvailable'] = false;
 					}
 				}
@@ -1470,17 +1471,20 @@
 		if (empty($end_date))
 			$end_date = $start_date;
 		
-		$stmt = $db->prepare("SELECT SetDate, FromInMinutes, ToInMinutes, isAvailable FROM setting_bookingperiods_special WHERE SystemId = ? AND SetDate >= ? AND SetDate <= ? ORDER BY FromInMinutes ASC");
+		$stmt = $db->prepare("SELECT SetDate, FromInMinutes, ToInMinutes, isAvailable, MaxMultipleBookings FROM setting_bookingperiods_special WHERE SystemId = ? AND SetDate >= ? AND SetDate <= ? ORDER BY FromInMinutes ASC");
 		$stmt->bind_param('iss', $systemId, $start_date, $end_date);
 		$stmt->execute();
-		$stmt->bind_result( $date, $from_in_mins, $to_in_mins, $isAvailable);
+		$stmt->bind_result( $date, $from_in_mins, $to_in_mins, $isAvailable, $max_multiple_bookings);
 		$stmt->store_result();
 
 		while ($stmt->fetch()) {
 			if (!isset($result[$date]))
 				$result[$date] = array();
 			
-			$result[$date][$from_in_mins . '-' . $to_in_mins] = $isAvailable;
+			$result[$date][$from_in_mins . '-' . $to_in_mins] = array(
+				'isAvailable' => $isAvailable,
+				'max_multiple_bookings' => $max_multiple_bookings
+			);
 		}
 
 		$stmt->close();
