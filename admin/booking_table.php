@@ -532,7 +532,7 @@ echo '<div class="modal fade" id="setMultiBooking" tabindex="-1" role="dialog" a
                         // Handle the server response if needed
                         
                         console.log('Toggle value saved successfully.');
-                        //location.reload();
+                        location.reload();
                     },
                     error: function(xhr, status, error) {
                         // Handle errors if the AJAX request fails
