@@ -1841,41 +1841,78 @@
 	}
 
 	// Added by CodeMAX (2024-04-21)
-	function getReportAllCustomize($startDate, $endDate, $page_start, $limit, $systemId, $locationId){
-	
+	function getReportAllCustomize($startDate, $endDate, $page_start, $limit, $systemId, $locationId)
+	{
+
 		$db = getDBConnection();
-    
+
 		// Base SQL query
-		$sql = "SELECT s.FullName, b.BookingDate, b.IsCancelled, b.BookingFrom, b.BookingTo, b.createdAt, b.BookingCode, c.FullName, b.Attended
-			FROM bookings b
-			JOIN customers c ON b.CustomerId = c.CustomerId
-			JOIN systems s ON b.SystemId = s.SystemId
-			WHERE b.BookingDate BETWEEN ? AND ?";
-		
+		$sql = "SELECT s.FullName,
+							l.locationName,
+							b.BookingDate,
+							b.IsCancelled,
+							b.BookingFrom,
+							b.BookingTo,
+							b.createdAt,
+							b.BookingCode,
+							b.PatientName,
+							b.StaffName,
+							c.FullName,
+							sv.FullName,
+							b.Attended,
+							sv.Price,
+							sv.DurationInMins_Doctor,
+							sv.DurationInMins_Nurse,
+							c.Email,
+							c.Phone,
+							c.PostalAddr
+				FROM bookings b
+				JOIN customers c ON b.CustomerId = c.CustomerId
+				JOIN systems s ON b.SystemId = s.SystemId
+				JOIN services sv ON b.ServiceId = sv.ServiceId
+				JOIN locations l ON s.LocationId = l.LocationId
+				WHERE b.BookingDate BETWEEN ? AND ?";
+
 		// Additional conditions based on optional parameters
 		if (is_null($page_start) && is_null($limit)) {
+			$sql .= " ORDER BY s.SystemId";
 			$stmt = $db->prepare($sql);
 			$stmt->bind_param('ss', $startDate, $endDate);
-		}
-		else if (!is_null($locationId)) {
-			$sql .= " AND s.LocationId = ? LIMIT ?, ?";
+		} else if (!is_null($locationId)) {
+			$sql .= " AND s.LocationId = ? ORDER BY s.SystemId LIMIT ?, ? ";
 			$stmt = $db->prepare($sql);
 			$stmt->bind_param('ssiii', $startDate, $endDate, $locationId, $page_start, $limit);
-		}
-		else if (!is_null($systemId)) {
-			$sql .= " AND b.SystemId = ? LIMIT ?, ?";
+		} else if (!is_null($systemId)) {
+			$sql .= " AND b.SystemId = ?  ORDER BY s.SystemId LIMIT ?, ?";
 			$stmt = $db->prepare($sql);
 			$stmt->bind_param('ssiii', $startDate, $endDate, $systemId, $page_start, $limit);
-		}
-		else if (is_null($systemId) && is_null($locationId)) {
-			$sql .= " LIMIT ?, ?";
+		} else if (is_null($systemId) && is_null($locationId)) {
+			$sql .= "ORDER BY s.SystemId LIMIT ?, ?";
 			$stmt = $db->prepare($sql);
 			$stmt->bind_param('ssii', $startDate, $endDate, $page_start, $limit);
 		}
 		$stmt->execute();
-
 		// Bind result variables
-		$stmt->bind_result($systemName, $bookingForDate, $isCancelled, $bookingFrom, $bookingTo, $bookingDate, $bookingCode, $businessName, $isAttended);
+		$stmt->bind_result($systemName,
+			$locationName,
+			$bookingForDate,
+			$isCancelled,
+			$bookingFrom,
+			$bookingTo,
+			$bookingDate,
+			$bookingCode,
+			$patientName,
+			$staffName,
+			$businessName,
+			$serviceName,
+			$attended,
+			$servicePrice,
+			$durationDoctor,
+			$durationNurse,
+			$customerEmail,
+			$customerPhone,
+			$customerAddress
+		);
 
 		// Initialize an array to store the booking data
 		$bookings = array();
@@ -1884,17 +1921,26 @@
 		while ($stmt->fetch()) {
 			$bookings[] = array(
 				'systemName' => $systemName,
+				'systemLocation' => $locationName,
 				'bookingForDate' => $bookingForDate,
 				'isCancelled' => $isCancelled,
 				'bookingFrom' => $bookingFrom,
 				'bookingTo' => $bookingTo,
 				'bookingDate' => $bookingDate,
 				'bookingCode' => $bookingCode,
+				'patientName' => $patientName,
+				'staffName' => $staffName,
 				'businessName' => $businessName,
-				'isAttended' => $isAttended
+				'isAttended' => $attended,
+				'serviceName' => $serviceName,
+				'servicePrice' => $servicePrice,
+				'durationDoctor' => $durationDoctor,
+				'durationNurse' => $durationNurse,
+				"customerEmail" => $customerEmail,
+				"customerPhone" => $customerPhone,
+				"customerAddress" => $customerAddress,
 			);
 		}
-
 		// Close the statement
 		$stmt->close();
 
