@@ -247,6 +247,7 @@ while ($startDateTime <= $endDateTime) {
 
                         foreach ($arrBookingsOfSystem[$dateYMD][$timeSlot] as $bookings) {
                             $bookingCode = $bookings["booking_code"];
+                            $patientName = $bookings["patient_name"];
                             $background_color = "CCFFCC"; //booked color
                             // Time slot is booked
                             $businessName = $bookings["business_name"];
@@ -284,9 +285,9 @@ while ($startDateTime <= $endDateTime) {
                                     .$timeRender.'
                                 </span>';
                             echo '<a target="_self" href="#" onclick="bookedClientView('.$customer_id.');"><span class="CustName" style="color: ' . generateTextColor($bookingCode) .'"><i class="fa fa-user"></i>'
-                                . $businessName . ' (' . $bookingCode . ')</span>';
+                                . $businessName . ' (' . $patientName . ')</span>';
 
-                            echo '<a href="#" title="Multi Bookings" data-toggle="modal" data-target="#setMultiBooking" data-date= "'.$startDateTime.'" data-status="1" data-slot="'.$fromMinutes.'-'.$toMinutes.'" style = "color: '.$strMultiBookingColor.'" data-value='.$nMaxMultipleBookings.'>MB</a>';
+                            echo '&nbsp;<a href="#" title="Multi Bookings" data-toggle="modal" data-target="#setMultiBooking" data-date= "' . $startDateTime . '" data-status="1" data-slot="' . $fromMinutes . '-' . $toMinutes . '" style = "color: ' . $strMultiBookingColor . '" data-value=' . $nMaxMultipleBookings . '>MB</a>';
                             
                             echo '<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
                             echo '<a target="_self" href="#" onclick="bookedAddComments(&quot;'.$bookingCode.'&quot;);">';
@@ -302,8 +303,8 @@ while ($startDateTime <= $endDateTime) {
                             //      </a>';
                             echo '<a target="_self" href="#" onclick="bookedViewBookingDetails(&quot;'.$bookingCode.'&quot;);">
                                         <img title="View Booking Details" border="0" src="/images/bookdetail.png">
-                                    </a>
-                                <br>';
+                                    </a>';
+                            echo '<span style="color: ' . generateTextColor($bookingCode) .'">' . $bookingCode . '</span><br/>';
                         }
                     } else {
 

@@ -1119,6 +1119,7 @@
 					bookings.BookingFrom, 
 					bookings.BookingTo, 
 					bookings.BookingCode, 
+					bookings.PatientName, 
 					bookings.Comments, 
 					bookings.Messages, 
 					customers.FullName, 
@@ -1137,6 +1138,7 @@
 				$bookingFrom, 
 				$bookingTo, 
 				$bookingCode,
+				$patientName,
 				$bookingComments,
 				$bookingMessages,
 				$customerBusiness, 
@@ -1156,6 +1158,7 @@
 				'customer_id' => $customerId,
 				'business_name' => $customerBusiness,
 				'booking_code' => $bookingCode,
+				'patient_name' => $patientName,
 				'booking_comments' => $bookingComments,
 				'booking_id' => $bookingId
 			);
