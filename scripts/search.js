@@ -16,7 +16,7 @@ function lookup(inputString) {
               `<li onclick="getProfile('` +
               result.id +
               `');">` +
-              result.name +
+              result.name + " (" + result.email + ")" + 
               `
             </li>`;
           });

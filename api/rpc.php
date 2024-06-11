@@ -10,7 +10,7 @@
         // Sanitize the input string to prevent SQL injection
         $inputString = $_POST['queryString'];
         // Perform the search query based on the input string
-        $query = "SELECT * FROM customers WHERE FullName LIKE '%".$inputString."%'";
+        $query = "SELECT * FROM customers WHERE FullName LIKE '%" . $inputString . "%' OR Email LIKE '%" . $inputString . "%'";
 
         // Execute the query and fetch results
         $stmt = $db->prepare($query);
