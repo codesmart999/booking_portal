@@ -45,11 +45,13 @@
     <table border="0" cellspacing="0" cellpadding="5" width="100%" class="table">
         <thead>
             <tr>
-                <td width="150" nowrap>Booking System <br>Name </td>
-                <td width="100" nowrap>Customer Name</td>
+                <td width="150" nowrap>Service Name</td>
+                <td width="150" nowrap>System Name</td>
+                <td width="100" nowrap>Customer Name (Email)</td>
+                <td width="100" nowrap>Patient Name</td>
+                <td width="100" nowrap>Booking Code</td>
                 <td width="100" nowrap>Booking Date</td>
-                <td width="100" nowrap>From</td>
-                <td width="100" nowrap>To</td>
+                <td width="100" nowrap>Booking Period</td>
                 <td width="100" nowrap>Status</td>
             </tr>
         </thead>
@@ -61,11 +63,13 @@
 				foreach ($bookings as $booking) {
                     $bookingForDate = date('D, M j Y', strtotime($booking['bookingForDate']));
 					echo '<tr>
-						<td>' . $booking['systemName'] . '</td>
-                        <td>' . $booking['businessName'] . '</td>
+                        <td>' . $booking['serviceName'] . '</td>
+						<td><a href="booking_access.php?SystemId=' . $booking['systemId'] . '&startDate=' . $startDate . '&endDate=' . $startDate . '">' . $booking['systemName'] . '</a></td>
+                        <td>' . $booking['businessName'] . ' (' . $booking['email'] . ')</td>
+                        <td>' . $booking['patientName'] . '</td>
+                        <td style="color: ' . generateTextColor($booking['bookingCode']) .'">' . $booking['bookingCode'] . '</td>
                         <td>' . $bookingForDate . '</td>
-						<td>' . convertDurationToHoursMinutes($booking['bookingFrom'])["formatted_text_type1"] . '</td>
-						<td>' . convertDurationToHoursMinutes($booking['bookingTo'])["formatted_text_type1"] . '</td>
+						<td>' . $booking['displayText'] . '</td>
 						<td></td>
 					</tr>';
 				}

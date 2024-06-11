@@ -688,6 +688,10 @@
 		return ($startA < $startB) ? -1 : 1;
 	}
 
+	function compareBookingFrom($a, $b) {
+		return $a['bookingFrom'] - $b['bookingFrom'];
+	}
+
 	function getNextDayFormatted($currentDate) {
 		// Get the timestamp for the next day
 		$nextDayTimestamp = strtotime('+1 day', $currentDate);
@@ -2038,7 +2042,7 @@
 		$db = getDBConnection();
     
 		// Base SQL query
-		$sql = "SELECT s.FullName, b.BookingDate, b.BookingFrom, b.BookingTo, c.FullName 
+		$sql = "SELECT s.SystemId, s.FullName as SystemName, b.BookingDate, b.BookingFrom, b.BookingTo, c.FullName, c.Email, b.PatientName, b.BookingCode, v.FullName as ServiceName 
 			FROM bookings b
 			JOIN customers c ON b.CustomerId = c.CustomerId
 			JOIN systems s ON b.SystemId = s.SystemId
@@ -2058,27 +2062,49 @@
 		$stmt->execute();
 
 		// Bind result variables
-		$stmt->bind_result($systemName, $bookingForDate, $bookingFrom, $bookingTo, $businessName);
+		$stmt->bind_result($systemId, $systemName, $bookingForDate, $bookingFrom, $bookingTo, $businessName, $email, $patientName, $bookingCode, $serviceName);
 
-		// Initialize an array to store the booking data
-		$bookings = array();
+		// Initialize an array to store the booking information
+		$arr_bookings = [];
+		$result = [];
 
-		// Fetch the data and store it in the array
+		// Fetch the results
 		while ($stmt->fetch()) {
-			$bookings[] = array(
-				'systemName' => $systemName,
-				'bookingForDate' => $bookingForDate,
-				'bookingFrom' => $bookingFrom,
-				'bookingTo' => $bookingTo,
-				'businessName' => $businessName,
-			);
+			if (isset($arr_bookings[$systemId][$bookingCode])) {
+				if ($arr_bookings[$systemId][$bookingCode]['bookingTo'] == $bookingFrom) {
+					$arr_bookings[$systemId][$bookingCode]['bookingTo'] = $bookingTo;
+					$arr_bookings[$systemId][$bookingCode]['displayText'] = get_display_text_from_minutes($arr_bookings[$systemId][$bookingCode]['bookingFrom'], $bookingTo);
+				}
+			} else {
+				$arr_bookings[$systemId][$bookingCode] = [
+					'bookingFrom' => $bookingFrom,
+					'bookingTo' => $bookingTo,
+					'displayText' => get_display_text_from_minutes($bookingFrom, $bookingTo),
+					'systemId' => $systemId,
+					'systemName' => $systemName,
+					'bookingForDate' => $bookingForDate,
+					'businessName' => $businessName,
+					'email' => $email,
+					'patientName' => $patientName,
+					'bookingCode' => $bookingCode,
+					'serviceName' => $serviceName,
+				];
+			}
 		}
 
 		// Close the statement
 		$stmt->close();
 
+		foreach ($arr_bookings as $systemId => $arr_bookingsBySystemId) {
+			foreach ($arr_bookingsBySystemId as $bookingCode => $values) {
+				$result[] = $values;
+			}
+		}
+
+		usort($result, 'compareBookingFrom');
+
 		// Return the array of booking data
-		return $bookings;
+		return $result;
 	}
 	
 	// Added by CodeMAX (2024-04-21)
