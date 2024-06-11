@@ -37,6 +37,7 @@
         <div class="col-sm-12">
             <label for="startDate"><?php echo "List of bookings created on " . $formattedDate . ".";?></label>
             <input id="startDate" type="date" value="<?php echo $startDate; ?>" />
+            <input type="button" class="btn-sm btn-secondary" value="Print" onclick="javascript:printPage()">&nbsp;&nbsp;&nbsp;
             <span id="startDateSelected"></span>
         </div>
     </div>
@@ -77,7 +78,7 @@
    	     else {
    	    ?>
             <tr>
-                <td align="right" colspan="5" class="text-center">No Result.</td>
+                <td align="right" colspan="8" class="text-center">No Result.</td>
             </tr>
             <?php
    	    }
@@ -85,7 +86,7 @@
         </tbody>
         <tfoot>
             <tr>
-                <td align="center" colspan="7">
+                <td align="center" colspan="8">
                     <div class="limit-selector">
                         <form class="pagination-form" method="post">
                             <select name="records-limit" id="records-limit" class="custom-select">
@@ -182,5 +183,12 @@ function viewBookings(booingCode) {
         "_blank",
         "width=" + width + ",height=" + height + ",left=" + left + ",top=" + top
     );
+}
+
+function printPage() {
+    if (window.print)
+        window.print()
+    else
+        alert("Sorry, your browser doesn't support this feature. Use File/Print instead.");
 }
 </script>
