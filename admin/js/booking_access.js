@@ -13,7 +13,7 @@ function hidePopupMenu() {
   $("#popupMenu").hide(); // Hide the popup menu
 }
 
-function bookedClientView(customer_id) {
+function bookedClientView(customer_id, booking_id) {
   // Define the width and height of the small window
   var width = 800;
   var height = 600;
@@ -23,8 +23,7 @@ function bookedClientView(customer_id) {
   // Open the small window with specified parameters
   window.open(
     window.location.origin +
-      "/admin/options_clients_view.php?customer_id=" +
-      customer_id,
+      "/admin/options_clients_view.php?customer_id=" + customer_id + "&booking_id=" + booking_id,
     "_blank",
     "width=" + width + ",height=" + height + ",left=" + left + ",top=" + top
   );

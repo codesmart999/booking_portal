@@ -1537,6 +1537,21 @@
 		$stmt->close();
 		return $result;
 	}
+
+	// Added by Hennadii (2024-06-10)
+	function getBookingInfoById($booking_id){
+		$db = getDBConnection();
+		$stmt = $db->prepare('SELECT PatientName FROM bookings WHERE BookingId =?');
+		$stmt->bind_param('i', $booking_id);
+		$stmt->execute();
+		$stmt->bind_result($patientName);
+		$result = [];
+		while ($stmt->fetch()) {
+			$result["patientName"] = $patientName;
+		}
+		$stmt->close();
+		return $result;
+	}
 	 
 	// Added by Devmax (2024-04-02)
 	function addCustomerComment($customerId, $new_comment){

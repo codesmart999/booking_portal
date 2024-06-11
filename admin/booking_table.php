@@ -284,7 +284,7 @@ while ($startDateTime <= $endDateTime) {
                                     style="color: ' . generateTextColor($bookingCode) . '">'
                                     .$timeRender.'
                                 </span>';
-                            echo '<a target="_self" href="#" onclick="bookedClientView('.$customer_id.');"><span class="CustName" style="color: ' . generateTextColor($bookingCode) .'"><i class="fa fa-user"></i>'
+                            echo '<a target="_self" href="#" onclick="bookedClientView(' . $customer_id . ', ' . $booking_id . ');"><span class="CustName" style="color: ' . generateTextColor($bookingCode) .'"><i class="fa fa-user"></i>'
                                 . $businessName . ' (' . $patientName . ')</span>';
 
                             echo '&nbsp;<a href="#" title="Multi Bookings" data-toggle="modal" data-target="#setMultiBooking" data-date= "' . $startDateTime . '" data-status="1" data-slot="' . $fromMinutes . '-' . $toMinutes . '" style = "color: ' . $strMultiBookingColor . '" data-value=' . $nMaxMultipleBookings . '>MB</a>';

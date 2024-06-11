@@ -3,6 +3,7 @@
     require_once('../lib.php');
 
     $customer_id = -1;
+    $booking_id = -1;
     
     if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
@@ -13,6 +14,7 @@
 	    }
         //__debug($_POST);
         $customer_id = $_POST["customer_id"];
+        $booking_id = $_POST["booking_id"];
         // Retrieve the content of the textarea
         if ($_POST["profile-comment-type"] == 'Add'){
             $textareaContent = $_POST["profile-comment"];
@@ -52,7 +54,17 @@
         if (isset($_GET['customer_id'])) {
             // Extract the value of startDate
             $customer_id = $_GET['customer_id'];
-        }else {
+        } else {
+            header('Location: '. SECURE_URL . ADMIN_INDEX, true, 301);
+            exit; // Make sure to exit after redirection to prevent further script execution
+        }
+    }
+
+    if ($booking_id == -1) {
+        if (isset($_GET['booking_id'])) {
+            // Extract the value of startDate
+            $booking_id = $_GET['booking_id'];
+        } else {
             header('Location: '. SECURE_URL . ADMIN_INDEX, true, 301);
             exit; // Make sure to exit after redirection to prevent further script execution
         }
@@ -61,6 +73,7 @@
     $userInfo = getUserInfo();
 
     $cutomer_info = getCutomerInfoById($customer_id);
+    $booking_info = getBookingInfoById($booking_id);
     if (!isset($cutomer_info["businessName"]) || !isset($cutomer_info["email"])) {//exception handling
         header('Location: '. SECURE_URL . ADMIN_INDEX, true, 301);
         exit; // Make sure to exit after redirection to prevent further script execution
@@ -113,6 +126,9 @@
                             </p>
                             <p>
                                 <font face="Arial" size="2" color="#000000">Email Address : <?php echo $cutomer_info["email"];?></font>
+                            </p>
+                            <p>
+                                <font face="Arial" size="2" color="#000000">Patient Name : <?php echo $booking_info["patientName"];?></font>
                             </p>
                             <p>
                                 <font face="Arial" size="2" color="#000000">Postal Address : <?php echo $street;?> &nbsp;<?php echo $city;?>&nbsp;<?php echo $state;?> &nbsp;<?php echo $postcode;?>&nbsp;Australia</font>
