@@ -60,12 +60,13 @@
 	    $stmt->fetch();
 	    $stmt->close();
 
-    	$_SESSION['User'] = $user;
-	    if ($user['UserId'] == 0){
+	    if (empty($user) || empty($user['UserId'])){
 	    	header('Location: '. SECURE_URL . LOGIN_PAGE, true, 301);
 		   	exit(0);
 	    } else {
-	    	if( $user['UserType'] == 'A' ){
+	    	$_SESSION['User'] = $user;
+			
+			if( $user['UserType'] == 'A' ){
 	    		header('Location: '. SECURE_URL . ADMIN_INDEX, true, 301);
 		   		exit(0);
 	    	} else {
