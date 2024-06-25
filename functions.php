@@ -1337,6 +1337,20 @@
 		
 	}
 
+	function updatePatientName($booking_id, $newPatientName) {
+		$db = getDBConnection();
+		
+		$stmt = $db->prepare("SELECT BookingCode FROM bookings WHERE BookingId = ? LIMIT 1");
+		$stmt->bind_param("i", $booking_id);
+		$stmt->execute();
+		$stmt->bind_result($bookingCode);
+		$stmt->fetch();
+		$stmt->close();
+
+		$updateStmt = $db->prepare("UPDATE bookings SET PatientName = ? WHERE BookingCode = ?");
+		$updateStmt->bind_param("ss", $newPatientName, $bookingCode);
+		$updateStmt->execute();
+	}
 
 	function addBookingComments($bookingCode, $attended, $new_comment){
 		$db = getDBConnection();

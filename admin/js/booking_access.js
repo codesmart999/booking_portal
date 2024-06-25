@@ -21,12 +21,20 @@ function bookedClientView(customer_id, booking_id) {
   var left = (window.innerWidth - width) / 2;
   var top = (window.innerHeight - height) / 2;
   // Open the small window with specified parameters
-  window.open(
+  var newWindow = window.open(
     window.location.origin +
       "/admin/options_clients_view.php?customer_id=" + customer_id + "&booking_id=" + booking_id,
     "_blank",
     "width=" + width + ",height=" + height + ",left=" + left + ",top=" + top
   );
+
+  // Check if the new window is closed every 500 milliseconds
+  var checkWindowClosed = setInterval(function() {
+    if (newWindow.closed) {
+      clearInterval(checkWindowClosed); // Stop checking when window is closed
+      window.location.reload(); // Reload the current page
+    }
+  }, 500);
 }
 
 function bookedAddComments(booking_id) {
