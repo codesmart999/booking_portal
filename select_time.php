@@ -197,6 +197,8 @@ if ( $arrAppData['location'] == ""){
 					duration_in_mins -= toInMins - fromInMins;
 					
 					selectedOption = selectedOption.next();
+					if (!selectedOption || !selectedOption.length)
+						break;
 					[fromInMins, toInMins] = selectedOption.val().split('-').map(Number);
 				}
 
@@ -256,6 +258,8 @@ if ( $arrAppData['location'] == ""){
 										duration_in_mins_doctor -= toInMins - fromInMins;
 										
 										selectedOption = selectedOption.next();
+										if (!selectedOption || !selectedOption.length)
+											break;
 										[fromInMins, toInMins] = selectedOption.val().split('-').map(Number);
 									}
 

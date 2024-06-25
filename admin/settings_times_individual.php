@@ -215,7 +215,6 @@ require_once('footer.php');
 ?>
 <?php
 	$settingKey = "SYSTEM_REGULAR_TIME";
-	$settingValue = json_decode($arrSettings[$settingKey]['value'], true);
 ?>
 <div class="modal fade" id="regularModal" tabindex="-1" role="dialog" aria-labelledby="saveModalLabel" aria-hidden="true">
 	<div class="modal-dialog" role="document">
@@ -353,7 +352,6 @@ require_once('footer.php');
 
 <?php
 	$settingKey = "SYSTEM_IRREGULAR_TIME";
-	$settingValue = json_decode($arrSettings[$settingKey]['value'], true);
 ?>
 <div class="modal fade" id="irregularModal" tabindex="-1" role="dialog" aria-labelledby="saveModalLabel" aria-hidden="true">
 	<div class="modal-dialog" role="document">
@@ -467,7 +465,6 @@ require_once('footer.php');
 
 <?php
 	$settingKey = "AVAILABLE_BOOKING_PERIOD";
-	$settingValue = json_decode($arrSettings[$settingKey]['value'], true);
 ?>
 <div class="modal fade" id="bookingPeriodModal" tabindex="-1" role="dialog" aria-labelledby="saveModalLabel" aria-hidden="true">
 	<div class="modal-dialog" role="document"  style="max-width: 800px; margin: 1.75rem auto;">
