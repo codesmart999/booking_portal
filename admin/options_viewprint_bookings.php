@@ -122,10 +122,13 @@
                                                 </font>
                                             </td>
                                             <td bgcolor="#FFFFFF">
-                                                <font face="arial" size="2"><b> <?php echo $booking_info["businessName"]; ?>
-                                                       </b><br>Doctor/Nurse Details : <?php echo $booking_info["systemFullName"]?>
-                                                    <br>
-                                                    Patient Name : TBA17<br>
+                                                <font face="arial" size="2">
+                                                    Business Name : <?php echo $booking_info["businessName"]; ?>
+                                                    <br/>
+                                                    Doctor/Nurse Details : <?php echo $booking_info["systemFullName"]?>
+                                                    <br/>
+                                                    Patient Name : <?php echo $booking_info["patientName"]; ?>
+                                                    <br/>
                                                     Chromis staff making the booking : Loren<br>
                                                     <?php 
                                           

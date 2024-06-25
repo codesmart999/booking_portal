@@ -1665,7 +1665,7 @@
 	// Added by Devmax (2024-04-02)
 	function getBookedInfoForPrintingByBookingcode($bookingCode){
 		$db = getDBConnection();
-        $stmt = $db->prepare('SELECT services.FullName as serviceName, systems.FullName, systems.Street, systems.City, systems.State, systems.PostCode, BookingDate, BookingFrom, BookingTo, Comments, Messages, LocationName, customers.FullName as BusinessName  FROM (SELECT * FROM bookings where BookingCode = ?) AS T1 JOIN systems ON T1.SystemId = systems.SystemId JOIN locations on systems.LocationId = locations.LocationId JOIN customers on T1.CustomerId = customers.CustomerId JOIN services ON T1.ServiceId = services.ServiceId');
+        $stmt = $db->prepare('SELECT services.FullName as serviceName, systems.FullName, systems.Street, systems.City, systems.State, systems.PostCode, BookingDate, BookingFrom, BookingTo, Comments, Messages, LocationName, customers.FullName as BusinessName, PatientName FROM (SELECT * FROM bookings where BookingCode = ?) AS T1 JOIN systems ON T1.SystemId = systems.SystemId JOIN locations on systems.LocationId = locations.LocationId JOIN customers on T1.CustomerId = customers.CustomerId JOIN services ON T1.ServiceId = services.ServiceId');
         $stmt->bind_param('s', $bookingCode);
         $stmt->execute();
         $stmt->bind_result($serviceName,
@@ -1680,7 +1680,8 @@
 					$comments, 
 					$messages,
 					$systemLocation, 
-					$businessName);
+					$businessName,
+					$patientName);
         $bookingInfo = [];
 
 
@@ -1701,6 +1702,7 @@
 			$bookingInfo["comments"] = $comments;
 			$bookingInfo["messages"] = $messages;
 			$bookingInfo["businessName"] = $businessName;
+			$bookingInfo["patientName"] = $patientName;
 		}
 		$bookingInfo["startTime"] = $bookingTimeStart;
 		$bookingInfo["endTime"] = $bookingTimeEnd;
