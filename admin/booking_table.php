@@ -287,7 +287,7 @@ while ($startDateTime <= $endDateTime) {
                             echo '<a target="_self" href="#" onclick="bookedClientView(' . $customer_id . ', ' . $booking_id . ');"><span class="CustName" style="color: ' . generateTextColor($bookingCode) .'"><i class="fa fa-user"></i>'
                                 . $businessName . ' (' . $patientName . ')</span>';
 
-                            echo '&nbsp;<a href="#" title="Multi Bookings" data-toggle="modal" data-target="#setMultiBooking" data-date= "' . $startDateTime . '" data-status="1" data-slot="' . $fromMinutes . '-' . $toMinutes . '" style = "color: ' . $strMultiBookingColor . '" data-value=' . $nMaxMultipleBookings . '>MB</a>';
+                            echo '&nbsp;<a href="#" title="Multi Bookings" data-toggle="modal" data-target="#setMultiBooking" data-date= "' . $startDateTime . '" data-status="1" data-slot="' . $fromMinutes . '-' . $toMinutes . '" style = "color: ' . $strMultiBookingColor . '" data-value=' . $nMaxMultipleBookings . '>MB (' . $nMaxMultipleBookings . ')</a>';
                             
                             echo '<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
                             echo '<a target="_self" href="#" onclick="bookedAddComments(&quot;'.$bookingCode.'&quot;);">';
@@ -326,7 +326,7 @@ while ($startDateTime <= $endDateTime) {
                             $background_color = "FFE2A6"; //unavailable
                             $available = 0; //unavailable
                             echo '&nbsp;<input type="checkbox" name="timeslot" date = "'.$startDateTime.'" status = "'.$available.'" style="margin-top: 5px" value="'.$fromMinutes.'-'.$toMinutes.'">&nbsp;<span style="background-color: #'.$background_color.'">'.$timeRender.'</span>&nbsp;&nbsp;';
-                            echo '<a href="#" title="Multi Bookings" data-toggle="modal" data-target="#setMultiBooking" data-date= "'.$startDateTime.'" data-status="0" data-slot="'.$fromMinutes.'-'.$toMinutes.'" style = "color: '.$strMultiBookingColor.'" data-value='.$nMaxMultipleBookings.'>MB</a>';
+                            echo '<a href="#" title="Multi Bookings" data-toggle="modal" data-target="#setMultiBooking" data-date= "'.$startDateTime.'" data-status="0" data-slot="'.$fromMinutes.'-'.$toMinutes.'" style = "color: '.$strMultiBookingColor.'" data-value='.$nMaxMultipleBookings.'>MB (' . $nMaxMultipleBookings . ')</a>';
                             echo '<br/>';
                         }
                         else {
@@ -338,7 +338,7 @@ while ($startDateTime <= $endDateTime) {
                                 continue;
                             }
                             echo '&nbsp;<input type="checkbox" name="timeslot" date = "'.$startDateTime.'" status = "'.$available.'" style="margin-top: 5px" value="'.$fromMinutes.'-'.$toMinutes.'">&nbsp;<span style="background-color: #'.$background_color.'">'.$timeRender.'</span>&nbsp;&nbsp;';
-                            echo '<a href="#" title="Multi Bookings" data-toggle="modal" data-target="#setMultiBooking" data-date= "'.$startDateTime.'" data-status="1" data-slot="'.$fromMinutes.'-'.$toMinutes.'" style = "color: '.$strMultiBookingColor.'" data-value='.$nMaxMultipleBookings.'>MB</a>';
+                            echo '<a href="#" title="Multi Bookings" data-toggle="modal" data-target="#setMultiBooking" data-date= "'.$startDateTime.'" data-status="1" data-slot="'.$fromMinutes.'-'.$toMinutes.'" style = "color: '.$strMultiBookingColor.'" data-value='.$nMaxMultipleBookings.'>MB (' . $nMaxMultipleBookings . ')</a>';
                             echo'<br/>';
                         }
                         
