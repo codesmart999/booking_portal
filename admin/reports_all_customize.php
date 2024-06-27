@@ -206,6 +206,16 @@ require_once 'header.php';
                                                     id="patientName" checked>
                                                 <label class="form-check-label" for="patientName">Patient Name</label>
                                             </div>
+                                            <div class="form-check" id="display_check">
+                                                <input class="form-check-input" type="checkbox" name="purchaseOrder"
+                                                    id="purchaseOrder" checked>
+                                                <label class="form-check-label" for="purchaseOrder">Purchase Order</label>
+                                            </div>
+                                            <div class="form-check" id="display_check">
+                                                <input class="form-check-input" type="checkbox" name="comments"
+                                                    id="comments" checked>
+                                                <label class="form-check-label" for="comments">Comments</label>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

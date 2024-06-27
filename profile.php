@@ -27,7 +27,9 @@ if ( isset($_POST['Submit'])){
 			'id' => str_pad(rand(1000, 9999), 4, '0', STR_PAD_LEFT),
 			'user_id' => $objCurUser['UserId'],
 			'datetime' => date('Y-m-d H:i:s'),
-			'content' => $arrAppData['comment']
+			'content' => $arrAppData['comment'],
+			'purchase_order' => $arrAppData['purchase_order']
+			
 		];
 		$comments = json_encode($arr_comments);;
 	}

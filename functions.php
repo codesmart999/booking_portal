@@ -1293,7 +1293,7 @@
 		
 		$stmt = $db->prepare($sql);
 		if (!$stmt->execute()) {
-			die('Error executing insert SQL statement: ' . $insertStmt->error);
+			die('Error executing insert SQL statement: ' . $stmt->error);
 		}
 
 		$stmt->close();
@@ -1923,6 +1923,7 @@
 							b.BookingCode,
 							b.PatientName,
 							b.StaffName,
+							b.Comments,
 							c.FullName,
 							sv.FullName,
 							b.Attended,
@@ -1969,6 +1970,7 @@
 			$bookingCode,
 			$patientName,
 			$staffName,
+			$comments,
 			$businessName,
 			$serviceName,
 			$attended,
@@ -1996,6 +1998,7 @@
 				'bookingCode' => $bookingCode,
 				'patientName' => $patientName,
 				'staffName' => $staffName,
+				'comments' => $comments,
 				'businessName' => $businessName,
 				'isAttended' => $attended,
 				'serviceName' => $serviceName,

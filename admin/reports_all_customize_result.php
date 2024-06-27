@@ -28,6 +28,8 @@ $headers = [
     'customerPhone' => 'Phone',
     'customerAddress' => 'Address',
     'patientName' => 'Patient Name',
+    'purchaseOrder' => 'Purchase Order',
+    'comments' => 'Comments',
 ];
 
 // Format the start and end dates as desired
@@ -224,6 +226,28 @@ if ($_GET['output'] === 'csv') {
         if (isset($_GET['patientName']) && $_GET['patientName'] == 'on') {
             $formattedRow[] = $row['patientName'];
         }
+        $comments = json_decode($row['comments'], true);
+        $comments_content = '';
+        $purchase_order = '';
+
+        // Check if decoding was successful and the array is not empty
+        if (is_array($comments) && count($comments) > 0) {
+            // Access the first comment
+            if (isset($comments[0])) {
+                $first_comment = $comments[0];
+                
+                $comments_content = isset($first_comment['content']) ? $first_comment['content'] : '';
+                $purchase_order = isset($first_comment['purchase_order']) ? $first_comment['purchase_order'] : '';       
+            }     
+        } 
+
+        if (isset($_GET['purchaseOrder']) && $_GET['purchaseOrder'] == 'on') {
+            $formattedRow[] = $purchase_order;
+        }
+    
+        if (isset($_GET['comments']) && $_GET['comments'] == 'on') {
+            $formattedRow[] = $comments_content;
+        }
         // Append the formatted row to the CSV content
         $csvContent .= implode(",", $formattedRow) . "\n";
     }
@@ -412,6 +436,31 @@ foreach ($row_data as $row) {
     if (isset($_GET['patientName']) && $_GET['patientName'] == 'on') {
         echo "<td bgcolor=\"#F8F8F8\">" . $row['patientName'] . "</td>";
     }
+    $comments = json_decode($row['comments'], true);
+    $comments_content = '';
+    $purchase_order = '';
+
+    // Check if decoding was successful and the array is not empty
+    if (is_array($comments) && count($comments) > 0) {
+        // Access the first comment
+        if (isset($comments[0])) {
+            $first_comment = $comments[0];
+            
+            // Extract content and purchase_order
+            $comments_content = isset($first_comment['content']) ? $first_comment['content'] : '';
+            $purchase_order = isset($first_comment['purchase_order']) ? $first_comment['purchase_order'] : '';
+        }
+    }
+
+    if (isset($_GET['purchaseOrder']) && $_GET['purchaseOrder'] == 'on') {
+        echo "<td bgcolor=\"#F8F8F8\">" . $purchase_order . "</td>";
+    }
+
+    if (isset($_GET['comments']) && $_GET['comments'] == 'on') {
+        echo "<td bgcolor=\"#F8F8F8\">" . $comments_content . "</td>";
+    }
+
+
 }
 ?>
 
