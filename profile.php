@@ -54,8 +54,8 @@ if ( isset($_POST['Submit'])){
 		$stmt->execute() or die($stmt->error);
 		$customerId = $db->insert_id;
 	} else {
-		$stmt = $db->prepare("UPDATE `customers` SET FullName = ?, PostalAddr = ?, Phone = ? WHERE Email = ?");
-		$stmt->bind_param('ssss', $business_name, $postAddress, $phone_number, $email_addr);
+		$stmt = $db->prepare("UPDATE `customers` SET FullName = ?, Email = ?, PostalAddr = ?, Phone = ? WHERE CustomerId = ?");
+		$stmt->bind_param('ssssi', $business_name, $email_addr, $postAddress, $phone_number, $customerId);
 		$stmt->execute() or die($stmt->error);
 	}
 	
