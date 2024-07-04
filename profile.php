@@ -11,6 +11,7 @@ if ( isset($_POST['Submit'])){
 	
 	$business_name = $arrAppData['business_name'];
 	$email_addr = $arrAppData['email_addr'];
+	$customerId = $arrAppData['profile_id'];
 
 	$postAddress = json_encode(array (
 		'street' => $arrAppData['street'],
@@ -34,16 +35,20 @@ if ( isset($_POST['Submit'])){
 		$comments = json_encode($arr_comments);;
 	}
 
-	// Check Email
-	$customerId = 0;
-	$stmt = $db->prepare("SELECT CustomerId FROM `customers` WHERE Email = ?");
-	$stmt->bind_param('s', $email_addr);
-	$stmt->execute();
-	$stmt->bind_result($customerId);
-	$stmt->store_result();
-	
+	if (!empty($customerId)) {
+		$stmt = $db->prepare("SELECT FullName, Email FROM `customers` WHERE CustomerId = ?");
+		$stmt->bind_param('i', $customerId);
+		$stmt->execute();
+		$stmt->bind_result($old_business_name, $old_email_addr);
+		$stmt->store_result();
+
+		if (!$stmt->fetch() || $business_name != $old_business_name || $email_addr != $old_email_addr) {
+			$customerId = 0;
+		}
+	}
+
 	// If the user does not exist, insert the new record
-	if (!$stmt->fetch() || empty($customerId)) {
+	if (empty($customerId)) {
 		$stmt = $db->prepare("INSERT INTO `customers` (FullName, Email, PostalAddr, Phone) VALUES (?, ?, ?, ?)");
 		$stmt->bind_param('ssss', $business_name, $email_addr, $postAddress, $phone_number);
 		$stmt->execute() or die($stmt->error);
